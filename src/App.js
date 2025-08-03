@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import OpenAI from 'openai';
 import { fetchYouTubeVideos, searchVideosWithPhrases } from './youtubeApi';
+import { filterVideosWithGPT, getFilteredVideos } from './videoFilter';
 import './App.css';
 
 function App() {
@@ -99,14 +100,28 @@ function App() {
           console.log(`   - ${videos} videos appear ${count} time(s)`);
         });
         
-        // Show videos with duplicates
-        const videosWithDuplicates = allVideos.filter(video => (video.duplicateCount || 1) > 1);
-        if (videosWithDuplicates.length > 0) {
-          console.log(`\n📺 [APP] Videos that appear multiple times:`);
-          videosWithDuplicates.forEach(video => {
-            console.log(`   - "${video.title}" appears ${video.duplicateCount} times`);
-          });
-        }
+                     // Show videos with duplicates
+             const videosWithDuplicates = allVideos.filter(video => (video.duplicateCount || 1) > 1);
+             if (videosWithDuplicates.length > 0) {
+               console.log(`\n📺 [APP] Videos that appear multiple times:`);
+               videosWithDuplicates.forEach(video => {
+                 console.log(`   - "${video.title}" appears ${video.duplicateCount} times`);
+               });
+             }
+
+             // Step 5: Filter videos with GPT
+             console.log(`\n🤖 [APP] Starting GPT filtering...`);
+             const relevantIds = await filterVideosWithGPT(allVideos, query);
+             
+             if (relevantIds.length > 0) {
+               const filteredVideos = getFilteredVideos(allVideos, relevantIds);
+               console.log(`\n🎯 [APP] GPT Filtering Results:`);
+               console.log(`- Original videos: ${allVideos.length}`);
+               console.log(`- Filtered videos: ${filteredVideos.length}`);
+               console.log(`- Filtered video details:`, filteredVideos);
+             } else {
+               console.log(`\n⚠️ [APP] GPT filtering failed or returned no results`);
+             }
       } else {
         console.log(`\n⚠️ [APP] Test failed - no videos found. Check API connectivity.`);
         console.log(`\n🔍 [APP] This might be due to YouTube API issues or invalid API key.`);
