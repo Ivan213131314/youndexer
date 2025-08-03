@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import OpenAI from 'openai';
-import { fetchFilmotVideos, searchVideosWithPhrases } from './filmotApi';
+import { fetchYouTubeVideos, searchVideosWithPhrases } from './youtubeApi';
 import './App.css';
 
 function App() {
@@ -70,7 +70,7 @@ function App() {
       const testPhrase = phrases[0];
       console.log(`🎯 [APP] Testing phrase: "${testPhrase}"`);
       
-      const testVideos = await fetchFilmotVideos(testPhrase, 3);
+      const testVideos = await fetchYouTubeVideos(testPhrase, 10);
       
       console.log(`\n📊 [APP] Test Results:`);
       console.log(`- Phrase tested: "${testPhrase}"`);
@@ -80,16 +80,36 @@ function App() {
       // Step 4: If test successful, proceed with all phrases
       if (testVideos.length > 0) {
         console.log(`\n✅ [APP] Test successful! Proceeding with all phrases...`);
-        const allVideos = await searchVideosWithPhrases(phrases, 3);
+        const allVideos = await searchVideosWithPhrases(phrases, 10);
         
         console.log(`\n🎉 [APP] Final Results:`);
         console.log(`- Total phrases processed: ${phrases.length}`);
         console.log(`- Total unique videos found: ${allVideos.length}`);
         console.log(`- All videos:`, allVideos);
+        
+        // Show duplicate analysis
+        console.log(`\n🔄 [APP] Duplicate Analysis:`);
+        const duplicateStats = {};
+        allVideos.forEach(video => {
+          const count = video.duplicateCount || 1;
+          duplicateStats[count] = (duplicateStats[count] || 0) + 1;
+        });
+        
+        Object.entries(duplicateStats).forEach(([count, videos]) => {
+          console.log(`   - ${videos} videos appear ${count} time(s)`);
+        });
+        
+        // Show videos with duplicates
+        const videosWithDuplicates = allVideos.filter(video => (video.duplicateCount || 1) > 1);
+        if (videosWithDuplicates.length > 0) {
+          console.log(`\n📺 [APP] Videos that appear multiple times:`);
+          videosWithDuplicates.forEach(video => {
+            console.log(`   - "${video.title}" appears ${video.duplicateCount} times`);
+          });
+        }
       } else {
         console.log(`\n⚠️ [APP] Test failed - no videos found. Check API connectivity.`);
-        console.log(`\n🔍 [APP] This might be due to CORS restrictions. Filmot API may not allow browser requests.`);
-        console.log(`\n💡 [APP] Consider using a proxy server or backend API to make the requests.`);
+        console.log(`\n🔍 [APP] This might be due to YouTube API issues or invalid API key.`);
       }
       
     } catch (error) {
