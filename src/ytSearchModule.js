@@ -4,6 +4,7 @@
  */
 
 const SERVER_URL = 'http://localhost:3001';
+const TRANSCRIPT_SERVER_URL = 'http://localhost:3001';
 const searchVideoCount = 6;
 /**
  * Fetch videos from YouTube via server API
@@ -161,15 +162,15 @@ export const searchVideosWithPhrases = async (phrases, videosPerPhrase = 10) => 
 };
 
 /**
- * Add transcripts to videos array
+ * Add transcripts to videos array using Python server
  * @param {Array} videos - Array of video objects with videoId
  * @returns {Promise<Array>} Videos with transcripts added
  */
 export const addTranscriptsToVideos = async (videos) => {
-  console.log(`\n📝 [YT-SEARCH] Adding transcripts to ${videos.length} videos...`);
+  console.log(`\n📝 [YT-SEARCH] Adding transcripts to ${videos.length} videos using Python server...`);
   
   try {
-    const response = await fetch(`${SERVER_URL}/api/transcripts`, {
+    const response = await fetch(`${TRANSCRIPT_SERVER_URL}/api/transcripts`, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
@@ -185,9 +186,21 @@ export const addTranscriptsToVideos = async (videos) => {
     }
     
     const result = await response.json();
-    console.log(`📦 [YT-SEARCH] Transcripts response:`, result);
+    console.log(`📦 [YT-SEARCH] Python transcripts response:`, result);
     
-    const videosWithTranscripts = result.videos || videos;
+    // Map transcript results back to videos
+    const transcriptMap = {};
+    if (result.transcripts) {
+      result.transcripts.forEach(item => {
+        transcriptMap[item.videoId] = item.transcript;
+      });
+    }
+    
+    // Add transcripts to videos
+    const videosWithTranscripts = videos.map(video => ({
+      ...video,
+      transcript: transcriptMap[video.videoId] || null
+    }));
     
     // Log transcript statistics
     const videosWithTranscript = videosWithTranscripts.filter(v => v.transcript);

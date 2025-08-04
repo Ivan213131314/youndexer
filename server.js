@@ -1,12 +1,25 @@
 const express = require('express');
 const cors = require('cors');
 const yts = require('yt-search');
-const { YouTubeTranscriptApi } = require('youtube-transcript-api');
+const fetch = require('node-fetch');
 
 
 const app = express();
 const PORT = 3001;
 const searchVideoCount = 6;  // кол-во видео возвращаемых сервером
+
+// Supadata API конфигурация
+const SUPADATA_API_KEY = "sd_cf39c3a6069af680097faf6f996b8c16"; // Замените на ваш API ключ
+const SUPADATA_BASE_URL = "https://api.supadata.ai/v1";
+
+// Динамический импорт Supadata функций
+let createTranscriptBatch, checkBatchStatus;
+(async () => {
+    const supadataModule = await import('./supadata-client.js');
+    createTranscriptBatch = supadataModule.createTranscriptBatch;
+    checkBatchStatus = supadataModule.checkBatchStatus;
+    console.log('✅ [SUPADATA] Функции загружены');
+})();
 
 // CORS middleware
 app.use(cors());
@@ -72,62 +85,7 @@ async function searchVideos(phrase, limit = searchVideoCount, retries = 2) {
   }
 }
 
-/**
- * Get transcript for a video using YouTube Transcript API
- * @param {string} videoId - YouTube video ID
- * @returns {Promise<string|null>} Transcript text or null if not available
- */
-async function getVideoTranscript(videoId) {
-  try {
-    console.log(`📝 [SERVER] Getting transcript for video: ${videoId}`);
-    
-    const ytt_api = new YouTubeTranscriptApi();
-    
-    // Add timeout to prevent hanging
-    const transcriptPromise = ytt_api.fetch(videoId, ['ru', 'en']);
-    const timeoutPromise = new Promise((_, reject) => {
-      setTimeout(() => reject(new Error('Transcript timeout after 10 seconds')), 10000);
-    });
-    
-    const transcript = await Promise.race([transcriptPromise, timeoutPromise]);
-    
-    // Combine all transcript snippets into one text
-    const transcriptText = transcript.map(snippet => snippet.text).join(' ');
-    
-    console.log(`✅ [SERVER] Successfully got transcript for ${videoId} (${transcriptText.length} characters)`);
-    return transcriptText;
-    
-  } catch (error) {
-    console.log(`⚠️ [SERVER] No transcript available for video ${videoId}:`, error.message);
-    return null;
-  }
-}
 
-
-/**
- * Add transcripts to videos array
- * @param {Array} videos - Array of video objects
- * @returns {Promise<Array>} Videos with transcripts added
- */
-async function addTranscriptsToVideos(videos) {
-  console.log(`\n📝 [SERVER] Adding transcripts to ${videos.length} videos...`);
-  
-  // Create array of promises for all transcript requests
-  const transcriptPromises = videos.map(async (video) => {
-    const transcript = await getVideoTranscript(video.videoId);
-    return {
-      ...video,
-      transcript: transcript
-    };
-  });
-  
-  // Wait for all transcript requests to complete in parallel
-  console.log(`⚡ [SERVER] Fetching ${videos.length} transcripts in parallel...`);
-  const videosWithTranscripts = await Promise.all(transcriptPromises);
-  
-  console.log(`✅ [SERVER] Added transcripts to ${videosWithTranscripts.length} videos`);
-  return videosWithTranscripts;
-}
 
 // GET /api/search - search for videos
 app.get('/api/search', async (req, res) => {
@@ -239,34 +197,205 @@ app.post('/api/batch-search', async (req, res) => {
   }
 });
 
-// POST /api/transcripts - add transcripts to videos
-app.post('/api/transcripts', async (req, res) => {
-  try {
-    const { videos } = req.body;
-    
-    if (!videos || !Array.isArray(videos) || videos.length === 0) {
-      return res.status(400).json({ 
-        error: 'Missing or invalid videos array' 
-      });
+
+
+// Supadata транскрипции функции
+function extractVideoId(urlOrId) {
+    if (urlOrId.includes('youtube.com') || urlOrId.includes('youtu.be')) {
+        const patterns = [
+            /(?:youtube\.com\/watch\?v=|youtu\.be\/)([a-zA-Z0-9_-]+)/,
+            /youtube\.com\/embed\/([a-zA-Z0-9_-]+)/
+        ];
+        
+        for (const pattern of patterns) {
+            const match = urlOrId.match(pattern);
+            if (match) {
+                return match[1];
+            }
+        }
     }
-    
-    console.log(`📝 [SERVER] Adding transcripts to ${videos.length} videos`);
-    
-    const videosWithTranscripts = await addTranscriptsToVideos(videos);
-    
-    res.json({
-      success: true,
-      videos: videosWithTranscripts,
-      count: videosWithTranscripts.length
-    });
-    
-  } catch (error) {
-    console.error(`❌ [SERVER] Error in /api/transcripts:`, error);
-    res.status(500).json({ 
-      error: 'Internal server error',
-      message: error.message 
-    });
-  }
+    return urlOrId;
+}
+
+async function getVideoTranscriptSupadata(videoId) {
+    try {
+        // Очищаем video ID
+        const cleanVideoId = extractVideoId(videoId);
+        
+        // Формируем YouTube URL
+        const youtubeUrl = `https://www.youtube.com/watch?v=${cleanVideoId}`;
+        
+        // Заголовки для Supadata API
+        const headers = {
+            "x-api-key": SUPADATA_API_KEY,
+            "Content-Type": "application/json"
+        };
+        
+        // Данные для запроса
+        const payload = {
+            url: youtubeUrl
+        };
+        
+        console.log(`🔍 [SUPADATA] Отправляем запрос к Supadata для видео: ${youtubeUrl}`);
+        
+        // Отправляем запрос к Supadata API
+        const response = await fetch(`${SUPADATA_BASE_URL}/youtube/transcript?url=${encodeURIComponent(youtubeUrl)}`, {
+            method: 'GET',
+            headers: headers
+        });
+        
+        console.log(`📡 [SUPADATA] Ответ от Supadata API:`);
+        console.log(`   Status Code: ${response.status}`);
+        
+        const responseText = await response.text();
+        console.log(`   Response: ${responseText}`);
+        
+        if (response.ok) {
+            const data = JSON.parse(responseText);
+            const transcript = data.content || '';
+            
+            return {
+                success: true,
+                transcript: transcript,
+                video_id: cleanVideoId,
+                supadata_response: data
+            };
+        } else {
+            return {
+                success: false,
+                error: `Supadata API error: ${response.status} - ${responseText}`,
+                video_id: cleanVideoId
+            };
+        }
+        
+    } catch (error) {
+        console.log(`❌ [SUPADATA] Ошибка при получении транскрипции: ${error.message}`);
+        return {
+            success: false,
+            error: error.message,
+            video_id: videoId
+        };
+    }
+}
+
+// Эндпоинт для получения транскрипции одного видео
+app.post('/api/transcript', async (req, res) => {
+    try {
+        const { videoId } = req.body;
+        
+        if (!videoId) {
+            return res.status(400).json({ error: 'videoId is required' });
+        }
+        
+        const result = await getVideoTranscriptSupadata(videoId);
+        res.json(result);
+        
+    } catch (error) {
+        console.error('[SUPADATA] Ошибка в /api/transcript:', error);
+        res.status(500).json({ error: error.message });
+    }
+});
+
+
+
+// Эндпоинт для получения транскрипций нескольких видео через batch API
+app.post('/api/transcripts', async (req, res) => {
+    try {
+        const { videos } = req.body;
+        
+        if (!videos || !Array.isArray(videos)) {
+            return res.status(400).json({ error: 'videos array is required' });
+        }
+        
+        console.log(`🧪 [SUPADATA] Обрабатываем ${videos.length} видео через batch API`);
+        
+        // Извлекаем video IDs
+        const videoIds = videos
+            .map(video => video.videoId || video.id)
+            .filter(id => id);
+        
+        if (videoIds.length === 0) {
+            return res.json({ transcripts: [] });
+        }
+        
+        // Проверяем что функции загружены
+        if (!createTranscriptBatch || !checkBatchStatus) {
+            throw new Error('Supadata функции еще не загружены');
+        }
+        
+        // Создаем batch job
+        const jobId = await createTranscriptBatch(videoIds);
+        
+        // Проверяем статус с интервалом и retry логикой
+        let attempts = 0;
+        const maxAttempts = 60; // максимум 60 попыток (60 секунд)
+        const retryDelay = 2000; // 2 секунды между попытками
+        let consecutiveErrors = 0;
+        const maxConsecutiveErrors = 3; // максимум 3 ошибки подряд
+        
+        while (attempts < maxAttempts) {
+            attempts++;
+            console.log(`⏳ [SUPADATA] Проверяем статус batch job (попытка ${attempts}/${maxAttempts})`);
+            
+            try {
+                const batchResult = await checkBatchStatus(jobId);
+                consecutiveErrors = 0; // Сбрасываем счетчик ошибок при успехе
+                
+                switch (batchResult.status) {
+                    case 'completed':
+                        console.log(`✅ [SUPADATA] Batch job завершен!`);
+                        console.log(`📊 [SUPADATA] Статистика: ${batchResult.stats.succeeded}/${batchResult.stats.total} успешно, ${batchResult.stats.failed} неудачно`);
+                        
+                        // Преобразуем результаты в нужный формат
+                        const results = batchResult.results.map(result => ({
+                            videoId: result.videoId,
+                            transcript: result.transcript ? result.transcript.content : null,
+                            error: result.errorCode || null,
+                            supadata_response: result
+                        }));
+                        
+                        return res.json({ transcripts: results });
+                        
+                    case 'failed':
+                        throw new Error(`Batch job failed: ${batchResult.error || 'Unknown error'}`);
+                        
+                    case 'queued':
+                        console.log(`⏸️ [SUPADATA] Job в очереди, ждем ${retryDelay/1000}с...`);
+                        break;
+                        
+                    case 'active':
+                        console.log(`🔄 [SUPADATA] Job активен, обрабатывается... ждем ${retryDelay/1000}с`);
+                        break;
+                        
+                    default:
+                        console.log(`❓ [SUPADATA] Неизвестный статус: ${batchResult.status}, ждем ${retryDelay/1000}с`);
+                        break;
+                }
+                
+            } catch (error) {
+                consecutiveErrors++;
+                console.log(`❌ [SUPADATA] Ошибка проверки статуса (${consecutiveErrors}/${maxConsecutiveErrors}): ${error.message}`);
+                
+                if (consecutiveErrors >= maxConsecutiveErrors) {
+                    throw new Error(`Слишком много ошибок подряд (${consecutiveErrors}). Последняя ошибка: ${error.message}`);
+                }
+                
+                // При ошибке ждем дольше
+                console.log(`⏳ [SUPADATA] Ждем ${retryDelay*2/1000}с перед повтором...`);
+                await new Promise(resolve => setTimeout(resolve, retryDelay * 2));
+                continue;
+            }
+            
+            // Ждем перед следующей проверкой
+            await new Promise(resolve => setTimeout(resolve, retryDelay));
+        }
+        
+        throw new Error('Batch job timeout - не удалось получить результаты за 30 секунд');
+        
+    } catch (error) {
+        console.error('[SUPADATA] Ошибка в /api/transcripts:', error);
+        res.status(500).json({ error: error.message });
+    }
 });
 
 // Start server
@@ -275,5 +404,11 @@ app.listen(PORT, () => {
   console.log(`📡 [SERVER] Available endpoints:`);
   console.log(`   GET  /api/search?q=<query>&limit=<number>`);
   console.log(`   POST /api/batch-search (with phrases array in body)`);
-  console.log(`   POST /api/transcripts (with videos array in body)`);
+  console.log(`   POST /api/transcript (single video transcript)`);
+  console.log(`   POST /api/transcripts (batch transcripts)`);
+  if (SUPADATA_API_KEY === "YOUR_API_KEY_HERE") {
+    console.log(`⚠️  [SUPADATA] Не забудьте установить API ключ в переменной SUPADATA_API_KEY!`);
+  } else {
+    console.log(`🔑 [SUPADATA] API Key: ${SUPADATA_API_KEY.substring(0, 10)}...`);
+  }
 }); 
