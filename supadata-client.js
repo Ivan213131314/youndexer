@@ -2,8 +2,11 @@ import { Supadata } from '@supadata/js';
 
 // Initialize the client
 const supadata = new Supadata({
-    apiKey: 'sd_cf39c3a6069af680097faf6f996b8c16',
+    apiKey: 'sd_cf39c3a6069af680097faf6f996b8c16'
 });
+
+// Отладочная информация
+console.log('🔍 [SUPADATA] Доступные методы:', Object.keys(supadata.youtube.batch || {}));
 
 // Функция для создания batch job
 export async function createTranscriptBatch(videoIds) {
@@ -32,7 +35,7 @@ export async function checkBatchStatus(jobId) {
         console.log(`📊 [SUPADATA] Проверяем статус batch job: ${jobId}`);
         
         // Check the status of a batch job
-        const batchResult = await supadata.youtube.batch.getJobStatus(jobId);
+        const batchResult = await supadata.youtube.batch.getBatchResults(jobId);
         
         console.log(`📊 [SUPADATA] Batch status: ${batchResult.status}`);
         return batchResult;
