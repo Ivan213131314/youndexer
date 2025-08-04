@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import OpenAI from 'openai';
 import { fetchVideosByPhrase, searchVideosWithPhrases, addTranscriptsToVideos } from './ytSearchModule';
 import { filterVideosWithGPT, getFilteredVideos } from './videoFilter';
+import TranscriptSummary from './TranscriptSummary';
 import './App.css';
 
 const videoSearchCountPerRequest = 6;
@@ -9,6 +10,8 @@ const videoSearchCountPerRequest = 6;
 function App() {
   const [query, setQuery] = useState('');
   const [isLoading, setIsLoading] = useState(false);
+  const [searchResults, setSearchResults] = useState(null);
+  const [batchJobId, setBatchJobId] = useState(null);
 
   const openai = new OpenAI({
     apiKey: process.env.REACT_APP_OPENAI_API_KEY,
@@ -23,6 +26,8 @@ function App() {
     
     console.log(`\n🚀 [APP] Starting search process for query: "${query}"`);
     setIsLoading(true);
+    setSearchResults(null);
+    setBatchJobId(null);
     
     try {
       // Step 1: Generate GPT response
@@ -117,6 +122,14 @@ function App() {
                console.log(`- Videos with transcripts: ${videosWithTranscripts.filter(v => v.transcript).length}`);
                console.log(`- Videos without transcripts: ${videosWithTranscripts.filter(v => !v.transcript).length}`);
                console.log(`\n🎬 [APP] Complete video objects with transcripts:`, videosWithTranscripts);
+               
+               // Сохраняем результаты для отображения
+               setSearchResults(videosWithTranscripts);
+               
+               // Если есть batch job ID, сохраняем его для создания резюме
+               if (videosWithTranscripts.length > 0 && videosWithTranscripts[0].batchJobId) {
+                 setBatchJobId(videosWithTranscripts[0].batchJobId);
+               }
              } else {
                console.log(`\n⚠️ [APP] GPT filtering failed or returned no results`);
              }
@@ -138,6 +151,10 @@ function App() {
     if (e.key === 'Enter') {
       handleSearch();
     }
+  };
+
+  const handleSummaryComplete = (summaryResult) => {
+    console.log('🎉 [APP] Summary completed:', summaryResult);
   };
 
   return (
@@ -162,6 +179,39 @@ function App() {
         >
           {isLoading ? 'Searching...' : 'Search'}
         </button>
+        
+        {/* Компонент для создания резюме */}
+        {batchJobId && (
+          <TranscriptSummary 
+            jobId={batchJobId}
+            userQuery={query}
+            onSummaryComplete={handleSummaryComplete}
+          />
+        )}
+        
+        {/* Отображение результатов поиска */}
+        {searchResults && (
+          <div className="search-results">
+            <h3>📺 Найденные видео ({searchResults.length})</h3>
+            <div className="videos-list">
+              {searchResults.map((video, index) => (
+                <div key={index} className="video-item">
+                  <h4>{video.title}</h4>
+                  <p>Канал: {video.author}</p>
+                  <p>Длительность: {video.duration}</p>
+                  {video.transcript && (
+                    <details>
+                      <summary>Показать transcript</summary>
+                      <div className="transcript-content">
+                        {video.transcript}
+                      </div>
+                    </details>
+                  )}
+                </div>
+              ))}
+            </div>
+          </div>
+        )}
       </div>
     </div>
   );

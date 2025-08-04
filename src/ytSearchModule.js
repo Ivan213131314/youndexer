@@ -3,8 +3,8 @@
  * Communicates with server that uses yt-search library
  */
 
-const SERVER_URL = 'http://localhost:3001';
-const TRANSCRIPT_SERVER_URL = 'http://localhost:3001';
+const SERVER_URL = process.env.REACT_APP_API_URL || 'http://localhost:3001';
+const TRANSCRIPT_SERVER_URL = process.env.REACT_APP_API_URL || 'http://localhost:3001';
 const searchVideoCount = 6;
 /**
  * Fetch videos from YouTube via server API

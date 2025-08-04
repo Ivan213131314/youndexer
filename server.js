@@ -1,11 +1,20 @@
+// Загружаем переменные окружени
+
+console.log('⬅️ До dotenv');
+require('dotenv').config();
+console.log('➡️ После dotenv');
+console.log('[CHECK] OPENAI_API_KEY:', process.env.OPENAI_API_KEY);
+console.log('[CHECK] REACT_APP_OPENAI_API_KEY:', process.env.REACT_APP_OPENAI_API_KEY);
+
+
 const express = require('express');
 const cors = require('cors');
 const yts = require('yt-search');
-const fetch = require('node-fetch');
+const { getTranscriptSummary } = require('./transcript-summarizer.cjs');
 
 
 const app = express();
-const PORT = 3001;
+const PORT = process.env.PORT || 3001;
 const searchVideoCount = 6;  // кол-во видео возвращаемых сервером
 
 // Supadata API конфигурация
@@ -19,10 +28,18 @@ let createTranscriptBatch, checkBatchStatus;
     createTranscriptBatch = supadataModule.createTranscriptBatch;
     checkBatchStatus = supadataModule.checkBatchStatus;
     console.log('✅ [SUPADATA] Функции загружены');
-})();
+})().catch(console.error);
 
-// CORS middleware
-app.use(cors());
+// CORS middleware - настройка для продакшена
+const corsOptions = {
+  origin: process.env.NODE_ENV === 'production' 
+    ? [process.env.FRONTEND_URL || 'https://yourdomain.com'] 
+    : ['http://localhost:3000', 'http://localhost:3001'],
+  credentials: true,
+  optionsSuccessStatus: 200
+};
+
+app.use(cors(corsOptions));
 app.use(express.json());
 
 /**
@@ -398,6 +415,35 @@ app.post('/api/transcripts', async (req, res) => {
     }
 });
 
+// Новый endpoint для создания резюме
+app.post('/api/summarize-transcripts', async (req, res) => {
+  try {
+    const { jobId, userQuery } = req.body;
+    
+    if (!jobId || !userQuery) {
+      return res.status(400).json({ 
+        error: 'Missing required parameters: jobId and userQuery' 
+      });
+    }
+    
+    console.log(`🔍 [API] Creating summary for jobId: ${jobId}, query: "${userQuery}"`);
+    
+    const result = await getTranscriptSummary(jobId, userQuery);
+    
+    console.log(`✅ [API] Summary created successfully`);
+    console.log(`📊 [API] Results:`, result);
+    
+    res.json(result);
+    
+  } catch (error) {
+    console.error('❌ [API] Error creating summary:', error.message);
+    res.status(500).json({ 
+      error: 'Failed to create summary',
+      details: error.message 
+    });
+  }
+});
+
 // Start server
 app.listen(PORT, () => {
   console.log(`🚀 [SERVER] YouTube search server running on http://localhost:${PORT}`);
@@ -406,9 +452,10 @@ app.listen(PORT, () => {
   console.log(`   POST /api/batch-search (with phrases array in body)`);
   console.log(`   POST /api/transcript (single video transcript)`);
   console.log(`   POST /api/transcripts (batch transcripts)`);
+  console.log(`   POST /api/summarize-transcripts (summarize transcripts)`);
   if (SUPADATA_API_KEY === "YOUR_API_KEY_HERE") {
     console.log(`⚠️  [SUPADATA] Не забудьте установить API ключ в переменной SUPADATA_API_KEY!`);
   } else {
     console.log(`🔑 [SUPADATA] API Key: ${SUPADATA_API_KEY.substring(0, 10)}...`);
   }
-}); 
+});

@@ -1,70 +1,172 @@
-# Getting Started with Create React App
+# YouTube Semantic Searcher
 
-This project was bootstrapped with [Create React App](https://github.com/facebook/create-react-app).
+Приложение для семантического поиска YouTube видео с возможностью создания резюме на основе transcript.
 
-## Available Scripts
+## 🚀 Быстрый старт
 
-In the project directory, you can run:
+### 1. Настройка проекта
 
-### `npm start`
+```bash
+# Клонируйте репозиторий
+git clone <repository-url>
+cd youtube-searcher
 
-Runs the app in the development mode.\
-Open [http://localhost:3000](http://localhost:3000) to view it in your browser.
+# Запустите скрипт настройки
+node setup.js
 
-The page will reload when you make changes.\
-You may also see any lint errors in the console.
+# Установите зависимости
+npm install
+```
 
-### `npm test`
+### 2. Настройка API ключей
 
-Launches the test runner in the interactive watch mode.\
-See the section about [running tests](https://facebook.github.io/create-react-app/docs/running-tests) for more information.
+1. Получите OpenAI API ключ на https://platform.openai.com/
+2. Отредактируйте файл `.env` и замените `your-openai-api-key-here` на ваш ключ
 
-### `npm run build`
+### 3. Запуск приложения
 
-Builds the app for production to the `build` folder.\
-It correctly bundles React in production mode and optimizes the build for the best performance.
+```bash
+# Запустите сервер (в одном терминале)
+node server.js
 
-The build is minified and the filenames include the hashes.\
-Your app is ready to be deployed!
+# Запустите React приложение (в другом терминале)
+npm start
+```
 
-See the section about [deployment](https://facebook.github.io/create-react-app/docs/deployment) for more information.
+Откройте http://localhost:3000 в браузере.
 
-### `npm run eject`
+## 📋 Функциональность
 
-**Note: this is a one-way operation. Once you `eject`, you can't go back!**
+### 🔍 Поиск видео
+- Семантический поиск по YouTube
+- Генерация ключевых фраз с помощью GPT
+- Фильтрация результатов с помощью AI
 
-If you aren't satisfied with the build tool and configuration choices, you can `eject` at any time. This command will remove the single build dependency from your project.
+### 📝 Создание резюме
+- Получение transcript видео через Supadata
+- Создание резюме на основе всех transcript
+- Красивый UI для отображения результатов
 
-Instead, it will copy all the configuration files and the transitive dependencies (webpack, Babel, ESLint, etc) right into your project so you have full control over them. All of the commands except `eject` will still work, but they will point to the copied scripts so you can tweak them. At this point you're on your own.
+## 🛠️ Технологии
 
-You don't have to ever use `eject`. The curated feature set is suitable for small and middle deployments, and you shouldn't feel obligated to use this feature. However we understand that this tool wouldn't be useful if you couldn't customize it when you are ready for it.
+- **Frontend**: React, CSS3
+- **Backend**: Node.js, Express
+- **AI**: OpenAI GPT-4o
+- **Video Processing**: Supadata API
+- **Search**: yt-search
 
-## Learn More
+## 📁 Структура проекта
 
-You can learn more in the [Create React App documentation](https://facebook.github.io/create-react-app/docs/getting-started).
+```
+youtube-searcher/
+├── src/
+│   ├── App.js              # Основной React компонент
+│   ├── App.css             # Стили приложения
+│   ├── TranscriptSummary.js # Компонент создания резюме
+│   ├── TranscriptSummary.css # Стили компонента резюме
+│   ├── ytSearchModule.js   # Модуль поиска YouTube
+│   └── videoFilter.js      # Фильтрация видео
+├── server.js               # Express сервер
+├── transcript-summarizer.cjs # Логика создания резюме
+├── test-summary.js         # Тестирование резюме
+├── setup.js                # Скрипт настройки
+└── .env                    # Переменные окружения
+```
 
-To learn React, check out the [React documentation](https://reactjs.org/).
+## 🔧 API Endpoints
 
-### Code Splitting
+- `GET /api/search?q=<query>&limit=<number>` - Поиск видео
+- `POST /api/batch-search` - Пакетный поиск
+- `POST /api/transcript` - Получение transcript одного видео
+- `POST /api/transcripts` - Пакетное получение transcript
+- `POST /api/summarize-transcripts` - Создание резюме
 
-This section has moved here: [https://facebook.github.io/create-react-app/docs/code-splitting](https://facebook.github.io/create-react-app/docs/code-splitting)
+## 🧪 Тестирование
 
-### Analyzing the Bundle Size
+```bash
+# Тест создания резюме
+node test-summary.js
 
-This section has moved here: [https://facebook.github.io/create-react-app/docs/analyzing-the-bundle-size](https://facebook.github.io/create-react-app/docs/analyzing-the-bundle-size)
+# Тест batch статуса
+node test-batch-status.js
+```
 
-### Making a Progressive Web App
+## 📖 Использование
 
-This section has moved here: [https://facebook.github.io/create-react-app/docs/making-a-progressive-web-app](https://facebook.github.io/create-react-app/docs/making-a-progressive-web-app)
+1. **Поиск видео**: Введите запрос в поле поиска
+2. **Просмотр результатов**: Изучите найденные видео и их transcript
+3. **Создание резюме**: Нажмите кнопку "Создать резюме" для получения AI-резюме
 
-### Advanced Configuration
+## 🔑 Переменные окружения
 
-This section has moved here: [https://facebook.github.io/create-react-app/docs/advanced-configuration](https://facebook.github.io/create-react-app/docs/advanced-configuration)
+Создайте файл `.env` со следующими переменными:
 
-### Deployment
+```bash
+OPENAI_API_KEY=your-openai-api-key
+REACT_APP_OPENAI_API_KEY=your-openai-api-key
+SUPADATA_API_KEY=sd_cf39c3a6069af680097faf6f996b8c16
+REACT_APP_API_URL=http://localhost:3001
+```
 
-This section has moved here: [https://facebook.github.io/create-react-app/docs/deployment](https://facebook.github.io/create-react-app/docs/deployment)
+## 🎨 Особенности UI
 
-### `npm run build` fails to minify
+- Современный дизайн с градиентами
+- Анимированные элементы интерфейса
+- Адаптивная верстка для мобильных устройств
+- Красивое отображение результатов поиска и резюме
 
-This section has moved here: [https://facebook.github.io/create-react-app/docs/troubleshooting#npm-run-build-fails-to-minify](https://facebook.github.io/create-react-app/docs/troubleshooting#npm-run-build-fails-to-minify)
+## 🚀 Деплой на продакшен
+
+### Настройка переменных окружения для продакшена:
+
+1. **API URL**: Измените `REACT_APP_API_URL` на URL вашего сервера:
+   ```bash
+   REACT_APP_API_URL=https://your-domain.com
+   ```
+
+2. **CORS**: Убедитесь, что сервер настроен для работы с вашим доменом
+
+3. **SSL**: Используйте HTTPS для продакшена
+
+### Примеры настроек:
+
+**Для локальной разработки:**
+```bash
+REACT_APP_API_URL=http://localhost:3001
+```
+
+**Для продакшена:**
+```bash
+REACT_APP_API_URL=https://api.yourdomain.com
+```
+
+## 🚨 Устранение неполадок
+
+### Ошибка "OPENAI_API_KEY is missing"
+1. Убедитесь, что файл `.env` создан
+2. Проверьте, что API ключ правильно указан
+3. Перезапустите сервер
+
+### Ошибки CORS
+1. Убедитесь, что сервер запущен на порту 3001
+2. Проверьте настройки CORS в server.js
+
+### Проблемы с поиском
+1. Проверьте подключение к интернету
+2. Убедитесь, что API ключи активны
+3. Проверьте консоль браузера на ошибки
+
+## 📝 Лицензия
+
+MIT License
+
+## 🤝 Вклад в проект
+
+1. Fork репозитория
+2. Создайте ветку для новой функции
+3. Внесите изменения
+4. Создайте Pull Request
+
+## 📞 Поддержка
+
+При возникновении проблем создайте Issue в репозитории.

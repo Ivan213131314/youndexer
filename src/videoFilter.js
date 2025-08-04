@@ -4,10 +4,18 @@
 
 import OpenAI from 'openai';
 
-const openai = new OpenAI({
-  apiKey: process.env.REACT_APP_OPENAI_API_KEY,
-  dangerouslyAllowBrowser: true
-});
+// Создаем OpenAI клиент только когда он нужен
+const createOpenAIClient = () => {
+  const apiKey = process.env.REACT_APP_OPENAI_API_KEY;
+  if (!apiKey) {
+    console.warn('⚠️ REACT_APP_OPENAI_API_KEY не установлен. Видео фильтрация будет отключена.');
+    return null;
+  }
+  return new OpenAI({
+    apiKey: apiKey,
+    dangerouslyAllowBrowser: true
+  });
+};
 
 /**
  * Filter videos based on user query using GPT
@@ -18,6 +26,13 @@ const openai = new OpenAI({
 export const filterVideosWithGPT = async (videos, userQuery) => {
   console.log(`\n🤖 [VIDEO FILTER] Starting GPT filtering for query: "${userQuery}"`);
   console.log(`📊 [VIDEO FILTER] Total videos to analyze: ${videos.length}`);
+
+  // Создаем OpenAI клиент
+  const openai = createOpenAIClient();
+  if (!openai) {
+    console.warn('⚠️ [VIDEO FILTER] OpenAI клиент не инициализирован. Возвращаем все видео.');
+    return videos.map((_, index) => index + 1);
+  }
 
   try {
          // Prepare video data for GPT

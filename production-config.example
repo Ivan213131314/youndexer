@@ -1,0 +1,21 @@
+# Production Environment Variables
+# Скопируйте этот файл в .env.production и настройте под ваш сервер
+
+# OpenAI API Key
+OPENAI_API_KEY=sk-your-actual-openai-api-key
+
+# Supadata API Key
+SUPADATA_API_KEY=sd_cf39c3a6069af680097faf6f996b8c16
+
+# React App OpenAI Key (для фронтенда)
+REACT_APP_OPENAI_API_KEY=sk-your-actual-openai-api-key
+
+# API Server URL (замените на ваш домен)
+REACT_APP_API_URL=https://api.yourdomain.com
+
+# Frontend URL для CORS (замените на ваш домен)
+FRONTEND_URL=https://yourdomain.com
+
+# Дополнительные настройки для продакшена
+NODE_ENV=production
+PORT=3001 
