@@ -122,11 +122,20 @@ export const searchVideosWithPhrases = async (phrases, videosPerPhrase = 10) => 
   const seenVideoIds = new Set();
   const duplicateCount = new Map(); // Track how many times each video appears
   
-  for (let i = 0; i < phrases.length; i++) {
-    const phrase = phrases[i];
-    console.log(`\n📝 [YOUTUBE API] Processing phrase ${i + 1}/${phrases.length}: "${phrase}"`);
-    
+  // Create array of promises for all phrases
+  const searchPromises = phrases.map(async (phrase, i) => {
+    console.log(`\n📝 [YOUTUBE API] Starting search for phrase ${i + 1}/${phrases.length}: "${phrase}"`);
     const videos = await fetchYouTubeVideos(phrase, videosPerPhrase);
+    return { phrase, videos, phraseIndex: i };
+  });
+  
+  // Wait for all searches to complete
+  console.log(`⚡ [YOUTUBE API] Executing ${phrases.length} searches in parallel...`);
+  const results = await Promise.all(searchPromises);
+  
+  // Process all results
+  for (const { phrase, videos, phraseIndex } of results) {
+    console.log(`\n📝 [YOUTUBE API] Processing results for phrase: "${phrase}"`);
     
     let newVideosCount = 0;
     for (const video of videos) {
@@ -137,7 +146,7 @@ export const searchVideosWithPhrases = async (phrases, videosPerPhrase = 10) => 
         allVideos.push({
           ...video,
           searchPhrase: phrase,
-          phraseIndex: i,
+          phraseIndex: phraseIndex,
           duplicateCount: 1
         });
         newVideosCount++;

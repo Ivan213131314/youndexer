@@ -1,8 +1,10 @@
 import React, { useState } from 'react';
 import OpenAI from 'openai';
-import { fetchYouTubeVideos, searchVideosWithPhrases } from './youtubeApi';
+import { fetchVideosByPhrase, searchVideosWithPhrases, addTranscriptsToVideos } from './ytSearchModule';
 import { filterVideosWithGPT, getFilteredVideos } from './videoFilter';
 import './App.css';
+
+const videoSearchCountPerRequest = 6;
 
 function App() {
   const [query, setQuery] = useState('');
@@ -25,7 +27,7 @@ function App() {
     try {
       // Step 1: Generate GPT response
       console.log(`\n🤖 [GPT] Generating keyword phrases...`);
-      const prompt = `Given the user query: "${query}", generate 5–10 short keyword phrases or alternative phrasings that may appear in YouTube video transcripts. These should include synonyms, paraphrases, and related expressions.`;
+      const prompt = `Given the user query: "${query}", generate exactly 2 short keyword phrases or alternative phrasings that may appear in YouTube video transcripts. These should include synonyms, paraphrases, and related expressions. Focus on quality over quantity - each phrase should be highly relevant and specific.`;
       
       console.log(`📝 [GPT] Sending prompt to OpenAI:`, prompt);
       
@@ -66,22 +68,9 @@ function App() {
         return;
       }
       
-      // Step 3: Test with single phrase first
-      console.log(`\n🧪 [APP] Testing with single phrase for debugging...`);
-      const testPhrase = phrases[0];
-      console.log(`🎯 [APP] Testing phrase: "${testPhrase}"`);
-      
-      const testVideos = await fetchYouTubeVideos(testPhrase, 10);
-      
-      console.log(`\n📊 [APP] Test Results:`);
-      console.log(`- Phrase tested: "${testPhrase}"`);
-      console.log(`- Videos found: ${testVideos.length}`);
-      console.log(`- Videos:`, testVideos);
-      
-      // Step 4: If test successful, proceed with all phrases
-      if (testVideos.length > 0) {
-        console.log(`\n✅ [APP] Test successful! Proceeding with all phrases...`);
-        const allVideos = await searchVideosWithPhrases(phrases, 10);
+      // Step 3: Search with all phrases
+      console.log(`\n✅ [APP] Proceeding with all phrases...`);
+      const allVideos = await searchVideosWithPhrases(phrases, videoSearchCountPerRequest);
         
         console.log(`\n🎉 [APP] Final Results:`);
         console.log(`- Total phrases processed: ${phrases.length}`);
@@ -119,13 +108,18 @@ function App() {
                console.log(`- Original videos: ${allVideos.length}`);
                console.log(`- Filtered videos: ${filteredVideos.length}`);
                console.log(`- Filtered video details:`, filteredVideos);
+               
+               // Step 6: Get transcripts for filtered videos
+               console.log(`\n📝 [APP] Getting transcripts for ${filteredVideos.length} filtered videos...`);
+               const videosWithTranscripts = await addTranscriptsToVideos(filteredVideos);
+               
+               console.log(`\n📊 [APP] Final Results with Transcripts:`);
+               console.log(`- Videos with transcripts: ${videosWithTranscripts.filter(v => v.transcript).length}`);
+               console.log(`- Videos without transcripts: ${videosWithTranscripts.filter(v => !v.transcript).length}`);
+               console.log(`\n🎬 [APP] Complete video objects with transcripts:`, videosWithTranscripts);
              } else {
                console.log(`\n⚠️ [APP] GPT filtering failed or returned no results`);
              }
-      } else {
-        console.log(`\n⚠️ [APP] Test failed - no videos found. Check API connectivity.`);
-        console.log(`\n🔍 [APP] This might be due to YouTube API issues or invalid API key.`);
-      }
       
     } catch (error) {
       console.error('❌ [APP] Error in search process:', error);

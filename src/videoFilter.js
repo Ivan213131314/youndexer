@@ -20,12 +20,13 @@ export const filterVideosWithGPT = async (videos, userQuery) => {
   console.log(`📊 [VIDEO FILTER] Total videos to analyze: ${videos.length}`);
 
   try {
-    // Prepare video data for GPT
-    const videoData = videos.map((video, index) => ({
-      id: index + 1, // Simple number starting from 1
-      title: video.title,
-      description: video.description
-    }));
+         // Prepare video data for GPT
+     const videoData = videos.map((video, index) => ({
+       id: index + 1, // Simple number starting from 1
+       title: video.title,
+       description: video.description,
+       videoId: video.videoId
+     }));
 
     console.log(`📋 [VIDEO FILTER] Video data to send to GPT:`);
     console.log(JSON.stringify(videoData, null, 2));
@@ -108,6 +109,7 @@ export const getFilteredVideos = (allVideos, relevantIds) => {
   });
 
   console.log(`✅ [VIDEO FILTER] Filtered ${filteredVideos.length} videos from ${allVideos.length} total`);
+  console.log(`📋 [VIDEO FILTER] Filtered videos array:`, filteredVideos);
   
   return filteredVideos;
 }; 
