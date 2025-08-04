@@ -5,13 +5,14 @@ import { filterVideosWithGPT, getFilteredVideos } from './videoFilter';
 import TranscriptSummary from './TranscriptSummary';
 import './App.css';
 
-const videoSearchCountPerRequest = 6;
+const videoSearchCountPerRequest = 3;
 
 function App() {
   const [query, setQuery] = useState('');
   const [isLoading, setIsLoading] = useState(false);
   const [searchResults, setSearchResults] = useState(null);
   const [batchJobId, setBatchJobId] = useState(null);
+  const [summaryData, setSummaryData] = useState(null);
 
   const openai = new OpenAI({
     apiKey: process.env.REACT_APP_OPENAI_API_KEY,
@@ -28,6 +29,7 @@ function App() {
     setIsLoading(true);
     setSearchResults(null);
     setBatchJobId(null);
+    setSummaryData(null);
     
     try {
       // Step 1: Generate GPT response
@@ -76,6 +78,12 @@ function App() {
       // Step 3: Search with all phrases
       console.log(`\n✅ [APP] Proceeding with all phrases...`);
       const allVideos = await searchVideosWithPhrases(phrases, videoSearchCountPerRequest);
+      
+      // Проверяем, что получили результаты
+      if (!allVideos || allVideos.length === 0) {
+        console.log(`❌ [APP] No videos found for any phrase`);
+        return;
+      }
         
         console.log(`\n🎉 [APP] Final Results:`);
         console.log(`- Total phrases processed: ${phrases.length}`);
@@ -155,11 +163,12 @@ function App() {
 
   const handleSummaryComplete = (summaryResult) => {
     console.log('🎉 [APP] Summary completed:', summaryResult);
+    setSummaryData(summaryResult);
   };
 
   return (
     <div className="App">
-      <div className="search-container">
+      <div className="header">
         <h1 className="main-heading">YouTube Semantic Searcher</h1>
         <div className="search-box">
           <input
@@ -171,47 +180,96 @@ function App() {
             onKeyPress={handleKeyPress}
             disabled={isLoading}
           />
+          <button 
+            className="search-button"
+            onClick={handleSearch}
+            disabled={isLoading}
+          >
+            {isLoading ? 'Searching...' : 'Search'}
+          </button>
         </div>
-        <button 
-          className="search-button"
-          onClick={handleSearch}
-          disabled={isLoading}
-        >
-          {isLoading ? 'Searching...' : 'Search'}
-        </button>
-        
-        {/* Компонент для создания резюме */}
-        {batchJobId && (
-          <TranscriptSummary 
-            jobId={batchJobId}
-            userQuery={query}
-            onSummaryComplete={handleSummaryComplete}
-          />
-        )}
-        
-        {/* Отображение результатов поиска */}
-        {searchResults && (
-          <div className="search-results">
-            <h3>📺 Найденные видео ({searchResults.length})</h3>
-            <div className="videos-list">
-              {searchResults.map((video, index) => (
-                <div key={index} className="video-item">
-                  <h4>{video.title}</h4>
-                  <p>Канал: {video.author}</p>
-                  <p>Длительность: {video.duration}</p>
-                  {video.transcript && (
-                    <details>
-                      <summary>Показать transcript</summary>
-                      <div className="transcript-content">
-                        {video.transcript}
-                      </div>
-                    </details>
-                  )}
+      </div>
+
+      {/* Основной контент с двумя колонками */}
+      <div className="main-content">
+        {/* Левая колонка - Общий вывод */}
+        <div className="left-column">
+          <div className="summary-section">
+            <h2>📋 Общий вывод</h2>
+            
+            {/* Показываем компонент для создания резюме */}
+            {batchJobId && (
+              <TranscriptSummary 
+                jobId={batchJobId}
+                userQuery={query}
+                onSummaryComplete={handleSummaryComplete}
+              />
+            )}
+
+            {/* Отображение готового резюме */}
+            {summaryData && (
+              <div className="summary-display">
+                <div className="summary-stats">
+                  <div className="stat-item">
+                    <span className="stat-label">Всего результатов:</span>
+                    <span className="stat-value">{summaryData.totalResults}</span>
+                  </div>
+                  <div className="stat-item">
+                    <span className="stat-label">Transcript найдено:</span>
+                    <span className="stat-value">{summaryData.transcriptCount}</span>
+                  </div>
                 </div>
-              ))}
-            </div>
+
+                <div className="summary-content">
+                  <h4>📋 Резюме по запросу: "{query}"</h4>
+                  <div className="summary-text">
+                    {summaryData.summary.split('\n').map((line, index) => (
+                      <p key={index}>{line}</p>
+                    ))}
+                  </div>
+                </div>
+              </div>
+            )}
+
+            {/* Плейсхолдер когда нет данных */}
+            {!batchJobId && !summaryData && (
+              <div className="placeholder">
+                <p>Выполните поиск, чтобы увидеть общий вывод по всем транскриптам</p>
+              </div>
+            )}
           </div>
-        )}
+        </div>
+
+        {/* Правая колонка - Отдельные видео */}
+        <div className="right-column">
+          <div className="videos-section">
+            <h2>📺 Найденные видео</h2>
+            
+            {searchResults ? (
+              <div className="videos-list">
+                {searchResults.map((video, index) => (
+                  <div key={index} className="video-item">
+                    <h4>{video.title}</h4>
+                    <p>Канал: {video.author}</p>
+                    <p>Длительность: {video.duration}</p>
+                    {video.transcript && (
+                      <details>
+                        <summary>► Показать transcript</summary>
+                        <div className="transcript-content">
+                          {video.transcript}
+                        </div>
+                      </details>
+                    )}
+                  </div>
+                ))}
+              </div>
+            ) : (
+              <div className="placeholder">
+                <p>Результаты поиска появятся здесь</p>
+              </div>
+            )}
+          </div>
+        </div>
       </div>
     </div>
   );

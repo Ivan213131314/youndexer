@@ -45,38 +45,90 @@ async function getTranscriptSummary(jobId, userQuery) {
         // Извлекаем transcript поля из каждого объекта
         const transcripts = batchResults.results
             .filter(result => result.transcript) // Фильтруем только объекты с transcript
-            .map(result => result.transcript);
+            .map(result => {
+                // Проверяем структуру transcript объекта
+                if (typeof result.transcript === 'string') {
+                    return result.transcript;
+                } else if (result.transcript && result.transcript.content) {
+                    return result.transcript.content;
+                } else if (result.transcript && result.transcript.text) {
+                    return result.transcript.text;
+                } else {
+                    console.log('⚠️ Неизвестная структура transcript:', result.transcript);
+                    return JSON.stringify(result.transcript);
+                }
+            });
         
         if (transcripts.length === 0) {
-            throw new Error('Не найдено ни одного transcript в результатах');
+            throw new Error('Не найдено ни одного transcript в результатах. Возможно, Supadata API недоступен.');
         }
         
         console.log(`📝 Найдено ${transcripts.length} transcript(ов)`);
+        
+        // Логируем первые символы каждого transcript для отладки
+        transcripts.forEach((transcript, index) => {
+            console.log(`📄 Transcript ${index + 1} (первые 100 символов): ${transcript.substring(0, 100)}...`);
+        });
+        
+        // Логируем полные транскрипты
+        console.log('\n📄 [TRANSCRIPTS] ПОЛНЫЕ ТРАНСКРИПТЫ:');
+        console.log('='.repeat(80));
+        transcripts.forEach((transcript, index) => {
+            console.log(`\n--- TRANSCRIPT ${index + 1} ---`);
+            console.log(transcript);
+            console.log(`--- КОНЕЦ TRANSCRIPT ${index + 1} ---\n`);
+        });
+        console.log('='.repeat(80));
         
         // Объединяем все transcript в один текст
         const combinedTranscripts = transcripts.join('\n\n---\n\n');
         
         console.log('🤖 Отправляем в OpenAI для создания резюме...');
         
+        // Формируем запрос для ChatGPT
+        const systemPrompt = 'Ты - эксперт по анализу видео контента. Создавай краткие и информативные резюме на основе транскриптов видео.';
+        const userPrompt = `Запрос: ${userQuery}\n\nТранскрипты:\n${combinedTranscripts}`;
+        
+        console.log('📤 [OPENAI] System Prompt:');
+        console.log('='.repeat(80));
+        console.log(systemPrompt);
+        console.log('='.repeat(80));
+        console.log('\n📤 [OPENAI] User Prompt (ПОЛНЫЙ ЗАПРОС):');
+        console.log('='.repeat(80));
+        console.log(userPrompt);
+        console.log('='.repeat(80));
+        console.log(`\n📊 [OPENAI] Общая длина запроса: ${userPrompt.length} символов`);
+        
         // Отправляем в OpenAI для создания резюме
-        const completion = await openai.chat.completions.create({
+        const requestConfig = {
             model: 'gpt-4o',
             messages: [
                 {
                     role: 'system',
-                    content: 'Ты - эксперт по анализу видео контента. Создавай краткие и информативные резюме на основе транскриптов видео.'
+                    content: systemPrompt
                 },
                 {
                     role: 'user',
-                    content: `Запрос: ${userQuery}\n\nТранскрипты:\n${combinedTranscripts}`
+                    content: userPrompt
                 }
             ],
             max_tokens: 2000,
             temperature: 0.7
-        });
+        };
+        
+        console.log('⚙️ [OPENAI] Параметры запроса:');
+        console.log(`   - Model: ${requestConfig.model}`);
+        console.log(`   - Max tokens: ${requestConfig.max_tokens}`);
+        console.log(`   - Temperature: ${requestConfig.temperature}`);
+        console.log(`   - Messages count: ${requestConfig.messages.length}`);
+        
+        const completion = await openai.chat.completions.create(requestConfig);
         
         const summary = completion.choices[0].message.content;
         console.log('✅ Резюме создано успешно!');
+        console.log('📥 [OPENAI] Ответ от ChatGPT:');
+        console.log(summary);
+        console.log(`📊 [OPENAI] Длина ответа: ${summary.length} символов`);
         
         return {
             summary,
@@ -111,7 +163,19 @@ async function getTranscriptsOnly(jobId) {
         // Извлекаем только transcript поля
         const transcripts = batchResults.results
             .filter(result => result.transcript)
-            .map(result => result.transcript);
+            .map(result => {
+                // Проверяем структуру transcript объекта
+                if (typeof result.transcript === 'string') {
+                    return result.transcript;
+                } else if (result.transcript && result.transcript.content) {
+                    return result.transcript.content;
+                } else if (result.transcript && result.transcript.text) {
+                    return result.transcript.text;
+                } else {
+                    console.log('⚠️ Неизвестная структура transcript:', result.transcript);
+                    return JSON.stringify(result.transcript);
+                }
+            });
         
         console.log(`📝 Найдено ${transcripts.length} transcript(ов)`);
         

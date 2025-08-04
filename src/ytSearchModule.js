@@ -5,7 +5,7 @@
 
 const SERVER_URL = process.env.REACT_APP_API_URL || 'http://localhost:3001';
 const TRANSCRIPT_SERVER_URL = process.env.REACT_APP_API_URL || 'http://localhost:3001';
-const searchVideoCount = 6;
+const searchVideoCount = 1;
 /**
  * Fetch videos from YouTube via server API
  * @param {string} phrase - Search phrase to look for
@@ -76,7 +76,7 @@ export const fetchVideosByPhrase = async (phrase, limit = searchVideoCount) => {
       message: error.message,
       stack: error.stack
     });
-    return [];
+    throw error; // Пробрасываем ошибку вместо возврата пустого массива
   }
 };
 
@@ -157,7 +157,7 @@ export const searchVideosWithPhrases = async (phrases, videosPerPhrase = 10) => 
       message: error.message,
       stack: error.stack
     });
-    return [];
+    throw error; // Пробрасываем ошибку вместо возврата пустого массива
   }
 };
 
@@ -196,10 +196,11 @@ export const addTranscriptsToVideos = async (videos) => {
       });
     }
     
-    // Add transcripts to videos
+    // Add transcripts to videos and preserve batchJobId
     const videosWithTranscripts = videos.map(video => ({
       ...video,
-      transcript: transcriptMap[video.videoId] || null
+      transcript: transcriptMap[video.videoId] || null,
+      batchJobId: result.batchJobId || null
     }));
     
     // Log transcript statistics

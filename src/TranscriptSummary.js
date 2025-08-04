@@ -2,7 +2,6 @@ import React, { useState } from 'react';
 import './TranscriptSummary.css';
 
 const TranscriptSummary = ({ jobId, userQuery, onSummaryComplete }) => {
-  const [summary, setSummary] = useState(null);
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState(null);
 
@@ -14,12 +13,26 @@ const TranscriptSummary = ({ jobId, userQuery, onSummaryComplete }) => {
 
     setIsLoading(true);
     setError(null);
-    setSummary(null);
 
     try {
       console.log('🚀 [SUMMARY] Создаем резюме...');
       console.log(`📋 [SUMMARY] JobId: ${jobId}`);
       console.log(`🔍 [SUMMARY] Запрос: "${userQuery}"`);
+
+      const requestBody = {
+        jobId,
+        userQuery
+      };
+
+      console.log('📤 [SUMMARY] Отправляем запрос к серверу:');
+      console.log('='.repeat(80));
+      console.log('URL:', `${process.env.REACT_APP_API_URL || 'http://localhost:3001'}/api/summarize-transcripts`);
+      console.log('Method: POST');
+      console.log('Headers:', {
+        'Content-Type': 'application/json'
+      });
+      console.log('Body:', JSON.stringify(requestBody, null, 2));
+      console.log('='.repeat(80));
 
       const response = await fetch(`${process.env.REACT_APP_API_URL || 'http://localhost:3001'}/api/summarize-transcripts`, {
         method: 'POST',
@@ -40,9 +53,12 @@ const TranscriptSummary = ({ jobId, userQuery, onSummaryComplete }) => {
       const result = await response.json();
       
       console.log('✅ [SUMMARY] Резюме создано успешно!');
+      console.log('📥 [SUMMARY] Ответ от сервера:');
+      console.log('='.repeat(80));
+      console.log('Status:', response.status, response.statusText);
+      console.log('Response:', JSON.stringify(result, null, 2));
+      console.log('='.repeat(80));
       console.log('📊 [SUMMARY] Результаты:', result);
-      
-      setSummary(result);
       
       if (onSummaryComplete) {
         onSummaryComplete(result);
@@ -79,42 +95,7 @@ const TranscriptSummary = ({ jobId, userQuery, onSummaryComplete }) => {
       {isLoading && (
         <div className="summary-loading">
           <div className="loading-spinner"></div>
-          <span>Создаем резюме на основе transcript...</span>
-        </div>
-      )}
-
-      {summary && (
-        <div className="summary-results">
-          <div className="summary-stats">
-            <div className="stat-item">
-              <span className="stat-label">Всего результатов:</span>
-              <span className="stat-value">{summary.totalResults}</span>
-            </div>
-            <div className="stat-item">
-              <span className="stat-label">Transcript найдено:</span>
-              <span className="stat-value">{summary.transcriptCount}</span>
-            </div>
-          </div>
-
-          <div className="summary-content">
-            <h4>📋 Резюме</h4>
-            <div className="summary-text">
-              {summary.summary.split('\n').map((line, index) => (
-                <p key={index}>{line}</p>
-              ))}
-            </div>
-          </div>
-
-          <div className="summary-meta">
-            <div className="meta-item">
-              <span className="meta-label">Job ID:</span>
-              <span className="meta-value">{summary.jobId}</span>
-            </div>
-            <div className="meta-item">
-              <span className="meta-label">Запрос:</span>
-              <span className="meta-value">{summary.userQuery}</span>
-            </div>
-          </div>
+          <span>Создаем резюме на основе всех транскриптов...</span>
         </div>
       )}
     </div>

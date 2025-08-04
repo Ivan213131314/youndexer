@@ -15,7 +15,7 @@ const { getTranscriptSummary } = require('./transcript-summarizer.cjs');
 
 const app = express();
 const PORT = process.env.PORT || 3001;
-const searchVideoCount = 6;  // кол-во видео возвращаемых сервером
+const searchVideoCount = 1;  // кол-во видео возвращаемых сервером
 
 // Supadata API конфигурация
 const SUPADATA_API_KEY = "sd_cf39c3a6069af680097faf6f996b8c16"; // Замените на ваш API ключ
@@ -345,17 +345,25 @@ app.post('/api/transcripts', async (req, res) => {
         
         // Проверяем статус с интервалом и retry логикой
         let attempts = 0;
-        const maxAttempts = 60; // максимум 60 попыток (60 секунд)
-        const retryDelay = 2000; // 2 секунды между попытками
+        const maxAttempts = 30; // максимум 30 попыток (30 секунд)
+        const retryDelay = 3000; // 3 секунды между попытками
         let consecutiveErrors = 0;
-        const maxConsecutiveErrors = 3; // максимум 3 ошибки подряд
+        const maxConsecutiveErrors = 5; // максимум 5 ошибок подряд
         
         while (attempts < maxAttempts) {
             attempts++;
             console.log(`⏳ [SUPADATA] Проверяем статус batch job (попытка ${attempts}/${maxAttempts})`);
             
             try {
-                const batchResult = await checkBatchStatus(jobId);
+                // Добавляем таймаут для каждого запроса
+                const timeoutPromise = new Promise((_, reject) => {
+                    setTimeout(() => reject(new Error('Supadata request timeout')), 10000);
+                });
+                
+                const batchResult = await Promise.race([
+                    checkBatchStatus(jobId),
+                    timeoutPromise
+                ]);
                 consecutiveErrors = 0; // Сбрасываем счетчик ошибок при успехе
                 
                 switch (batchResult.status) {
@@ -371,7 +379,10 @@ app.post('/api/transcripts', async (req, res) => {
                             supadata_response: result
                         }));
                         
-                        return res.json({ transcripts: results });
+                        return res.json({ 
+                            transcripts: results,
+                            batchJobId: jobId 
+                        });
                         
                     case 'failed':
                         throw new Error(`Batch job failed: ${batchResult.error || 'Unknown error'}`);
@@ -411,7 +422,20 @@ app.post('/api/transcripts', async (req, res) => {
         
     } catch (error) {
         console.error('[SUPADATA] Ошибка в /api/transcripts:', error);
-        res.status(500).json({ error: error.message });
+        
+        // Fallback: возвращаем видео без транскриптов
+        console.log('🔄 [SUPADATA] Fallback: возвращаем видео без транскриптов');
+        const fallbackResults = videos.map(video => ({
+            videoId: video.videoId || video.id,
+            transcript: null,
+            error: 'Supadata API недоступен',
+            supadata_response: null
+        }));
+        
+        res.json({ 
+            transcripts: fallbackResults,
+            batchJobId: null 
+        });
     }
 });
 
