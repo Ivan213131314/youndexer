@@ -4,6 +4,7 @@ import { fetchVideosByPhrase, searchVideosWithPhrases, addTranscriptsToVideos } 
 import { filterVideosWithGPT, getFilteredVideos } from './videoFilter';
 import TranscriptSummary from './TranscriptSummary';
 import History from './history/History';
+import ChannelParsing from './channel-parsing/ChannelParsing';
 import { collection, addDoc } from 'firebase/firestore';
 import { db } from './firebase';
 import { saveSearchToHistory } from './history/historyService';
@@ -18,7 +19,7 @@ function App() {
   const [summaryData, setSummaryData] = useState(null);
   const [isResizing, setIsResizing] = useState(false);
   const [leftColumnWidth, setLeftColumnWidth] = useState(50); // процент от общей ширины
-  const [currentPage, setCurrentPage] = useState('main'); // 'main' или 'history'
+  const [currentPage, setCurrentPage] = useState('main'); // 'main', 'history', или 'channel-parsing'
 
   const openai = new OpenAI({
     apiKey: process.env.REACT_APP_OPENAI_API_KEY,
@@ -167,6 +168,10 @@ function App() {
     setCurrentPage('history');
   };
 
+  const handleChannelParsingClick = () => {
+    setCurrentPage('channel-parsing');
+  };
+
   const handleBackToMain = () => {
     setCurrentPage('main');
   };
@@ -175,6 +180,8 @@ function App() {
     <div className="App">
       {currentPage === 'history' ? (
         <History onBackToMain={handleBackToMain} />
+      ) : currentPage === 'channel-parsing' ? (
+        <ChannelParsing onBackToMain={handleBackToMain} />
       ) : (
         <>
           {/* Верхнее меню */}
@@ -185,7 +192,12 @@ function App() {
             >
               History
             </button>
-            <button className="menu-button">Channel parsing</button>
+            <button 
+              className={`menu-button ${currentPage === 'channel-parsing' ? 'active' : ''}`}
+              onClick={handleChannelParsingClick}
+            >
+              Channel parsing
+            </button>
             <button className="menu-button">About us</button>
           </div>
 

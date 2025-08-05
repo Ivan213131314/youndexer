@@ -1,0 +1,382 @@
+/* Channel Parsing Page Styles */
+.channel-parsing {
+  min-height: 100vh;
+  display: flex;
+  flex-direction: column;
+  padding: 20px;
+  position: relative;
+}
+
+/* Верхнее меню */
+.top-menu {
+  position: absolute;
+  top: 20px;
+  right: 20px;
+  display: flex;
+  gap: 15px;
+  z-index: 10;
+}
+
+.menu-button {
+  background: none;
+  border: none;
+  font-size: 14px;
+  color: #5f6368;
+  cursor: pointer;
+  padding: 8px 12px;
+  border-radius: 6px;
+  transition: all 0.2s ease;
+  font-weight: 500;
+}
+
+.menu-button:hover {
+  background-color: #f1f3f4;
+  color: #202124;
+}
+
+.menu-button.active {
+  background-color: #e8f0fe;
+  color: #1a73e8;
+  border: 2px solid #1a73e8;
+  font-weight: 600;
+}
+
+/* Header styles */
+.header {
+  text-align: center;
+  margin-bottom: 2rem;
+  padding-bottom: 2rem;
+}
+
+.main-heading {
+  font-size: 2.5rem;
+  font-weight: 400;
+  color: #202124;
+  margin-bottom: 2rem;
+  letter-spacing: -0.5px;
+}
+
+.search-box {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  gap: 1rem;
+  flex-wrap: wrap;
+}
+
+.search-input {
+  width: 100%;
+  max-width: 500px;
+  height: 48px;
+  padding: 0 16px;
+  font-size: 16px;
+  border: 1px solid #dfe1e5;
+  border-radius: 24px;
+  outline: none;
+  transition: all 0.2s ease;
+  box-shadow: 0 1px 6px rgba(32, 33, 36, 0.08);
+}
+
+.search-input:hover {
+  box-shadow: 0 1px 6px rgba(32, 33, 36, 0.12);
+  border-color: #dadce0;
+}
+
+.search-input:focus {
+  box-shadow: 0 2px 8px rgba(32, 33, 36, 0.15);
+  border-color: #4285f4;
+}
+
+.search-input::placeholder {
+  color: #9aa0a6;
+}
+
+.search-button {
+  background-color: #f8f9fa;
+  border: 1px solid #f8f9fa;
+  border-radius: 4px;
+  color: #3c4043;
+  font-size: 14px;
+  font-weight: 500;
+  padding: 12px 24px;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  box-shadow: 0 1px 1px rgba(0, 0, 0, 0.1);
+  white-space: nowrap;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.search-button:hover {
+  background-color: #f1f3f4;
+  border-color: #dadce0;
+  box-shadow: 0 1px 1px rgba(0, 0, 0, 0.1);
+}
+
+.search-button:active {
+  background-color: #e8eaed;
+  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.1);
+}
+
+.search-button:disabled {
+  background-color: #f1f3f4;
+  color: #9aa0a6;
+  cursor: not-allowed;
+  opacity: 0.6;
+}
+
+.search-input:disabled {
+  background-color: #f8f9fa;
+  color: #9aa0a6;
+  cursor: not-allowed;
+}
+
+/* Main content layout */
+.main-content {
+  flex: 1;
+  max-width: 1200px;
+  margin: 0 auto;
+  width: 100%;
+}
+
+.channel-results {
+  background: #ffffff;
+  border: 1px solid #e1e5e9;
+  border-radius: 12px;
+  padding: 1.5rem;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+  min-height: 400px;
+}
+
+/* Placeholder styles */
+.placeholder {
+  text-align: center;
+  padding: 4rem 2rem;
+  color: #9aa0a6;
+  font-style: italic;
+  background: #f8fafc;
+  border-radius: 8px;
+  border: 2px dashed #dadce0;
+  margin: 2rem 0;
+}
+
+.placeholder-examples {
+  font-size: 14px;
+  color: #6b7280;
+  margin-top: 1rem;
+  line-height: 1.6;
+  font-style: normal;
+}
+
+/* Error message styles */
+.error-message {
+  background: #fef2f2;
+  border: 1px solid #fecaca;
+  border-radius: 8px;
+  padding: 1rem;
+  margin: 1rem 0;
+  color: #dc2626;
+  text-align: center;
+  max-width: 600px;
+  margin-left: auto;
+  margin-right: auto;
+}
+
+.error-message p {
+  margin: 0;
+  font-weight: 500;
+}
+
+/* Results section */
+.results-section {
+  display: flex;
+  flex-direction: column;
+  gap: 2rem;
+}
+
+.channel-info {
+  background: #f8fafc;
+  border-radius: 8px;
+  padding: 1.5rem;
+  border-left: 4px solid #4285f4;
+}
+
+.channel-info h2 {
+  color: #202124;
+  font-size: 1.5rem;
+  font-weight: 500;
+  margin-bottom: 1rem;
+}
+
+.channel-details {
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+}
+
+.detail-item {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 0.5rem 0;
+}
+
+.detail-label {
+  font-weight: 500;
+  color: #5f6368;
+}
+
+.detail-value {
+  font-weight: 600;
+  color: #202124;
+  background: #e8f0fe;
+  padding: 0.25rem 0.75rem;
+  border-radius: 4px;
+}
+
+.detail-value.description {
+  max-width: 300px;
+  word-wrap: break-word;
+  text-align: right;
+}
+
+/* Videos section */
+.videos-section h2 {
+  color: #202124;
+  font-size: 1.5rem;
+  font-weight: 500;
+  margin-bottom: 1.5rem;
+  padding-bottom: 0.5rem;
+  border-bottom: 2px solid #4285f4;
+}
+
+.videos-list {
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+}
+
+.video-item {
+  background: #ffffff;
+  border: 1px solid #e1e5e9;
+  border-radius: 8px;
+  padding: 1.5rem;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+  transition: all 0.2s ease;
+}
+
+.video-item:hover {
+  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.15);
+  transform: translateY(-1px);
+}
+
+.video-header {
+  display: flex;
+  gap: 1rem;
+  align-items: flex-start;
+  margin-bottom: 1rem;
+}
+
+.video-thumbnail {
+  width: 120px;
+  height: 67px;
+  border-radius: 6px;
+  object-fit: cover;
+  flex-shrink: 0;
+}
+
+.video-header h4 {
+  color: #202124;
+  font-size: 1.1rem;
+  font-weight: 500;
+  margin: 0;
+  line-height: 1.4;
+  flex: 1;
+}
+
+.video-details {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+}
+
+.video-details p {
+  color: #5f6368;
+  font-size: 14px;
+  margin: 0;
+}
+
+.video-link {
+  color: #4285f4;
+  text-decoration: none;
+  font-weight: 500;
+  font-size: 14px;
+  padding: 0.5rem 0;
+  transition: color 0.2s ease;
+}
+
+.video-link:hover {
+  color: #1a73e8;
+  text-decoration: underline;
+}
+
+/* Responsive design */
+@media (max-width: 768px) {
+  .channel-parsing {
+    padding: 15px;
+  }
+  
+  .main-heading {
+    font-size: 2rem;
+  }
+  
+  .search-box {
+    flex-direction: column;
+    align-items: stretch;
+  }
+  
+  .search-input {
+    max-width: 100%;
+  }
+  
+  .search-button {
+    width: 100%;
+    max-width: 200px;
+    margin: 0 auto;
+  }
+  
+  .channel-results {
+    padding: 1rem;
+  }
+  
+  .video-item {
+    padding: 1rem;
+  }
+  
+  .video-item h4 {
+    font-size: 1rem;
+  }
+  
+  .detail-item {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 0.25rem;
+  }
+  
+  .video-header {
+    flex-direction: column;
+    gap: 0.5rem;
+  }
+  
+  .video-thumbnail {
+    width: 100%;
+    height: auto;
+    max-width: 320px;
+  }
+  
+  .detail-value.description {
+    max-width: 100%;
+    text-align: left;
+  }
+}
