@@ -1,4 +1,4 @@
-// Загружаем переменные окружени
+// Загружаем переменные окружения
 
 console.log('⬅️ До dotenv');
 require('dotenv').config();
@@ -10,6 +10,7 @@ console.log('[CHECK] REACT_APP_OPENAI_API_KEY:', process.env.REACT_APP_OPENAI_AP
 const express = require('express');
 const cors = require('cors');
 const yts = require('yt-search');
+const OpenAI = require('openai');
 const { getTranscriptSummary } = require('./transcript-summarizer.cjs');
 
 
@@ -24,7 +25,7 @@ const SUPADATA_BASE_URL = "https://api.supadata.ai/v1";
 // Динамический импорт Supadata функций
 let createTranscriptBatch, checkBatchStatus;
 (async () => {
-    const supadataModule = await import('./supadata-client.js');
+    const supadataModule = await import('./src/supadata-client.js');
     createTranscriptBatch = supadataModule.createTranscriptBatch;
     checkBatchStatus = supadataModule.checkBatchStatus;
     console.log('✅ [SUPADATA] Функции загружены');
@@ -468,6 +469,92 @@ app.post('/api/summarize-transcripts', async (req, res) => {
   }
 });
 
+// Новый endpoint для создания резюме из видео напрямую
+app.post('/api/summarize-videos', async (req, res) => {
+  try {
+    const { videos, userQuery } = req.body;
+    
+    if (!videos || !Array.isArray(videos) || !userQuery) {
+      return res.status(400).json({ 
+        error: 'Missing required parameters: videos array and userQuery' 
+      });
+    }
+    
+    console.log(`🔍 [API] Creating summary for ${videos.length} videos, query: "${userQuery}"`);
+    
+    // Фильтруем видео с transcriptами
+    const videosWithTranscripts = videos.filter(video => video.transcript);
+    
+    if (videosWithTranscripts.length === 0) {
+      return res.status(400).json({ 
+        error: 'No videos with transcripts found' 
+      });
+    }
+    
+    console.log(`📝 [API] Found ${videosWithTranscripts.length} videos with transcripts`);
+    
+    // Создаем текст для анализа из всех transcriptов
+    const allTranscripts = videosWithTranscripts.map(video => 
+      `Video: ${video.title}\nAuthor: ${video.author}\nTranscript: ${video.transcript}\n\n`
+    ).join('---\n');
+    
+    // Используем OpenAI для создания резюме
+    const openai = new OpenAI({
+      apiKey: process.env.OPENAI_API_KEY || 'sk-your-openai-api-key'
+    });
+    
+    const prompt = `Based on the following YouTube video transcripts, create a comprehensive summary that answers the user's query: "${userQuery}"
+
+Videos and their transcripts:
+${allTranscripts}
+
+Please provide a detailed summary that:
+1. Directly addresses the user's query
+2. Highlights key points from the videos
+3. Identifies common themes or patterns
+4. Provides actionable insights or conclusions
+
+Format the response in a clear, structured manner.`;
+
+    const completion = await openai.chat.completions.create({
+      model: "gpt-3.5-turbo",
+      messages: [
+        {
+          role: "user",
+          content: prompt
+        }
+      ],
+      max_tokens: 2000,
+      temperature: 0.7
+    });
+
+    const summary = completion.choices[0].message.content;
+    
+    const result = {
+      summary: summary,
+      totalResults: videos.length,
+      transcriptCount: videosWithTranscripts.length,
+      videosProcessed: videosWithTranscripts.map(v => ({
+        title: v.title,
+        author: v.author,
+        videoId: v.videoId
+      }))
+    };
+    
+    console.log(`✅ [API] Summary created successfully`);
+    console.log(`📊 [API] Results:`, result);
+    
+    res.json(result);
+    
+  } catch (error) {
+    console.error('❌ [API] Error creating summary:', error.message);
+    res.status(500).json({ 
+      error: 'Failed to create summary',
+      details: error.message 
+    });
+  }
+});
+
 // Start server
 app.listen(PORT, () => {
   console.log(`🚀 [SERVER] YouTube search server running on http://localhost:${PORT}`);
@@ -477,6 +564,7 @@ app.listen(PORT, () => {
   console.log(`   POST /api/transcript (single video transcript)`);
   console.log(`   POST /api/transcripts (batch transcripts)`);
   console.log(`   POST /api/summarize-transcripts (summarize transcripts)`);
+  console.log(`   POST /api/summarize-videos (summarize videos directly)`);
   if (SUPADATA_API_KEY === "YOUR_API_KEY_HERE") {
     console.log(`⚠️  [SUPADATA] Не забудьте установить API ключ в переменной SUPADATA_API_KEY!`);
   } else {

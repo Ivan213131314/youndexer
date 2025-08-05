@@ -5,13 +5,12 @@ import { filterVideosWithGPT, getFilteredVideos } from './videoFilter';
 import TranscriptSummary from './TranscriptSummary';
 import './App.css';
 
-const videoSearchCountPerRequest = 3;
+const videoSearchCountPerRequest = 4;
 
 function App() {
   const [query, setQuery] = useState('');
   const [isLoading, setIsLoading] = useState(false);
   const [searchResults, setSearchResults] = useState(null);
-  const [batchJobId, setBatchJobId] = useState(null);
   const [summaryData, setSummaryData] = useState(null);
 
   const openai = new OpenAI({
@@ -28,65 +27,20 @@ function App() {
     console.log(`\n🚀 [APP] Starting search process for query: "${query}"`);
     setIsLoading(true);
     setSearchResults(null);
-    setBatchJobId(null);
     setSummaryData(null);
     
     try {
-      // Step 1: Generate GPT response
-      console.log(`\n🤖 [GPT] Generating keyword phrases...`);
-      const prompt = `Given the user query: "${query}", generate exactly 2 short keyword phrases or alternative phrasings that may appear in YouTube video transcripts. These should include synonyms, paraphrases, and related expressions. Focus on quality over quantity - each phrase should be highly relevant and specific.`;
-      
-      console.log(`📝 [GPT] Sending prompt to OpenAI:`, prompt);
-      
-      const completion = await openai.chat.completions.create({
-        model: "gpt-3.5-turbo",
-        messages: [
-          {
-            role: "user",
-            content: prompt
-          }
-        ],
-        max_tokens: 300,
-        temperature: 0.7
-      });
-
-      const response = completion.choices[0].message.content;
-      console.log(`✅ [GPT] Response received:`, response);
-      
-      // Step 2: Extract and process phrases
-      console.log(`\n🔧 [APP] Processing GPT response...`);
-      const phrases = response
-        .split('\n')
-        .map(line => line.trim())
-        .filter(line => line.length > 0)
-        .map(line => {
-          // Remove numbering, bullet points, and quotes
-          return line
-            .replace(/^[\d\-.\s]+/, '') // Remove numbering
-            .replace(/^["']|["']$/g, '') // Remove quotes at start/end
-            .trim();
-        })
-        .filter(phrase => phrase.length > 0);
-      
-      console.log(`📋 [APP] Extracted ${phrases.length} phrases:`, phrases);
-      
-      if (phrases.length === 0) {
-        console.log(`❌ [APP] No valid phrases extracted from GPT response`);
-        return;
-      }
-      
-      // Step 3: Search with all phrases
-      console.log(`\n✅ [APP] Proceeding with all phrases...`);
-      const allVideos = await searchVideosWithPhrases(phrases, videoSearchCountPerRequest);
+      // Step 1: Search videos directly with user query
+      console.log(`\n🔍 [APP] Searching videos with query: "${query}"`);
+      const allVideos = await searchVideosWithPhrases([query], videoSearchCountPerRequest);
       
       // Проверяем, что получили результаты
       if (!allVideos || allVideos.length === 0) {
-        console.log(`❌ [APP] No videos found for any phrase`);
+        console.log(`❌ [APP] No videos found for query`);
         return;
       }
         
-        console.log(`\n🎉 [APP] Final Results:`);
-        console.log(`- Total phrases processed: ${phrases.length}`);
+        console.log(`\n🎉 [APP] Search Results:`);
         console.log(`- Total unique videos found: ${allVideos.length}`);
         console.log(`- All videos:`, allVideos);
         
@@ -111,7 +65,7 @@ function App() {
                });
              }
 
-             // Step 5: Filter videos with GPT
+             // Step 2: Filter videos with GPT
              console.log(`\n🤖 [APP] Starting GPT filtering...`);
              const relevantIds = await filterVideosWithGPT(allVideos, query);
              
@@ -122,7 +76,7 @@ function App() {
                console.log(`- Filtered videos: ${filteredVideos.length}`);
                console.log(`- Filtered video details:`, filteredVideos);
                
-               // Step 6: Get transcripts for filtered videos
+               // Step 3: Get transcripts for filtered videos
                console.log(`\n📝 [APP] Getting transcripts for ${filteredVideos.length} filtered videos...`);
                const videosWithTranscripts = await addTranscriptsToVideos(filteredVideos);
                
@@ -133,11 +87,6 @@ function App() {
                
                // Сохраняем результаты для отображения
                setSearchResults(videosWithTranscripts);
-               
-               // Если есть batch job ID, сохраняем его для создания резюме
-               if (videosWithTranscripts.length > 0 && videosWithTranscripts[0].batchJobId) {
-                 setBatchJobId(videosWithTranscripts[0].batchJobId);
-               }
              } else {
                console.log(`\n⚠️ [APP] GPT filtering failed or returned no results`);
              }
@@ -198,9 +147,9 @@ function App() {
             <h2>📋 Общий вывод</h2>
             
             {/* Показываем компонент для создания резюме */}
-            {batchJobId && (
+            {searchResults && searchResults.length > 0 && (
               <TranscriptSummary 
-                jobId={batchJobId}
+                videos={searchResults}
                 userQuery={query}
                 onSummaryComplete={handleSummaryComplete}
               />
@@ -232,7 +181,7 @@ function App() {
             )}
 
             {/* Плейсхолдер когда нет данных */}
-            {!batchJobId && !summaryData && (
+            {!summaryData && (
               <div className="placeholder">
                 <p>Выполните поиск, чтобы увидеть общий вывод по всем транскриптам</p>
               </div>
@@ -256,7 +205,7 @@ function App() {
                       <details>
                         <summary>► Показать transcript</summary>
                         <div className="transcript-content">
-                          {video.transcript}
+                          {typeof video.transcript === 'string' ? video.transcript : 'Transcript недоступен'}
                         </div>
                       </details>
                     )}

@@ -5,14 +5,14 @@
 
 const SERVER_URL = process.env.REACT_APP_API_URL || 'http://localhost:3001';
 const TRANSCRIPT_SERVER_URL = process.env.REACT_APP_API_URL || 'http://localhost:3001';
-const searchVideoCount = 1;
+
 /**
  * Fetch videos from YouTube via server API
  * @param {string} phrase - Search phrase to look for
  * @param {number} limit - Maximum number of videos to return (default: 10)
  * @returns {Promise<Array>} Array of video objects
  */
-export const fetchVideosByPhrase = async (phrase, limit = searchVideoCount) => {
+export const fetchVideosByPhrase = async (phrase, limit = 10) => {
   console.log(`\n🔍 [YT-SEARCH] Starting search for phrase: "${phrase}"`);
   
   try {
@@ -162,48 +162,135 @@ export const searchVideosWithPhrases = async (phrases, videosPerPhrase = 10) => 
 };
 
 /**
- * Add transcripts to videos array using Python server
+ * Add transcripts to videos array using individual Supadata requests
  * @param {Array} videos - Array of video objects with videoId
  * @returns {Promise<Array>} Videos with transcripts added
  */
 export const addTranscriptsToVideos = async (videos) => {
-  console.log(`\n📝 [YT-SEARCH] Adding transcripts to ${videos.length} videos using Python server...`);
+  console.log(`\n📝 [YT-SEARCH] Adding transcripts to ${videos.length} videos using individual Supadata requests...`);
   
   try {
-    const response = await fetch(`${TRANSCRIPT_SERVER_URL}/api/transcripts`, {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-      },
-      body: JSON.stringify({
-        videos: videos
-      })
+    // Импортируем Supadata
+    const { Supadata } = await import('@supadata/js');
+    
+    // Initialize the client
+    const supadata = new Supadata({
+      apiKey: 'sd_cf39c3a6069af680097faf6f996b8c16'
     });
     
-    if (!response.ok) {
-      console.error(`❌ [YT-SEARCH] HTTP error! Status: ${response.status} ${response.statusText}`);
-      return videos; // Return original videos if transcript request fails
+    // Получаем список videoId
+    const videoIds = videos.map(video => video.videoId);
+    
+    console.log(`🚀 [SUPADATA] Получаем transcriptы для ${videoIds.length} видео по отдельности`);
+    
+    const results = [];
+    
+    for (let i = 0; i < videoIds.length; i++) {
+      const videoId = videoIds[i];
+      console.log(`📝 [SUPADATA] Обрабатываем видео ${i + 1}/${videoIds.length}: ${videoId}`);
+      
+      try {
+        // Get transcript for a single video
+        const transcriptResult = await supadata.youtube.transcript({
+          url: `https://www.youtube.com/watch?v=${videoId}`,
+          lang: 'en',
+          text: true
+        });
+        
+        console.log(`✅ [SUPADATA] Transcript получен для видео: ${videoId}`);
+        
+        // Извлекаем текст из объекта transcript
+        let transcriptText = null;
+        if (transcriptResult && typeof transcriptResult === 'object') {
+          // Если это объект с полями lang, availableLangs, content
+          if (transcriptResult.content) {
+            transcriptText = transcriptResult.content;
+          } else if (transcriptResult.text) {
+            transcriptText = transcriptResult.text;
+          } else {
+            // Если это строка, используем как есть
+            transcriptText = transcriptResult;
+          }
+        } else if (typeof transcriptResult === 'string') {
+          transcriptText = transcriptResult;
+        }
+        
+        // Дополнительная проверка - убеждаемся что transcriptText это строка
+        if (transcriptText && typeof transcriptText === 'object') {
+          console.log(`⚠️ [SUPADATA] Transcript для видео ${videoId} все еще объект:`, transcriptText);
+          // Пытаемся извлечь текст из объекта
+          if (transcriptText.content) {
+            transcriptText = transcriptText.content;
+          } else if (transcriptText.text) {
+            transcriptText = transcriptText.text;
+          } else {
+            // Если не можем извлечь, устанавливаем null
+            transcriptText = null;
+          }
+        }
+        
+        // Финальная проверка - только строки или null
+        if (transcriptText && typeof transcriptText !== 'string') {
+          console.log(`❌ [SUPADATA] Не удалось извлечь строку из transcript для видео ${videoId}:`, transcriptText);
+          transcriptText = null;
+        }
+        
+        results.push({
+          videoId: videoId,
+          transcript: transcriptText
+        });
+        
+        // Небольшая задержка между запросами
+        if (i < videoIds.length - 1) {
+          await new Promise(resolve => setTimeout(resolve, 100));
+        }
+        
+      } catch (error) {
+        console.error(`❌ [SUPADATA] Ошибка при обработке видео ${videoId}:`, error);
+        results.push({
+          videoId: videoId,
+          transcript: null
+        });
+      }
     }
     
-    const result = await response.json();
-    console.log(`📦 [YT-SEARCH] Python transcripts response:`, result);
+    console.log(`✅ [SUPADATA] Обработано ${results.length} видео`);
     
-    // Map transcript results back to videos
+    // Создаем map для быстрого поиска transcriptов
     const transcriptMap = {};
-    if (result.transcripts) {
-      result.transcripts.forEach(item => {
-        transcriptMap[item.videoId] = item.transcript;
-      });
-    }
+    results.forEach(result => {
+      transcriptMap[result.videoId] = result.transcript;
+    });
     
-    // Add transcripts to videos and preserve batchJobId
+    // Добавляем transcriptы к видео
     const videosWithTranscripts = videos.map(video => ({
       ...video,
-      transcript: transcriptMap[video.videoId] || null,
-      batchJobId: result.batchJobId || null
+      transcript: transcriptMap[video.videoId] || null
     }));
     
-    // Log transcript statistics
+    // Финальная проверка - убеждаемся что все transcriptы это строки или null
+    videosWithTranscripts.forEach(video => {
+      if (video.transcript && typeof video.transcript !== 'string') {
+        console.log(`⚠️ [YT-SEARCH] Исправляем transcript для видео ${video.videoId}:`, video.transcript);
+        if (video.transcript.content) {
+          video.transcript = video.transcript.content;
+        } else if (video.transcript.text) {
+          video.transcript = video.transcript.text;
+        } else {
+          video.transcript = null;
+        }
+      }
+      
+      // Дополнительная проверка - логируем тип transcript
+      if (video.transcript) {
+        console.log(`🔍 [YT-SEARCH] Transcript для видео ${video.videoId} имеет тип: ${typeof video.transcript}`);
+        if (typeof video.transcript === 'object') {
+          console.log(`❌ [YT-SEARCH] ОШИБКА: Transcript для видео ${video.videoId} все еще объект:`, video.transcript);
+        }
+      }
+    });
+    
+    // Логируем статистику
     const videosWithTranscript = videosWithTranscripts.filter(v => v.transcript);
     const videosWithoutTranscript = videosWithTranscripts.filter(v => !v.transcript);
     
@@ -211,7 +298,7 @@ export const addTranscriptsToVideos = async (videos) => {
     console.log(`   - Videos with transcript: ${videosWithTranscript.length}`);
     console.log(`   - Videos without transcript: ${videosWithoutTranscript.length}`);
     
-    // Log videos with transcripts
+    // Логируем видео с transcriptами
     videosWithTranscript.forEach((video, index) => {
       console.log(`   ${index + 1}. "${video.title}" - ${video.transcript.length} characters`);
     });
@@ -220,6 +307,11 @@ export const addTranscriptsToVideos = async (videos) => {
     
   } catch (error) {
     console.error(`❌ [YT-SEARCH] Error adding transcripts:`, error);
+    console.error(`🔍 [YT-SEARCH] Error details:`, {
+      name: error.name,
+      message: error.message,
+      stack: error.stack
+    });
     return videos; // Return original videos if transcript request fails
   }
 }; 

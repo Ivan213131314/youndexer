@@ -1,13 +1,20 @@
 import React, { useState } from 'react';
 import './TranscriptSummary.css';
 
-const TranscriptSummary = ({ jobId, userQuery, onSummaryComplete }) => {
+const TranscriptSummary = ({ videos, userQuery, onSummaryComplete }) => {
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState(null);
 
   const createSummary = async () => {
-    if (!jobId || !userQuery) {
-      setError('Необходимы jobId и userQuery для создания резюме');
+    if (!videos || videos.length === 0 || !userQuery) {
+      setError('Необходимы видео и userQuery для создания резюме');
+      return;
+    }
+
+    // Проверяем что есть видео с transcriptами
+    const videosWithTranscripts = videos.filter(video => video.transcript);
+    if (videosWithTranscripts.length === 0) {
+      setError('Нет видео с transcriptами для создания резюме');
       return;
     }
 
@@ -16,33 +23,34 @@ const TranscriptSummary = ({ jobId, userQuery, onSummaryComplete }) => {
 
     try {
       console.log('🚀 [SUMMARY] Создаем резюме...');
-      console.log(`📋 [SUMMARY] JobId: ${jobId}`);
+      console.log(`📋 [SUMMARY] Количество видео: ${videos.length}`);
+      console.log(`📝 [SUMMARY] Видео с transcriptами: ${videosWithTranscripts.length}`);
       console.log(`🔍 [SUMMARY] Запрос: "${userQuery}"`);
 
       const requestBody = {
-        jobId,
+        videos: videosWithTranscripts,
         userQuery
       };
 
       console.log('📤 [SUMMARY] Отправляем запрос к серверу:');
       console.log('='.repeat(80));
-      console.log('URL:', `${process.env.REACT_APP_API_URL || 'http://localhost:3001'}/api/summarize-transcripts`);
+      console.log('URL:', `${process.env.REACT_APP_API_URL || 'http://localhost:3001'}/api/summarize-videos`);
       console.log('Method: POST');
       console.log('Headers:', {
         'Content-Type': 'application/json'
       });
-      console.log('Body:', JSON.stringify(requestBody, null, 2));
+      console.log('Body:', JSON.stringify({
+        ...requestBody,
+        videos: requestBody.videos.map(v => ({ ...v, transcript: v.transcript ? `${v.transcript.substring(0, 100)}...` : null }))
+      }, null, 2));
       console.log('='.repeat(80));
 
-      const response = await fetch(`${process.env.REACT_APP_API_URL || 'http://localhost:3001'}/api/summarize-transcripts`, {
+      const response = await fetch(`${process.env.REACT_APP_API_URL || 'http://localhost:3001'}/api/summarize-videos`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
         },
-        body: JSON.stringify({
-          jobId,
-          userQuery
-        })
+        body: JSON.stringify(requestBody)
       });
 
       if (!response.ok) {
@@ -72,14 +80,22 @@ const TranscriptSummary = ({ jobId, userQuery, onSummaryComplete }) => {
     }
   };
 
+  // Проверяем есть ли видео с transcriptами
+  const videosWithTranscripts = videos ? videos.filter(video => video.transcript) : [];
+  const hasTranscripts = videosWithTranscripts.length > 0;
+
   return (
     <div className="transcript-summary">
       <div className="summary-header">
         <h3>📝 Создание резюме</h3>
+        <div className="summary-stats">
+          <span>Всего видео: {videos ? videos.length : 0}</span>
+          <span>С transcriptами: {videosWithTranscripts.length}</span>
+        </div>
         <button 
           className="summary-button"
           onClick={createSummary}
-          disabled={isLoading || !jobId || !userQuery}
+          disabled={isLoading || !hasTranscripts || !userQuery}
         >
           {isLoading ? 'Создаем резюме...' : 'Создать резюме'}
         </button>
@@ -89,6 +105,13 @@ const TranscriptSummary = ({ jobId, userQuery, onSummaryComplete }) => {
         <div className="summary-error">
           <span className="error-icon">❌</span>
           <span className="error-text">{error}</span>
+        </div>
+      )}
+
+      {!hasTranscripts && videos && videos.length > 0 && (
+        <div className="summary-warning">
+          <span className="warning-icon">⚠️</span>
+          <span className="warning-text">Нет видео с transcriptами для создания резюме</span>
         </div>
       )}
 
