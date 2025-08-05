@@ -87,7 +87,6 @@ const TranscriptSummary = ({ videos, userQuery, onSummaryComplete }) => {
   return (
     <div className="transcript-summary">
       <div className="summary-header">
-        <h3>📝 Создание резюме</h3>
         <div className="summary-stats">
           <span>Всего видео: {videos ? videos.length : 0}</span>
           <span>С transcriptами: {videosWithTranscripts.length}</span>

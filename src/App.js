@@ -12,6 +12,8 @@ function App() {
   const [isLoading, setIsLoading] = useState(false);
   const [searchResults, setSearchResults] = useState(null);
   const [summaryData, setSummaryData] = useState(null);
+  const [isResizing, setIsResizing] = useState(false);
+  const [leftColumnWidth, setLeftColumnWidth] = useState(50); // процент от общей ширины
 
   const openai = new OpenAI({
     apiKey: process.env.REACT_APP_OPENAI_API_KEY,
@@ -115,6 +117,29 @@ function App() {
     setSummaryData(summaryResult);
   };
 
+  const handleMouseDown = (e) => {
+    setIsResizing(true);
+    e.preventDefault();
+  };
+
+  const handleMouseMove = (e) => {
+    if (!isResizing) return;
+    
+    const container = e.currentTarget;
+    const rect = container.getBoundingClientRect();
+    const x = e.clientX - rect.left;
+    const width = rect.width;
+    const percentage = (x / width) * 100;
+    
+    // Ограничиваем ширину от 30% до 70% для предотвращения "плывущих" элементов
+    const clampedPercentage = Math.max(30, Math.min(70, percentage));
+    setLeftColumnWidth(clampedPercentage);
+  };
+
+  const handleMouseUp = () => {
+    setIsResizing(false);
+  };
+
   return (
     <div className="App">
       <div className="header">
@@ -140,9 +165,17 @@ function App() {
       </div>
 
       {/* Основной контент с двумя колонками */}
-      <div className="main-content">
+      <div 
+        className="main-content"
+        onMouseMove={handleMouseMove}
+        onMouseUp={handleMouseUp}
+        onMouseLeave={handleMouseUp}
+      >
         {/* Левая колонка - Общий вывод */}
-        <div className="left-column">
+        <div 
+          className="left-column"
+          style={{ width: `${leftColumnWidth}%` }}
+        >
           <div className="summary-section">
             <h2>📋 Общий вывод</h2>
             
@@ -188,6 +221,12 @@ function App() {
             )}
           </div>
         </div>
+
+        {/* Разделитель колонок */}
+        <div 
+          className="column-resizer"
+          onMouseDown={handleMouseDown}
+        ></div>
 
         {/* Правая колонка - Отдельные видео */}
         <div className="right-column">
