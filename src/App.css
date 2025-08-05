@@ -18,6 +18,41 @@ body {
   display: flex;
   flex-direction: column;
   padding: 20px;
+  position: relative;
+}
+
+/* Верхнее меню */
+.top-menu {
+  position: absolute;
+  top: 20px;
+  right: 20px;
+  display: flex;
+  gap: 15px;
+  z-index: 10;
+}
+
+.menu-button {
+  background: none;
+  border: none;
+  font-size: 14px;
+  color: #5f6368;
+  cursor: pointer;
+  padding: 8px 12px;
+  border-radius: 6px;
+  transition: all 0.2s ease;
+  font-weight: 500;
+}
+
+.menu-button:hover {
+  background-color: #f1f3f4;
+  color: #202124;
+}
+
+.menu-button.active {
+  background-color: #e8f0fe;
+  color: #1a73e8;
+  border: 2px solid #1a73e8;
+  font-weight: 600;
 }
 
 /* Header styles */

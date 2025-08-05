@@ -3,6 +3,10 @@ import OpenAI from 'openai';
 import { fetchVideosByPhrase, searchVideosWithPhrases, addTranscriptsToVideos } from './ytSearchModule';
 import { filterVideosWithGPT, getFilteredVideos } from './videoFilter';
 import TranscriptSummary from './TranscriptSummary';
+import History from './history/History';
+import { collection, addDoc } from 'firebase/firestore';
+import { db } from './firebase';
+import { saveSearchToHistory } from './history/historyService';
 import './App.css';
 
 const videoSearchCountPerRequest = 4;
@@ -14,6 +18,7 @@ function App() {
   const [summaryData, setSummaryData] = useState(null);
   const [isResizing, setIsResizing] = useState(false);
   const [leftColumnWidth, setLeftColumnWidth] = useState(50); // процент от общей ширины
+  const [currentPage, setCurrentPage] = useState('main'); // 'main' или 'history'
 
   const openai = new OpenAI({
     apiKey: process.env.REACT_APP_OPENAI_API_KEY,
@@ -112,9 +117,27 @@ function App() {
     }
   };
 
-  const handleSummaryComplete = (summaryResult) => {
+  const handleSummaryComplete = async (summaryResult) => {
     console.log('🎉 [APP] Summary completed:', summaryResult);
     setSummaryData(summaryResult);
+    
+    // Сохраняем результаты в историю
+    try {
+      const searchData = {
+        query: query,
+        searchResults: searchResults,
+        summaryData: summaryResult
+      };
+      
+      const historyId = await saveSearchToHistory(searchData);
+      if (historyId) {
+        console.log('✅ [APP] Search saved to history with ID:', historyId);
+      } else {
+        console.log('⚠️ [APP] Failed to save to history, but continuing...');
+      }
+    } catch (error) {
+      console.error('❌ [APP] Error saving to history:', error);
+    }
   };
 
   const handleMouseDown = (e) => {
@@ -140,37 +163,61 @@ function App() {
     setIsResizing(false);
   };
 
+  const handleHistoryClick = () => {
+    setCurrentPage('history');
+  };
+
+  const handleBackToMain = () => {
+    setCurrentPage('main');
+  };
+
   return (
     <div className="App">
-      <div className="header">
-        <h1 className="main-heading">YouTube Semantic Searcher</h1>
-        <div className="search-box">
-          <input
-            type="text"
-            className="search-input"
-            placeholder="Search for videos..."
-            value={query}
-            onChange={(e) => setQuery(e.target.value)}
-            onKeyPress={handleKeyPress}
-            disabled={isLoading}
-          />
-          <button 
-            className="search-button"
-            onClick={handleSearch}
-            disabled={isLoading}
-          >
-            {isLoading ? 'Searching...' : 'Search'}
-          </button>
-        </div>
-      </div>
+      {currentPage === 'history' ? (
+        <History onBackToMain={handleBackToMain} />
+      ) : (
+        <>
+          {/* Верхнее меню */}
+          <div className="top-menu">
+            <button 
+              className={`menu-button ${currentPage === 'history' ? 'active' : ''}`}
+              onClick={handleHistoryClick}
+            >
+              History
+            </button>
+            <button className="menu-button">Channel parsing</button>
+            <button className="menu-button">About us</button>
+          </div>
 
-      {/* Основной контент с двумя колонками */}
-      <div 
-        className="main-content"
-        onMouseMove={handleMouseMove}
-        onMouseUp={handleMouseUp}
-        onMouseLeave={handleMouseUp}
-      >
+          <div className="header">
+            <h1 className="main-heading">YouTube Semantic Searcher</h1>
+            <div className="search-box">
+              <input
+                type="text"
+                className="search-input"
+                placeholder="Search for videos..."
+                value={query}
+                onChange={(e) => setQuery(e.target.value)}
+                onKeyPress={handleKeyPress}
+                disabled={isLoading}
+              />
+              <button 
+                className="search-button"
+                onClick={handleSearch}
+                disabled={isLoading}
+              >
+                {isLoading ? 'Searching...' : 'Search'}
+              </button>
+            </div>
+          </div>
+
+          {/* Основной контент с двумя колонками */}
+          <div 
+            className="main-content"
+            onMouseMove={handleMouseMove}
+            onMouseUp={handleMouseUp}
+            onMouseLeave={handleMouseUp}
+          >
         {/* Левая колонка - Общий вывод */}
         <div 
           className="left-column"
@@ -259,6 +306,8 @@ function App() {
           </div>
         </div>
       </div>
+        </>
+      )}
     </div>
   );
 }

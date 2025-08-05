@@ -1,0 +1,200 @@
+.history-container {
+  min-height: 100vh;
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  padding: 20px;
+}
+
+.history-header {
+  display: flex;
+  align-items: center;
+  margin-bottom: 30px;
+  gap: 20px;
+}
+
+.back-button {
+  background: rgba(255, 255, 255, 0.2);
+  border: 1px solid rgba(255, 255, 255, 0.3);
+  color: white;
+  padding: 10px 20px;
+  border-radius: 25px;
+  cursor: pointer;
+  font-size: 14px;
+  transition: all 0.3s ease;
+  backdrop-filter: blur(10px);
+}
+
+.back-button:hover {
+  background: rgba(255, 255, 255, 0.3);
+  transform: translateY(-2px);
+}
+
+.history-header h1 {
+  color: white;
+  margin: 0;
+  font-size: 2.5rem;
+  font-weight: 300;
+  text-shadow: 0 2px 4px rgba(0, 0, 0, 0.3);
+}
+
+/* Список истории */
+.history-list {
+  max-width: 800px;
+  margin: 0 auto;
+}
+
+.history-item {
+  background: rgba(255, 255, 255, 0.95);
+  border-radius: 15px;
+  margin-bottom: 15px;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1);
+  border: 1px solid rgba(255, 255, 255, 0.2);
+}
+
+.history-item:hover {
+  transform: translateY(-3px);
+  box-shadow: 0 8px 25px rgba(0, 0, 0, 0.15);
+  background: rgba(255, 255, 255, 1);
+}
+
+.history-item-content {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 20px;
+}
+
+.history-item-main {
+  flex: 1;
+}
+
+.history-query {
+  margin: 0 0 8px 0;
+  font-size: 1.1rem;
+  color: #333;
+  font-weight: 500;
+}
+
+.history-meta {
+  display: flex;
+  gap: 15px;
+  font-size: 0.9rem;
+  color: #666;
+}
+
+.history-date {
+  color: #888;
+}
+
+.history-stats {
+  color: #667eea;
+  font-weight: 500;
+}
+
+.history-item-actions {
+  display: flex;
+  align-items: center;
+}
+
+.checkmark {
+  color: #4CAF50;
+  font-size: 1.2rem;
+  font-weight: bold;
+  padding: 8px;
+  border-radius: 50%;
+  background: rgba(76, 175, 80, 0.1);
+  transition: all 0.3s ease;
+}
+
+.history-item:hover .checkmark {
+  background: rgba(76, 175, 80, 0.2);
+  transform: scale(1.1);
+}
+
+/* Пустая история */
+.empty-history {
+  text-align: center;
+  color: white;
+  padding: 60px 20px;
+}
+
+.empty-history p {
+  margin: 10px 0;
+  font-size: 1.1rem;
+  opacity: 0.8;
+}
+
+/* Загрузка и ошибки */
+.loading-message,
+.error-message {
+  text-align: center;
+  color: white;
+  padding: 40px 20px;
+  font-size: 1.1rem;
+}
+
+.error-message {
+  color: #ff6b6b;
+}
+
+/* Детальный вид */
+.history-item-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 20px;
+}
+
+.close-button {
+  background: #ff6b6b;
+  border: none;
+  color: white;
+  width: 30px;
+  height: 30px;
+  border-radius: 50%;
+  cursor: pointer;
+  font-size: 16px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: all 0.3s ease;
+}
+
+.close-button:hover {
+  background: #ff5252;
+  transform: scale(1.1);
+}
+
+/* Адаптивность */
+@media (max-width: 768px) {
+  .history-container {
+    padding: 15px;
+  }
+  
+  .history-header h1 {
+    font-size: 2rem;
+  }
+  
+  .history-item-content {
+    padding: 15px;
+  }
+  
+  .history-meta {
+    flex-direction: column;
+    gap: 5px;
+  }
+  
+  .main-content {
+    flex-direction: column;
+  }
+  
+  .left-column,
+  .right-column {
+    width: 100% !important;
+  }
+  
+  .column-resizer {
+    display: none;
+  }
+}
