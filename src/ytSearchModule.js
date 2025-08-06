@@ -262,10 +262,18 @@ export const addTranscriptsToVideos = async (videos) => {
       transcriptMap[result.videoId] = result.transcript;
     });
     
-    // Добавляем transcriptы к видео
+    // Добавляем transcriptы к видео и убеждаемся что есть все необходимые поля
     const videosWithTranscripts = videos.map(video => ({
       ...video,
-      transcript: transcriptMap[video.videoId] || null
+      transcript: transcriptMap[video.videoId] || null,
+      // Убеждаемся что есть thumbnail и url
+      thumbnail: video.thumbnail || `https://img.youtube.com/vi/${video.videoId}/default.jpg`,
+      url: video.url || `https://www.youtube.com/watch?v=${video.videoId}`,
+      // Добавляем дополнительные поля если их нет
+      author: video.author || video.channelTitle || 'Unknown Channel',
+      duration: video.duration || 'N/A',
+      views: video.views || 'N/A',
+      publishedAt: video.publishedAt || 'N/A'
     }));
     
     // Финальная проверка - убеждаемся что все transcriptы это строки или null

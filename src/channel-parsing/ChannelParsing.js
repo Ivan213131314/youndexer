@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import { parseChannel, validateChannelUrl } from './channelService';
 import { addTranscriptsToVideos } from '../ytSearchModule';
 import TranscriptSummary from '../TranscriptSummary';
+import VideoItem from '../components/VideoItem';
 import './ChannelParsing.css';
 
 function ChannelParsing({ onBackToMain }) {
@@ -316,19 +317,7 @@ function ChannelParsing({ onBackToMain }) {
                     <h2>📺 Найденные видео ({channelVideosResults.totalCount})</h2>
                     <div className="videos-list">
                       {channelVideosResults.videos.map((video, index) => (
-                        <div key={index} className="video-item">
-                          <h4>{video.title}</h4>
-                          <p>Канал: {video.author}</p>
-                          <p>Длительность: {video.duration}</p>
-                          {video.transcript && (
-                            <details>
-                              <summary>► Показать transcript</summary>
-                              <div className="transcript-content">
-                                {typeof video.transcript === 'string' ? video.transcript : 'Transcript недоступен'}
-                              </div>
-                            </details>
-                          )}
-                        </div>
+                        <VideoItem key={index} video={video} index={index} />
                       ))}
                     </div>
                   </div>

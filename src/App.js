@@ -5,6 +5,7 @@ import { filterVideosWithGPT, getFilteredVideos } from './videoFilter';
 import TranscriptSummary from './TranscriptSummary';
 import History from './history/History';
 import ChannelParsing from './channel-parsing/ChannelParsing';
+import VideoItem from './components/VideoItem';
 import { collection, addDoc } from 'firebase/firestore';
 import { db } from './firebase';
 import { saveSearchToHistory } from './history/historyService';
@@ -302,19 +303,7 @@ function AppContent() {
             {searchResults ? (
               <div className="videos-list">
                 {searchResults.map((video, index) => (
-                  <div key={index} className="video-item">
-                    <h4>{video.title}</h4>
-                    <p>Канал: {video.author}</p>
-                    <p>Длительность: {video.duration}</p>
-                    {video.transcript && (
-                      <details>
-                        <summary>► Показать transcript</summary>
-                        <div className="transcript-content">
-                          {typeof video.transcript === 'string' ? video.transcript : 'Transcript недоступен'}
-                        </div>
-                      </details>
-                    )}
-                  </div>
+                  <VideoItem key={index} video={video} index={index} />
                 ))}
               </div>
             ) : (
