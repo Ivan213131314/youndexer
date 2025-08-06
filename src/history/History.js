@@ -1,8 +1,13 @@
 import React, { useState } from 'react';
+import html2canvas from 'html2canvas';
+import { jsPDF } from 'jspdf';
+import { Document, Packer, Paragraph, TextRun, HeadingLevel } from 'docx';
 import { useSearchHistory, useHistoryItem } from './historyHooks';
 import { formatHistoryDate, truncateQuery, hasSummary, hasSearchResults, getHistoryStats } from './historyUtils';
 import TranscriptSummary from '../TranscriptSummary';
 import './History.css';
+
+
 
 const History = ({ onBackToMain }) => {
   const { history, loading, error, refreshHistory } = useSearchHistory();
@@ -45,6 +50,168 @@ const History = ({ onBackToMain }) => {
     console.log('🎉 [HISTORY] Summary completed:', summaryResult);
     // Обновляем историю после создания нового summary
     refreshHistory();
+  };
+
+  const downloadSummaryAsPDF = async (historyItem) => {
+    if (!historyItem || !historyItem.summaryData) return;
+    
+    try {
+      // Создаем временный HTML элемент для PDF
+      const tempDiv = document.createElement('div');
+      tempDiv.style.position = 'absolute';
+      tempDiv.style.left = '-9999px';
+      tempDiv.style.top = '-9999px';
+      tempDiv.style.width = '800px';
+      tempDiv.style.backgroundColor = 'white';
+      tempDiv.style.padding = '40px';
+      tempDiv.style.fontFamily = 'Arial, sans-serif';
+      tempDiv.style.fontSize = '14px';
+      tempDiv.style.lineHeight = '1.6';
+      tempDiv.style.color = 'black';
+      
+      tempDiv.innerHTML = `
+        <div style="text-align: center; margin-bottom: 30px;">
+          <h1 style="font-size: 28px; margin-bottom: 20px; color: #333;">Резюме по запросу</h1>
+          <h2 style="font-size: 20px; color: #666; margin-bottom: 30px;">"${historyItem.query}"</h2>
+        </div>
+        
+        <div style="margin-bottom: 30px; padding: 20px; background-color: #f8f9fa; border-radius: 8px;">
+          <p style="margin: 5px 0; font-weight: bold;">Всего результатов: ${historyItem.summaryData.totalResults}</p>
+          <p style="margin: 5px 0; font-weight: bold;">Transcript найдено: ${historyItem.summaryData.transcriptCount}</p>
+          <p style="margin: 5px 0; font-weight: bold;">Дата поиска: ${formatHistoryDate(historyItem.timestamp)}</p>
+        </div>
+        
+        <hr style="border: none; border-top: 2px solid #ddd; margin: 30px 0;">
+        
+        <div style="font-size: 14px; line-height: 1.8; page-break-inside: auto;">
+          ${historyItem.summaryData.summary.split('\n').map((line, index) => {
+            // Обрабатываем отступы в начале строки
+            const trimmedLine = line.trim();
+            const indentLevel = line.length - line.trimStart().length;
+            const indent = indentLevel * 20; // 20px на уровень отступа
+            
+            // Добавляем разрыв страницы перед заголовками (строки с ###)
+            const isHeader = trimmedLine.startsWith('###') || trimmedLine.startsWith('**') && trimmedLine.endsWith('**');
+            const pageBreak = isHeader ? 'page-break-before: always;' : '';
+            
+            if (trimmedLine === '') {
+              return '<div style="height: 10px; page-break-inside: avoid;"></div>'; // Пустая строка
+            } else if (indentLevel > 0) {
+              return `<div style="padding-left: ${indent}px; margin-bottom: 8px; page-break-inside: avoid; ${pageBreak}">${trimmedLine}</div>`;
+            } else {
+              return `<div style="margin-bottom: 8px; page-break-inside: avoid; ${pageBreak}">${trimmedLine}</div>`;
+            }
+          }).join('')}
+        </div>
+      `;
+      
+      document.body.appendChild(tempDiv);
+      
+      // Конвертируем HTML в canvas
+      const canvas = await html2canvas(tempDiv, {
+        scale: 2,
+        useCORS: true,
+        allowTaint: true,
+        backgroundColor: '#ffffff'
+      });
+      
+      // Удаляем временный элемент
+      document.body.removeChild(tempDiv);
+      
+      // Создаем PDF
+      const imgData = canvas.toDataURL('image/png');
+      const pdf = new jsPDF('p', 'mm', 'a4');
+      const imgWidth = 210;
+      const pageHeight = 295;
+      const imgHeight = (canvas.height * imgWidth) / canvas.width;
+      let heightLeft = imgHeight;
+      
+      let position = 0;
+      
+      pdf.addImage(imgData, 'PNG', 0, position, imgWidth, imgHeight);
+      heightLeft -= pageHeight;
+      
+      while (heightLeft >= 0) {
+        position = heightLeft - imgHeight;
+        pdf.addPage();
+        pdf.addImage(imgData, 'PNG', 0, position, imgWidth, imgHeight);
+        heightLeft -= pageHeight;
+      }
+      
+      // Сохраняем файл
+      pdf.save(`${historyItem.query}.pdf`);
+      
+    } catch (error) {
+      console.error('Ошибка при создании PDF:', error);
+    }
+  };
+
+  const downloadSummaryAsDOC = async (historyItem) => {
+    if (!historyItem || !historyItem.summaryData) return;
+    
+    try {
+      const doc = new Document({
+        title: `Резюме по запросу: ${historyItem.query}`,
+        creator: "YouTube Semantic Searcher",
+        description: "Резюме по результатам поиска YouTube видео",
+        sections: [{
+          children: [
+            new Paragraph({
+              text: "Резюме по запросу",
+              heading: HeadingLevel.HEADING_1,
+            }),
+            new Paragraph({
+              text: `"${historyItem.query}"`,
+              heading: HeadingLevel.HEADING_2,
+            }),
+            new Paragraph({
+              children: [
+                new TextRun({
+                  text: `Всего результатов: ${historyItem.summaryData.totalResults}`,
+                  bold: true,
+                }),
+              ],
+            }),
+            new Paragraph({
+              children: [
+                new TextRun({
+                  text: `Transcript найдено: ${historyItem.summaryData.transcriptCount}`,
+                  bold: true,
+                }),
+              ],
+            }),
+            new Paragraph({
+              children: [
+                new TextRun({
+                  text: `Дата поиска: ${formatHistoryDate(historyItem.timestamp)}`,
+                  bold: true,
+                }),
+              ],
+            }),
+            new Paragraph({
+              text: "",
+            }),
+            new Paragraph({
+              text: historyItem.summaryData.summary,
+            }),
+          ],
+        }],
+      });
+
+      const blob = await Packer.toBlob(doc);
+      const url = window.URL.createObjectURL(blob);
+      const link = document.createElement('a');
+      link.href = url;
+      const fileName = `${historyItem.query}.docx`;
+      link.download = fileName;
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+      window.URL.revokeObjectURL(url);
+      
+    } catch (error) {
+      console.error('Ошибка при создании DOC:', error);
+    }
   };
 
   if (loading) {
@@ -122,6 +289,7 @@ const History = ({ onBackToMain }) => {
                       videos={historyItem.searchResults}
                       userQuery={historyItem.query}
                       onSummaryComplete={handleSummaryComplete}
+                      summaryData={null}
                     />
                   )}
 
@@ -149,6 +317,26 @@ const History = ({ onBackToMain }) => {
                           {historyItem.summaryData.summary.split('\n').map((line, index) => (
                             <p key={index}>{line}</p>
                           ))}
+                        </div>
+                      </div>
+
+                      {/* Кнопки скачивания для истории */}
+                      <div className="download-section">
+                        <div className="download-buttons">
+                          <button 
+                            className="download-button pdf-button"
+                            onClick={() => downloadSummaryAsPDF(historyItem)}
+                          >
+                            <span className="download-icon">📄</span>
+                            Скачать PDF
+                          </button>
+                          <button 
+                            className="download-button doc-button"
+                            onClick={() => downloadSummaryAsDOC(historyItem)}
+                          >
+                            <span className="download-icon">📝</span>
+                            Скачать DOC
+                          </button>
                         </div>
                       </div>
                     </div>

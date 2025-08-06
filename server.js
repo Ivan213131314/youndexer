@@ -519,11 +519,12 @@ app.post('/api/summarize-videos', async (req, res) => {
 Videos and their transcripts:
 ${allTranscripts}
 
-Please provide a detailed summary that:
+provide a detailed summary that:
 1. Directly addresses the user's query
 2. Highlights key points from the videos
 3. Identifies common themes or patterns
 4. Provides actionable insights or conclusions
+5. Use language that used user in his request
 
 Format the response in a clear, structured manner.`;
 

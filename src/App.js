@@ -411,6 +411,7 @@ function AppContent() {
                 userQuery={query}
                 onSummaryComplete={handleSummaryComplete}
                 selectedModel={selectedModel}
+                summaryData={summaryData}
               />
             )}
 
