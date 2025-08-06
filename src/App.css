@@ -55,6 +55,14 @@ body {
   font-weight: 600;
 }
 
+/* Auth section */
+.auth-section {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+  margin-left: auto;
+}
+
 /* Header styles */
 .header {
   text-align: center;

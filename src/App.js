@@ -8,11 +8,14 @@ import ChannelParsing from './channel-parsing/ChannelParsing';
 import { collection, addDoc } from 'firebase/firestore';
 import { db } from './firebase';
 import { saveSearchToHistory } from './history/historyService';
+import { AuthProvider, useAuth } from './auth/AuthContext';
+import AuthButtons from './auth/AuthButtons';
+import UserProfile from './auth/UserProfile';
 import './App.css';
 
 const videoSearchCountPerRequest = 4;
 
-function App() {
+function AppContent() {
   const [query, setQuery] = useState('');
   const [isLoading, setIsLoading] = useState(false);
   const [searchResults, setSearchResults] = useState(null);
@@ -199,6 +202,10 @@ function App() {
               Channel parsing
             </button>
             <button className="menu-button">About us</button>
+            <div className="auth-section">
+              <UserProfile />
+              <AuthButtons />
+            </div>
           </div>
 
           <div className="header">
@@ -321,6 +328,14 @@ function App() {
         </>
       )}
     </div>
+  );
+}
+
+function App() {
+  return (
+    <AuthProvider>
+      <AppContent />
+    </AuthProvider>
   );
 }
 
