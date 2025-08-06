@@ -154,31 +154,19 @@ function AppContent() {
       const videoId = extractVideoId(query);
       
       if (videoId) {
-        // Это YouTube URL - обрабатываем как конкретное видео
-        console.log(`\n🎯 [APP] YouTube URL detected, video ID: ${videoId}`);
-        
-        // Получаем информацию о видео
-        const videoInfo = await fetchVideoInfo(videoId);
-        console.log('✅ [APP] Video info obtained:', videoInfo);
-        
-        // Получаем транскрипцию
-        console.log('📝 [APP] Getting transcript...');
-        let transcript = null;
-        
-        try {
-          transcript = await fetchTranscript(videoId);
-          console.log('✅ [APP] Transcript obtained');
-        } catch (transcriptError) {
-          console.warn('⚠️ [APP] Could not get transcript:', transcriptError.message);
-          // Показываем видео без транскрипции
-        }
-        
-        const videoWithTranscript = {
-          ...videoInfo,
-          transcript: transcript
-        };
-        
-        setSearchResults([videoWithTranscript]);
+        // Это YouTube URL - показываем ошибку и предлагаем переключиться в режим parsing
+        console.log(`\n🎯 [APP] YouTube URL detected in request mode, showing error`);
+        setChannelError('Change mode to "Parsing video or channel" in order to parse URL');
+        setIsLoading(false);
+        return;
+      }
+      
+      // Проверяем, является ли это ссылкой на канал
+      if (validateChannelUrl(query)) {
+        // Это канал - показываем ошибку и предлагаем переключиться в режим parsing
+        console.log(`\n📺 [APP] Channel URL detected in request mode, showing error`);
+        setChannelError('Change mode to "Parsing video or channel" in order to parse URL');
+        setIsLoading(false);
         return;
       }
       
@@ -305,7 +293,7 @@ function AppContent() {
         console.error('❌ [APP] Error saving to history:', error);
       }
     } else {
-      // Режим парсинга каналов
+      // Режим парсинга видео или каналов
       setChannelSummaryData(summaryResult);
     }
   };
@@ -347,33 +335,84 @@ function AppContent() {
     setCurrentPage('main');
   };
 
-  // Функции для парсинга каналов
-  const handleChannelParse = async () => {
+  // Функции для парсинга видео или каналов
+  const handleVideoOrChannelParse = async () => {
     if (!channelUrl.trim()) {
-      setChannelError('Пожалуйста, введите ссылку на канал');
-      return;
-    }
-
-    if (!validateChannelUrl(channelUrl)) {
-      setChannelError('Неверный формат ссылки на YouTube канал');
+      setChannelError('Пожалуйста, введите ссылку на видео или канал');
       return;
     }
     
-    console.log(`\n🚀 [CHANNEL] Starting channel parsing for URL: "${channelUrl}"`);
+    console.log(`\n🚀 [PARSING] Starting parsing for URL: "${channelUrl}"`);
     setIsLoading(true);
     setParsingResults(null);
     setChannelError(null);
     
     try {
+      // Проверяем, является ли запрос YouTube URL видео
+      const videoId = extractVideoId(channelUrl);
+      
+      if (videoId) {
+        // Это YouTube URL видео - обрабатываем как конкретное видео
+        console.log(`\n🎯 [PARSING] YouTube video URL detected, video ID: ${videoId}`);
+        
+        // Получаем информацию о видео
+        const videoInfo = await fetchVideoInfo(videoId);
+        console.log('✅ [PARSING] Video info obtained:', videoInfo);
+        
+        // Получаем транскрипцию
+        console.log('📝 [PARSING] Getting transcript...');
+        let transcript = null;
+        
+        try {
+          transcript = await fetchTranscript(videoId);
+          console.log('✅ [PARSING] Transcript obtained');
+        } catch (transcriptError) {
+          console.warn('⚠️ [PARSING] Could not get transcript:', transcriptError.message);
+          // Показываем видео без транскрипции
+        }
+        
+        const videoWithTranscript = {
+          ...videoInfo,
+          transcript: transcript
+        };
+        
+        // Устанавливаем результаты как для отдельного видео
+        setChannelVideosResults({
+          videos: [videoWithTranscript],
+          totalCount: 1
+        });
+        
+        // Создаем фиктивные результаты парсинга для отображения
+        setParsingResults({
+          channelName: videoInfo.author,
+          videoCount: 1,
+          subscriberCount: null,
+          description: null
+        });
+        
+        return;
+      }
+      
+      // Проверяем, является ли это ссылкой на канал
+      if (!validateChannelUrl(channelUrl)) {
+        setChannelError('Неверный формат ссылки на YouTube видео или канал');
+        return;
+      }
+      
+      // Это канал - используем существующую логику парсинга каналов
+      console.log(`\n📺 [PARSING] Channel URL detected, starting channel parsing`);
       const results = await parseChannel(channelUrl);
       setParsingResults(results);
-      console.log(`✅ [CHANNEL] Channel parsed successfully:`, results);
+      // Очищаем результаты видео при парсинге канала
+      setChannelVideosResults(null);
+      setChannelSummaryData(null);
+      console.log(`✅ [PARSING] Channel parsed successfully:`, results);
       
     } catch (error) {
-      console.error('❌ [CHANNEL] Error in channel parsing:', error);
-      setChannelError('Ошибка при парсинге канала. Попробуйте еще раз.');
+      console.error('❌ [PARSING] Error in parsing:', error);
+      setChannelError('Ошибка при обработке ссылки. Попробуйте еще раз.');
     } finally {
-      console.log(`\n🏁 [CHANNEL] Channel parsing completed`);
+      console.log(`\n🏁 [PARSING] Parsing completed`);
       setIsLoading(false);
     }
   };
@@ -507,11 +546,40 @@ function AppContent() {
   const handleChannelSummaryComplete = async (summaryResult) => {
     console.log(`📋 [CHANNEL] Summary completed:`, summaryResult);
     setChannelSummaryData(summaryResult);
+    
+    // Сохраняем результаты парсинга в историю
+    try {
+      let queryTitle;
+      if (channelVideosResults && channelVideosResults.totalCount === 1) {
+        // Это отдельное видео
+        const videoTitle = channelVideosResults.videos[0]?.title || 'Unknown Video';
+        queryTitle = `Video: ${videoTitle}`;
+      } else {
+        // Это канал
+        const channelName = parsingResults?.channelName || 'Unknown Channel';
+        queryTitle = `Channel: ${channelName}`;
+      }
+      
+      const searchData = {
+        query: queryTitle,
+        searchResults: channelVideosResults?.videos || [],
+        summaryData: summaryResult
+      };
+      
+      const historyId = await saveSearchToHistory(searchData);
+      if (historyId) {
+        console.log('✅ [APP] Parsing results saved to history with ID:', historyId);
+      } else {
+        console.log('⚠️ [APP] Failed to save parsing results to history, but continuing...');
+      }
+    } catch (error) {
+      console.error('❌ [APP] Error saving parsing results to history:', error);
+    }
   };
 
   const handleChannelKeyPress = (e) => {
     if (e.key === 'Enter') {
-      handleChannelParse();
+      handleVideoOrChannelParse();
     }
   };
 
@@ -549,39 +617,47 @@ function AppContent() {
             <h1 className="main-heading">YouTube Semantic Searcher</h1>
             <div className="search-box">
               <div className="search-mode-toggle">
-                <button
-                  className={`toggle-button ${searchMode === 'request' ? 'active' : ''}`}
-                  onClick={() => setSearchMode('request')}
-                  disabled={isLoading}
-                >
-                  Write your request
-                </button>
-                <button
-                  className={`toggle-button ${searchMode === 'parsing' ? 'active' : ''}`}
-                  onClick={() => setSearchMode('parsing')}
-                  disabled={isLoading}
-                >
-                  Parsing video or channel
-                </button>
+                                 <button
+                   className={`toggle-button ${searchMode === 'request' ? 'active' : ''}`}
+                   onClick={() => {
+                     setSearchMode('request');
+                     setChannelError(null);
+                   }}
+                   disabled={isLoading}
+                 >
+                   Write your request
+                 </button>
+                 <button
+                   className={`toggle-button ${searchMode === 'parsing' ? 'active' : ''}`}
+                   onClick={() => {
+                     setSearchMode('parsing');
+                     setChannelError(null);
+                   }}
+                   disabled={isLoading}
+                 >
+                   Parsing video or channel
+                 </button>
               </div>
               <input
                 type="text"
                 className="search-input"
                 placeholder={searchMode === 'request' ? "Write your request..." : "Paste YouTube video or channel URL..."}
                 value={searchMode === 'request' ? query : channelUrl}
-                onChange={(e) => {
-                  if (searchMode === 'request') {
-                    setQuery(e.target.value);
-                  } else {
-                    setChannelUrl(e.target.value);
-                  }
-                }}
+                                 onChange={(e) => {
+                   if (searchMode === 'request') {
+                     setQuery(e.target.value);
+                     setChannelError(null); // Очищаем ошибку при изменении запроса
+                   } else {
+                     setChannelUrl(e.target.value);
+                     setChannelError(null); // Очищаем ошибку при изменении URL
+                   }
+                 }}
                 onKeyPress={searchMode === 'request' ? handleKeyPress : handleChannelKeyPress}
                 disabled={isLoading}
               />
               <button 
                 className="search-button"
-                onClick={searchMode === 'request' ? handleSearch : handleChannelParse}
+                onClick={searchMode === 'request' ? handleSearch : handleVideoOrChannelParse}
                 disabled={isLoading}
               >
                 {isLoading ? (searchMode === 'request' ? 'Searching...' : 'Parsing...') : (searchMode === 'request' ? 'Search' : 'Parse')}
@@ -597,12 +673,12 @@ function AppContent() {
             />
           </div>
 
-          {/* Сообщение об ошибке для парсинга каналов */}
-          {searchMode === 'parsing' && channelError && (
-            <div className="error-message">
-              <p>{channelError}</p>
-            </div>
-          )}
+                     {/* Сообщение об ошибке */}
+           {channelError && (
+             <div className="error-message">
+               <p>{channelError}</p>
+             </div>
+           )}
 
                     {/* Основной контент */}
           {searchMode === 'request' ? (
@@ -695,81 +771,104 @@ function AppContent() {
             // Интерфейс для парсинга каналов
             <div className="main-content">
               <div className="channel-results">
-                {parsingResults ? (
-                  <div className="results-section">
-                    <div className="channel-info">
-                      {/* Кнопки управления */}
-                      <div className="channel-actions-top">
-                        <h2>📺 Информация о канале</h2>
-                        <div className="channel-actions-right">
-                          <div className="video-count-selector">
-                            <label htmlFor="videoCount">Количество видео:</label>
-                            <select 
-                              id="videoCount" 
-                              className="video-count-select"
-                              value={selectedVideoCount}
-                              onChange={(e) => setSelectedVideoCount(parseInt(e.target.value))}
-                            >
-                              <option value="1">1</option>
-                              <option value="5">5</option>
-                              <option value="10">10</option>
-                              <option value="15">15</option>
-                              <option value="20">20</option>
-                              <option value="25">25</option>
-                              <option value="30">30</option>
-                              <option value="35">35</option>
-                              <option value="40">40</option>
-                              <option value="45">45</option>
-                              <option value="50">50</option>
-                            </select>
+                                    {parsingResults ? (
+                      <div className="results-section">
+                        <div className="channel-info">
+                          {/* Кнопки управления */}
+                          <div className="channel-actions-top">
+                            <h2>📺 Информация о {channelVideosResults && channelVideosResults.totalCount === 1 ? 'видео' : 'канале'}</h2>
+                            {(!channelVideosResults || channelVideosResults.totalCount > 1) && (
+                              <div className="channel-actions-right">
+                                <div className="video-count-selector">
+                                  <label htmlFor="videoCount">Количество видео:</label>
+                                  <select 
+                                    id="videoCount" 
+                                    className="video-count-select"
+                                    value={selectedVideoCount}
+                                    onChange={(e) => setSelectedVideoCount(parseInt(e.target.value))}
+                                  >
+                                    <option value="1">1</option>
+                                    <option value="5">5</option>
+                                    <option value="10">10</option>
+                                    <option value="15">15</option>
+                                    <option value="20">20</option>
+                                    <option value="25">25</option>
+                                    <option value="30">30</option>
+                                    <option value="35">35</option>
+                                    <option value="40">40</option>
+                                    <option value="45">45</option>
+                                    <option value="50">50</option>
+                                  </select>
+                                </div>
+                                <button 
+                                  className="get-videos-button"
+                                  onClick={handleGetVideos}
+                                  disabled={isLoadingVideos}
+                                >
+                                  {isLoadingVideos ? 'Получение...' : 'Получить видео'}
+                                </button>
+                              </div>
+                            )}
                           </div>
-                          <button 
-                            className="get-videos-button"
-                            onClick={handleGetVideos}
-                            disabled={isLoadingVideos}
-                          >
-                            {isLoadingVideos ? 'Получение...' : 'Получить видео'}
-                          </button>
-                        </div>
-                      </div>
-                      <div className="channel-info-content">
-                        <div className="channel-details">
-                          <div className="detail-item">
-                            <span className="detail-label">Название канала:</span>
-                            <span className="detail-value">{parsingResults.channelName || 'Не найдено'}</span>
-                          </div>
-                          <div className="detail-item">
-                            <span className="detail-label">Подписчики:</span>
-                            <span className="detail-value">{parsingResults.subscriberCount?.toLocaleString() || 'N/A'}</span>
-                          </div>
-                          <div className="detail-item">
-                            <span className="detail-label">Количество видео:</span>
-                            <span className="detail-value">{parsingResults.videoCount}</span>
-                          </div>
-                          {parsingResults.description && (
+                                              <div className="channel-info-content">
+                          <div className="channel-details">
                             <div className="detail-item">
-                              <span className="detail-label">Описание:</span>
-                              <span className="detail-value description">{parsingResults.description}</span>
+                              <span className="detail-label">{channelVideosResults && channelVideosResults.totalCount === 1 ? 'Автор:' : 'Название канала:'}</span>
+                              <span className="detail-value">{parsingResults.channelName || 'Не найдено'}</span>
                             </div>
-                          )}
+                            {channelVideosResults && channelVideosResults.totalCount === 1 ? (
+                              // Для отдельного видео показываем информацию о видео
+                              <>
+                                <div className="detail-item">
+                                  <span className="detail-label">Название видео:</span>
+                                  <span className="detail-value">{channelVideosResults.videos[0]?.title || 'Не найдено'}</span>
+                                </div>
+                                <div className="detail-item">
+                                  <span className="detail-label">Просмотры:</span>
+                                  <span className="detail-value">{channelVideosResults.videos[0]?.views || 'N/A'}</span>
+                                </div>
+                                <div className="detail-item">
+                                  <span className="detail-label">Длительность:</span>
+                                  <span className="detail-value">{channelVideosResults.videos[0]?.duration || 'N/A'}</span>
+                                </div>
+                              </>
+                            ) : (
+                              // Для канала показываем информацию о канале
+                              <>
+                                <div className="detail-item">
+                                  <span className="detail-label">Подписчики:</span>
+                                  <span className="detail-value">{parsingResults.subscriberCount?.toLocaleString() || 'N/A'}</span>
+                                </div>
+                                <div className="detail-item">
+                                  <span className="detail-label">Количество видео:</span>
+                                  <span className="detail-value">{parsingResults.videoCount}</span>
+                                </div>
+                                {parsingResults.description && (
+                                  <div className="detail-item">
+                                    <span className="detail-label">Описание:</span>
+                                    <span className="detail-value description">{parsingResults.description}</span>
+                                  </div>
+                                )}
+                              </>
+                            )}
+                          </div>
                         </div>
-                      </div>
                     </div>
 
-                    {/* Результаты получения видео в двух колонках */}
-                    {channelVideosResults && (
-                      <div className="videos-results-section">
-                        {/* Левая колонка - Общий вывод */}
-                        <div className="left-column">
-                          <div className="summary-section">
-                            <h2>📋 Общий вывод</h2>
+                                            {/* Результаты получения видео в двух колонках */}
+                        {channelVideosResults && (
+                          <div className="videos-results-section">
+                            {/* Левая колонка - Общий вывод */}
+                            <div className="left-column">
+                              <div className="summary-section">
+                                <h2>📋 Общий вывод {channelVideosResults.totalCount === 1 ? 'по видео' : 'по каналу'}</h2>
                             
                             {/* Показываем компонент для создания резюме */}
                             {channelVideosResults.videos && channelVideosResults.videos.length > 0 && (
                               <TranscriptSummary 
                                 videos={channelVideosResults.videos}
                                 userQuery={`Канал: ${parsingResults.channelName}`}
-                                onSummaryComplete={handleSummaryComplete}
+                                onSummaryComplete={handleChannelSummaryComplete}
                                 selectedModel={selectedModel}
                                 summaryData={channelSummaryData}
                               />
@@ -816,7 +915,7 @@ function AppContent() {
                         {/* Правая колонка - Найденные видео */}
                         <div className="right-column">
                           <div className="videos-section">
-                            <h2>📺 Найденные видео ({channelVideosResults.totalCount})</h2>
+                            <h2>📺 {channelVideosResults.totalCount === 1 ? 'Видео' : 'Найденные видео'} ({channelVideosResults.totalCount})</h2>
                             <div className="videos-list">
                               {channelVideosResults.videos.map((video, index) => (
                                 <VideoItem key={index} video={video} index={index} />
@@ -829,9 +928,13 @@ function AppContent() {
                   </div>
                 ) : (
                   <div className="placeholder">
-                    <p>Вставьте ссылку на YouTube канал для начала парсинга</p>
+                    <p>Вставьте ссылку на YouTube видео или канал для начала парсинга</p>
                     <p className="placeholder-examples">
                       Примеры поддерживаемых форматов:<br/>
+                      <strong>Видео:</strong><br/>
+                      • https://youtube.com/watch?v=VIDEO_ID<br/>
+                      • https://youtu.be/VIDEO_ID<br/>
+                      <strong>Каналы:</strong><br/>
                       • https://youtube.com/channel/UC...<br/>
                       • https://youtube.com/c/ChannelName<br/>
                       • https://youtube.com/@username<br/>
