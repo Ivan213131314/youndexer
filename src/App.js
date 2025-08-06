@@ -5,6 +5,7 @@ import TranscriptSummary from './TranscriptSummary';
 import LLMChoose from './components/LLMChoose';
 import History from './history/History';
 import ChannelParsing from './channel-parsing/ChannelParsing';
+
 import VideoItem from './components/VideoItem';
 import { collection, addDoc } from 'firebase/firestore';
 import { db } from './firebase';
@@ -30,6 +31,102 @@ function AppContent() {
 
 
 
+  // Функция для извлечения videoId из YouTube URL
+  const extractVideoId = (url) => {
+    const patterns = [
+      /(?:youtube\.com\/watch\?v=|youtu\.be\/|youtube\.com\/embed\/)([^&\n?#]+)/,
+      /youtube\.com\/v\/([^&\n?#]+)/,
+      /youtube\.com\/watch\?.*v=([^&\n?#]+)/
+    ];
+
+    for (const pattern of patterns) {
+      const match = url.match(pattern);
+      if (match) {
+        return match[1];
+      }
+    }
+    return null;
+  };
+
+  // Функция для получения информации о видео
+  const fetchVideoInfo = async (videoId) => {
+    const YOUTUBE_API_KEY = 'AIzaSyCs3QZxVnZBltP2tn2_v8IkbK0_03zoaTU';
+    const url = `https://www.googleapis.com/youtube/v3/videos?key=${YOUTUBE_API_KEY}&part=snippet,contentDetails,statistics&id=${videoId}`;
+    
+    const response = await fetch(url);
+    if (!response.ok) {
+      throw new Error('Ошибка при получении информации о видео');
+    }
+    
+    const data = await response.json();
+    if (!data.items || data.items.length === 0) {
+      throw new Error('Видео не найдено');
+    }
+    
+    const videoData = data.items[0];
+    return {
+      id: videoId,
+      videoId: videoId,
+      title: videoData.snippet.title,
+      description: videoData.snippet.description,
+      url: `https://www.youtube.com/watch?v=${videoId}`,
+      thumbnail: videoData.snippet.thumbnails?.high?.url || videoData.snippet.thumbnails?.default?.url || '',
+      author: videoData.snippet.channelTitle,
+      publishedAt: videoData.snippet.publishedAt,
+      duration: videoData.contentDetails.duration,
+      views: videoData.statistics?.viewCount || 'Неизвестно',
+      transcript: null
+    };
+  };
+
+  // Функция для получения транскрипции
+  const fetchTranscript = async (videoId) => {
+    try {
+      const response = await fetch(`${process.env.REACT_APP_API_URL || 'http://localhost:3001'}/api/transcript`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ videoId })
+      });
+
+      if (!response.ok) {
+        // Проверяем тип контента
+        const contentType = response.headers.get('content-type');
+        if (contentType && contentType.includes('text/html')) {
+          throw new Error('Сервер недоступен или эндпоинт не найден');
+        }
+        
+        try {
+          const errorData = await response.json();
+          throw new Error(errorData.error || 'Ошибка при получении транскрипции');
+        } catch (jsonError) {
+          throw new Error(`Ошибка сервера: ${response.status} ${response.statusText}`);
+        }
+      }
+
+      const data = await response.json();
+      
+      if (data.success && data.transcript) {
+        // Преобразуем транскрипцию в строку если она пришла в формате массива
+        if (Array.isArray(data.transcript)) {
+          return data.transcript.map(item => item.text).join(' ');
+        } else if (typeof data.transcript === 'string') {
+          return data.transcript;
+        } else {
+          return JSON.stringify(data.transcript);
+        }
+      } else {
+        throw new Error(data.error || 'Транскрипция недоступна');
+      }
+    } catch (error) {
+      if (error.name === 'TypeError' && error.message.includes('fetch')) {
+        throw new Error('Сервер недоступен. Убедитесь что сервер запущен на порту 3001');
+      }
+      throw error;
+    }
+  };
+
   const handleSearch = async () => {
     if (!query.trim()) {
       console.log('❌ [APP] Empty query provided');
@@ -42,8 +139,40 @@ function AppContent() {
     setSummaryData(null);
     
     try {
-      // Step 1: Search videos directly with user query
-      console.log(`\n🔍 [APP] Searching videos with query: "${query}"`);
+      // Проверяем, является ли запрос YouTube URL
+      const videoId = extractVideoId(query);
+      
+      if (videoId) {
+        // Это YouTube URL - обрабатываем как конкретное видео
+        console.log(`\n🎯 [APP] YouTube URL detected, video ID: ${videoId}`);
+        
+        // Получаем информацию о видео
+        const videoInfo = await fetchVideoInfo(videoId);
+        console.log('✅ [APP] Video info obtained:', videoInfo);
+        
+        // Получаем транскрипцию
+        console.log('📝 [APP] Getting transcript...');
+        let transcript = null;
+        
+        try {
+          transcript = await fetchTranscript(videoId);
+          console.log('✅ [APP] Transcript obtained');
+        } catch (transcriptError) {
+          console.warn('⚠️ [APP] Could not get transcript:', transcriptError.message);
+          // Показываем видео без транскрипции
+        }
+        
+        const videoWithTranscript = {
+          ...videoInfo,
+          transcript: transcript
+        };
+        
+        setSearchResults([videoWithTranscript]);
+        return;
+      }
+      
+      // Обычный поиск по запросу
+      console.log(`\n🔍 [APP] Regular search for query: "${query}"`);
       const allVideos = await searchVideosWithPhrases([query], videoSearchCountPerRequest);
       
       // Проверяем, что получили результаты
@@ -194,6 +323,8 @@ function AppContent() {
     setCurrentPage('channel-parsing');
   };
 
+
+
   const handleBackToMain = () => {
     setCurrentPage('main');
   };
@@ -220,6 +351,7 @@ function AppContent() {
             >
               Channel parsing
             </button>
+
             <button className="menu-button">About us</button>
             <div className="auth-section">
               <UserProfile />
@@ -233,7 +365,7 @@ function AppContent() {
               <input
                 type="text"
                 className="search-input"
-                placeholder="Search for videos..."
+                placeholder="Search for videos or paste YouTube URL..."
                 value={query}
                 onChange={(e) => setQuery(e.target.value)}
                 onKeyPress={handleKeyPress}

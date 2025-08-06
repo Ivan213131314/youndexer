@@ -1,0 +1,4 @@
+---
+alwaysApply: true
+---
+do not create any files and do not run terminal comands, always ask user about it
