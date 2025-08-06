@@ -13,6 +13,7 @@ import { saveSearchToHistory } from './history/historyService';
 import { AuthProvider, useAuth } from './auth/AuthContext';
 import AuthButtons from './auth/AuthButtons';
 import UserProfile from './auth/UserProfile';
+import { parseChannel, validateChannelUrl } from './channel-parsing/channelService';
 import './App.css';
 
 const videoSearchCountPerRequest = 4;
@@ -26,6 +27,16 @@ function AppContent() {
   const [leftColumnWidth, setLeftColumnWidth] = useState(50); // процент от общей ширины
   const [currentPage, setCurrentPage] = useState('main'); // 'main', 'history', или 'channel-parsing'
   const [selectedModel, setSelectedModel] = useState('openai/gpt-4o'); // выбранная LLM модель
+  const [searchMode, setSearchMode] = useState('request'); // 'request' или 'parsing'
+  
+  // Состояния для парсинга каналов
+  const [channelUrl, setChannelUrl] = useState('');
+  const [parsingResults, setParsingResults] = useState(null);
+  const [channelVideosResults, setChannelVideosResults] = useState(null);
+  const [isLoadingVideos, setIsLoadingVideos] = useState(false);
+  const [selectedVideoCount, setSelectedVideoCount] = useState(10);
+  const [channelError, setChannelError] = useState(null);
+  const [channelSummaryData, setChannelSummaryData] = useState(null);
 
 
 
@@ -271,24 +282,31 @@ function AppContent() {
 
   const handleSummaryComplete = async (summaryResult) => {
     console.log('🎉 [APP] Summary completed:', summaryResult);
-    setSummaryData(summaryResult);
     
-    // Сохраняем результаты в историю
-    try {
-      const searchData = {
-        query: query,
-        searchResults: searchResults,
-        summaryData: summaryResult
-      };
+    // Сохраняем результат в соответствующее состояние в зависимости от режима
+    if (searchMode === 'request') {
+      setSummaryData(summaryResult);
       
-      const historyId = await saveSearchToHistory(searchData);
-      if (historyId) {
-        console.log('✅ [APP] Search saved to history with ID:', historyId);
-      } else {
-        console.log('⚠️ [APP] Failed to save to history, but continuing...');
+      // Сохраняем результаты в историю
+      try {
+        const searchData = {
+          query: query,
+          searchResults: searchResults,
+          summaryData: summaryResult
+        };
+        
+        const historyId = await saveSearchToHistory(searchData);
+        if (historyId) {
+          console.log('✅ [APP] Search saved to history with ID:', historyId);
+        } else {
+          console.log('⚠️ [APP] Failed to save to history, but continuing...');
+        }
+      } catch (error) {
+        console.error('❌ [APP] Error saving to history:', error);
       }
-    } catch (error) {
-      console.error('❌ [APP] Error saving to history:', error);
+    } else {
+      // Режим парсинга каналов
+      setChannelSummaryData(summaryResult);
     }
   };
 
@@ -329,6 +347,174 @@ function AppContent() {
     setCurrentPage('main');
   };
 
+  // Функции для парсинга каналов
+  const handleChannelParse = async () => {
+    if (!channelUrl.trim()) {
+      setChannelError('Пожалуйста, введите ссылку на канал');
+      return;
+    }
+
+    if (!validateChannelUrl(channelUrl)) {
+      setChannelError('Неверный формат ссылки на YouTube канал');
+      return;
+    }
+    
+    console.log(`\n🚀 [CHANNEL] Starting channel parsing for URL: "${channelUrl}"`);
+    setIsLoading(true);
+    setParsingResults(null);
+    setChannelError(null);
+    
+    try {
+      const results = await parseChannel(channelUrl);
+      setParsingResults(results);
+      console.log(`✅ [CHANNEL] Channel parsed successfully:`, results);
+      
+    } catch (error) {
+      console.error('❌ [CHANNEL] Error in channel parsing:', error);
+      setChannelError('Ошибка при парсинге канала. Попробуйте еще раз.');
+    } finally {
+      console.log(`\n🏁 [CHANNEL] Channel parsing completed`);
+      setIsLoading(false);
+    }
+  };
+
+  const handleGetVideos = async () => {
+    if (!channelUrl.trim()) {
+      setChannelError('Пожалуйста, введите ссылку на канал');
+      return;
+    }
+
+    if (!validateChannelUrl(channelUrl)) {
+      setChannelError('Неверный формат ссылки на YouTube канал');
+      return;
+    }
+    
+    console.log(`\n🚀 [CHANNEL] Getting videos for channel: "${channelUrl}" with limit: ${selectedVideoCount}`);
+    setIsLoadingVideos(true);
+    setChannelVideosResults(null);
+    setChannelSummaryData(null);
+    setChannelError(null);
+    
+    try {
+      // Получаем видео канала через Supadata
+      const { Supadata } = await import('@supadata/js');
+      const supadata = new Supadata({
+        apiKey: 'sd_cf39c3a6069af680097faf6f996b8c16'
+      });
+      
+      const channelVideos = await supadata.youtube.channel.videos({
+        id: channelUrl,
+        type: 'all',
+        limit: selectedVideoCount,
+      });
+      
+      console.log(`✅ [CHANNEL] Channel videos received:`, channelVideos);
+      
+      // Преобразуем в формат как на главном экране
+      const videoIds = channelVideos.videoIds || [];
+      
+      // Получаем полную информацию о видео через Supadata инкрементально
+      console.log(`📝 [CHANNEL] Getting full video info for ${videoIds.length} videos...`);
+      
+      const videosWithInfo = [];
+      
+      // Обрабатываем видео по одному для инкрементального отображения
+      for (let i = 0; i < videoIds.length; i++) {
+        const videoId = videoIds[i];
+        console.log(`📝 [CHANNEL] Processing video ${i + 1}/${videoIds.length}: ${videoId}`);
+        
+        try {
+          const videoInfo = await supadata.youtube.video({
+            id: videoId
+          });
+          
+          const video = {
+            videoId: videoId,
+            title: videoInfo.title || `Video ${videoId}`,
+            author: videoInfo.channel?.name || parsingResults.channelName,
+            duration: videoInfo.duration || 'N/A',
+            url: `https://youtube.com/watch?v=${videoId}`,
+            thumbnail: videoInfo.thumbnail || `https://img.youtube.com/vi/${videoId}/default.jpg`,
+            views: videoInfo.viewCount || 'N/A',
+            publishedAt: videoInfo.uploadDate || 'N/A'
+          };
+          
+          videosWithInfo.push(video);
+          
+          // Немедленно обновляем состояние для отображения видео
+          setChannelVideosResults(prev => ({
+            videos: [...videosWithInfo],
+            totalCount: videosWithInfo.length
+          }));
+          
+          console.log(`✅ [CHANNEL] Video ${i + 1}/${videoIds.length} added to display:`, video.title);
+          
+        } catch (error) {
+          console.warn(`⚠️ [CHANNEL] Failed to get info for video ${videoId}:`, error);
+          // Fallback если не удалось получить информацию
+          const fallbackVideo = {
+            videoId: videoId,
+            title: `Video ${videoId}`,
+            author: parsingResults.channelName,
+            duration: 'N/A',
+            url: `https://youtube.com/watch?v=${videoId}`,
+            thumbnail: `https://img.youtube.com/vi/${videoId}/default.jpg`,
+            views: 'N/A',
+            publishedAt: 'N/A'
+          };
+          
+          videosWithInfo.push(fallbackVideo);
+          
+          // Немедленно обновляем состояние для отображения видео
+          setChannelVideosResults(prev => ({
+            videos: [...videosWithInfo],
+            totalCount: videosWithInfo.length
+          }));
+          
+          console.log(`⚠️ [CHANNEL] Fallback video ${i + 1}/${videoIds.length} added to display:`, fallbackVideo.title);
+        }
+      }
+      
+      console.log(`✅ [CHANNEL] Full video info received for all ${videosWithInfo.length} videos`);
+      
+      // Теперь получаем transcriptы инкрементально
+      console.log(`📝 [CHANNEL] Getting transcripts for ${videosWithInfo.length} videos...`);
+      const videosWithTranscripts = await addTranscriptsToVideos(videosWithInfo, (updatedVideos) => {
+        // Callback для обновления состояния при получении каждого transcript
+        setChannelVideosResults(prev => ({
+          videos: updatedVideos,
+          totalCount: updatedVideos.length
+        }));
+      });
+      
+      // Финальное обновление состояния
+      setChannelVideosResults({
+        videos: videosWithTranscripts,
+        totalCount: videosWithTranscripts.length
+      });
+      
+      console.log(`✅ [CHANNEL] Channel videos with transcripts received successfully:`, videosWithTranscripts);
+      
+    } catch (error) {
+      console.error('❌ [CHANNEL] Error getting channel videos:', error);
+      setChannelError('Ошибка при получении видео канала. Попробуйте еще раз.');
+    } finally {
+      console.log(`\n🏁 [CHANNEL] Channel videos request completed`);
+      setIsLoadingVideos(false);
+    }
+  };
+
+  const handleChannelSummaryComplete = async (summaryResult) => {
+    console.log(`📋 [CHANNEL] Summary completed:`, summaryResult);
+    setChannelSummaryData(summaryResult);
+  };
+
+  const handleChannelKeyPress = (e) => {
+    if (e.key === 'Enter') {
+      handleChannelParse();
+    }
+  };
+
   return (
     <div className="App">
       {currentPage === 'history' ? (
@@ -362,21 +548,43 @@ function AppContent() {
           <div className="header">
             <h1 className="main-heading">YouTube Semantic Searcher</h1>
             <div className="search-box">
+              <div className="search-mode-toggle">
+                <button
+                  className={`toggle-button ${searchMode === 'request' ? 'active' : ''}`}
+                  onClick={() => setSearchMode('request')}
+                  disabled={isLoading}
+                >
+                  Write your request
+                </button>
+                <button
+                  className={`toggle-button ${searchMode === 'parsing' ? 'active' : ''}`}
+                  onClick={() => setSearchMode('parsing')}
+                  disabled={isLoading}
+                >
+                  Parsing video or channel
+                </button>
+              </div>
               <input
                 type="text"
                 className="search-input"
-                placeholder="Search for videos or paste YouTube URL..."
-                value={query}
-                onChange={(e) => setQuery(e.target.value)}
-                onKeyPress={handleKeyPress}
+                placeholder={searchMode === 'request' ? "Write your request..." : "Paste YouTube video or channel URL..."}
+                value={searchMode === 'request' ? query : channelUrl}
+                onChange={(e) => {
+                  if (searchMode === 'request') {
+                    setQuery(e.target.value);
+                  } else {
+                    setChannelUrl(e.target.value);
+                  }
+                }}
+                onKeyPress={searchMode === 'request' ? handleKeyPress : handleChannelKeyPress}
                 disabled={isLoading}
               />
               <button 
                 className="search-button"
-                onClick={handleSearch}
+                onClick={searchMode === 'request' ? handleSearch : handleChannelParse}
                 disabled={isLoading}
               >
-                {isLoading ? 'Searching...' : 'Search'}
+                {isLoading ? (searchMode === 'request' ? 'Searching...' : 'Parsing...') : (searchMode === 'request' ? 'Search' : 'Parse')}
               </button>
             </div>
           </div>
@@ -389,91 +597,251 @@ function AppContent() {
             />
           </div>
 
-          {/* Основной контент с двумя колонками */}
-          <div 
-            className="main-content"
-            onMouseMove={handleMouseMove}
-            onMouseUp={handleMouseUp}
-            onMouseLeave={handleMouseUp}
-          >
-        {/* Левая колонка - Общий вывод */}
-        <div 
-          className="left-column"
-          style={{ width: `${leftColumnWidth}%` }}
-        >
-          <div className="summary-section">
-            <h2>📋 Общий вывод</h2>
-            
-            {/* Показываем компонент для создания резюме */}
-            {searchResults && searchResults.length > 0 && (
-              <TranscriptSummary 
-                videos={searchResults}
-                userQuery={query}
-                onSummaryComplete={handleSummaryComplete}
-                selectedModel={selectedModel}
-                summaryData={summaryData}
-              />
-            )}
+          {/* Сообщение об ошибке для парсинга каналов */}
+          {searchMode === 'parsing' && channelError && (
+            <div className="error-message">
+              <p>{channelError}</p>
+            </div>
+          )}
 
-            {/* Отображение готового резюме */}
-            {summaryData && (
-              <div className="summary-display">
-                <div className="summary-stats">
-                  <div className="stat-item">
-                    <span className="stat-label">Всего результатов:</span>
-                    <span className="stat-value">{summaryData.totalResults}</span>
-                  </div>
-                  <div className="stat-item">
-                    <span className="stat-label">Transcript найдено:</span>
-                    <span className="stat-value">{summaryData.transcriptCount}</span>
-                  </div>
+                    {/* Основной контент */}
+          {searchMode === 'request' ? (
+            // Интерфейс для обычного поиска
+            <div 
+              className="main-content"
+              onMouseMove={handleMouseMove}
+              onMouseUp={handleMouseUp}
+              onMouseLeave={handleMouseUp}
+            >
+              {/* Левая колонка - Общий вывод */}
+              <div 
+                className="left-column"
+                style={{ width: `${leftColumnWidth}%` }}
+              >
+                <div className="summary-section">
+                  <h2>📋 Общий вывод</h2>
+                  
+                  {/* Показываем компонент для создания резюме */}
+                  {searchResults && searchResults.length > 0 && (
+                    <TranscriptSummary 
+                      videos={searchResults}
+                      userQuery={query}
+                      onSummaryComplete={handleSummaryComplete}
+                      selectedModel={selectedModel}
+                      summaryData={summaryData}
+                    />
+                  )}
+
+                  {/* Отображение готового резюме */}
+                  {summaryData && (
+                    <div className="summary-display">
+                      <div className="summary-stats">
+                        <div className="stat-item">
+                          <span className="stat-label">Всего результатов:</span>
+                          <span className="stat-value">{summaryData.totalResults}</span>
+                        </div>
+                        <div className="stat-item">
+                          <span className="stat-label">Transcript найдено:</span>
+                          <span className="stat-value">{summaryData.transcriptCount}</span>
+                        </div>
+                      </div>
+
+                      <div className="summary-content">
+                        <h4>📋 Резюме по запросу: "{query}"</h4>
+                        <div className="summary-text">
+                          {summaryData.summary.split('\n').map((line, index) => (
+                            <p key={index}>{line}</p>
+                          ))}
+                        </div>
+                      </div>
+                    </div>
+                  )}
+
+                  {/* Плейсхолдер когда нет данных */}
+                  {!summaryData && !searchResults && (
+                    <div className="placeholder">
+                      <p>Выполните поиск, чтобы увидеть общий вывод по всем транскриптам</p>
+                    </div>
+                  )}
                 </div>
+              </div>
 
-                <div className="summary-content">
-                  <h4>📋 Резюме по запросу: "{query}"</h4>
-                  <div className="summary-text">
-                    {summaryData.summary.split('\n').map((line, index) => (
-                      <p key={index}>{line}</p>
-                    ))}
-                  </div>
+              {/* Разделитель колонок */}
+              <div 
+                className="column-resizer"
+                onMouseDown={handleMouseDown}
+              ></div>
+
+              {/* Правая колонка - Отдельные видео */}
+              <div className="right-column">
+                <div className="videos-section">
+                  <h2>📺 Найденные видео</h2>
+                  
+                  {searchResults ? (
+                    <div className="videos-list">
+                      {searchResults.map((video, index) => (
+                        <VideoItem key={index} video={video} index={index} />
+                      ))}
+                    </div>
+                  ) : (
+                    <div className="placeholder">
+                      <p>Результаты поиска появятся здесь</p>
+                    </div>
+                  )}
                 </div>
               </div>
-            )}
+            </div>
+          ) : (
+            // Интерфейс для парсинга каналов
+            <div className="main-content">
+              <div className="channel-results">
+                {parsingResults ? (
+                  <div className="results-section">
+                    <div className="channel-info">
+                      {/* Кнопки управления */}
+                      <div className="channel-actions-top">
+                        <h2>📺 Информация о канале</h2>
+                        <div className="channel-actions-right">
+                          <div className="video-count-selector">
+                            <label htmlFor="videoCount">Количество видео:</label>
+                            <select 
+                              id="videoCount" 
+                              className="video-count-select"
+                              value={selectedVideoCount}
+                              onChange={(e) => setSelectedVideoCount(parseInt(e.target.value))}
+                            >
+                              <option value="1">1</option>
+                              <option value="5">5</option>
+                              <option value="10">10</option>
+                              <option value="15">15</option>
+                              <option value="20">20</option>
+                              <option value="25">25</option>
+                              <option value="30">30</option>
+                              <option value="35">35</option>
+                              <option value="40">40</option>
+                              <option value="45">45</option>
+                              <option value="50">50</option>
+                            </select>
+                          </div>
+                          <button 
+                            className="get-videos-button"
+                            onClick={handleGetVideos}
+                            disabled={isLoadingVideos}
+                          >
+                            {isLoadingVideos ? 'Получение...' : 'Получить видео'}
+                          </button>
+                        </div>
+                      </div>
+                      <div className="channel-info-content">
+                        <div className="channel-details">
+                          <div className="detail-item">
+                            <span className="detail-label">Название канала:</span>
+                            <span className="detail-value">{parsingResults.channelName || 'Не найдено'}</span>
+                          </div>
+                          <div className="detail-item">
+                            <span className="detail-label">Подписчики:</span>
+                            <span className="detail-value">{parsingResults.subscriberCount?.toLocaleString() || 'N/A'}</span>
+                          </div>
+                          <div className="detail-item">
+                            <span className="detail-label">Количество видео:</span>
+                            <span className="detail-value">{parsingResults.videoCount}</span>
+                          </div>
+                          {parsingResults.description && (
+                            <div className="detail-item">
+                              <span className="detail-label">Описание:</span>
+                              <span className="detail-value description">{parsingResults.description}</span>
+                            </div>
+                          )}
+                        </div>
+                      </div>
+                    </div>
 
-            {/* Плейсхолдер когда нет данных */}
-            {!summaryData && (
-              <div className="placeholder">
-                <p>Выполните поиск, чтобы увидеть общий вывод по всем транскриптам</p>
-              </div>
-            )}
-          </div>
-        </div>
+                    {/* Результаты получения видео в двух колонках */}
+                    {channelVideosResults && (
+                      <div className="videos-results-section">
+                        {/* Левая колонка - Общий вывод */}
+                        <div className="left-column">
+                          <div className="summary-section">
+                            <h2>📋 Общий вывод</h2>
+                            
+                            {/* Показываем компонент для создания резюме */}
+                            {channelVideosResults.videos && channelVideosResults.videos.length > 0 && (
+                              <TranscriptSummary 
+                                videos={channelVideosResults.videos}
+                                userQuery={`Канал: ${parsingResults.channelName}`}
+                                onSummaryComplete={handleSummaryComplete}
+                                selectedModel={selectedModel}
+                                summaryData={channelSummaryData}
+                              />
+                            )}
 
-        {/* Разделитель колонок */}
-        <div 
-          className="column-resizer"
-          onMouseDown={handleMouseDown}
-        ></div>
+                            {/* Отображение готового резюме */}
+                            {channelSummaryData && (
+                              <div className="summary-display">
+                                <div className="summary-stats">
+                                  <div className="stat-item">
+                                    <span className="stat-label">Всего результатов:</span>
+                                    <span className="stat-value">{channelSummaryData.totalResults}</span>
+                                  </div>
+                                  <div className="stat-item">
+                                    <span className="stat-label">Transcript найдено:</span>
+                                    <span className="stat-value">{channelSummaryData.transcriptCount}</span>
+                                  </div>
+                                  <div className="stat-item">
+                                    <span className="stat-label">Канал:</span>
+                                    <span className="stat-value">{parsingResults.channelName}</span>
+                                  </div>
+                                </div>
 
-        {/* Правая колонка - Отдельные видео */}
-        <div className="right-column">
-          <div className="videos-section">
-            <h2>📺 Найденные видео</h2>
-            
-            {searchResults ? (
-              <div className="videos-list">
-                {searchResults.map((video, index) => (
-                  <VideoItem key={index} video={video} index={index} />
-                ))}
+                                <div className="summary-content">
+                                  <h4>📋 Резюме канала: "{parsingResults.channelName}"</h4>
+                                  <div className="summary-text">
+                                    {channelSummaryData.summary.split('\n').map((line, index) => (
+                                      <p key={index}>{line}</p>
+                                    ))}
+                                  </div>
+                                </div>
+                              </div>
+                            )}
+
+                            {/* Плейсхолдер когда нет данных */}
+                            {!channelSummaryData && (
+                              <div className="placeholder">
+                                <p>Нажмите "Получить видео" чтобы увидеть общий вывод по всем транскриптам</p>
+                              </div>
+                            )}
+                          </div>
+                        </div>
+
+                        {/* Правая колонка - Найденные видео */}
+                        <div className="right-column">
+                          <div className="videos-section">
+                            <h2>📺 Найденные видео ({channelVideosResults.totalCount})</h2>
+                            <div className="videos-list">
+                              {channelVideosResults.videos.map((video, index) => (
+                                <VideoItem key={index} video={video} index={index} />
+                              ))}
+                            </div>
+                          </div>
+                        </div>
+                      </div>
+                    )}
+                  </div>
+                ) : (
+                  <div className="placeholder">
+                    <p>Вставьте ссылку на YouTube канал для начала парсинга</p>
+                    <p className="placeholder-examples">
+                      Примеры поддерживаемых форматов:<br/>
+                      • https://youtube.com/channel/UC...<br/>
+                      • https://youtube.com/c/ChannelName<br/>
+                      • https://youtube.com/@username<br/>
+                      • https://youtube.com/user/username
+                    </p>
+                  </div>
+                )}
               </div>
-            ) : (
-              <div className="placeholder">
-                <p>Результаты поиска появятся здесь</p>
-              </div>
-            )}
-          </div>
-        </div>
-      </div>
+            </div>
+          )}
         </>
       )}
     </div>
