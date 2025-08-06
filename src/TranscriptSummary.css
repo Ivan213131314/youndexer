@@ -280,6 +280,14 @@
   background: linear-gradient(135deg, #0056b3 0%, #004085 100%);
 }
 
+.txt-button {
+  background: linear-gradient(135deg, #6c757d 0%, #495057 100%);
+}
+
+.txt-button:hover:not(:disabled) {
+  background: linear-gradient(135deg, #495057 0%, #343a40 100%);
+}
+
 .download-icon {
   font-size: 16px;
 }

@@ -214,6 +214,34 @@ const History = ({ onBackToMain }) => {
     }
   };
 
+  const downloadSummaryAsTXT = async (historyItem) => {
+    if (!historyItem || !historyItem.summaryData) return;
+    
+    try {
+      const content = `Резюме по запросу: "${historyItem.query}"
+
+Всего результатов: ${historyItem.summaryData.totalResults}
+Transcript найдено: ${historyItem.summaryData.transcriptCount}
+Дата поиска: ${formatHistoryDate(historyItem.timestamp)}
+
+${historyItem.summaryData.summary}`;
+
+      const blob = new Blob([content], { type: 'text/plain;charset=utf-8' });
+      const url = window.URL.createObjectURL(blob);
+      const link = document.createElement('a');
+      link.href = url;
+      const fileName = `${historyItem.query}.txt`;
+      link.download = fileName;
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+      window.URL.revokeObjectURL(url);
+      
+    } catch (error) {
+      console.error('Ошибка при создании TXT:', error);
+    }
+  };
+
   if (loading) {
     return (
       <div className="history-container">
@@ -330,13 +358,20 @@ const History = ({ onBackToMain }) => {
                             <span className="download-icon">📄</span>
                             Скачать PDF
                           </button>
-                          <button 
-                            className="download-button doc-button"
-                            onClick={() => downloadSummaryAsDOC(historyItem)}
-                          >
-                            <span className="download-icon">📝</span>
-                            Скачать DOC
-                          </button>
+                                                     <button 
+                             className="download-button doc-button"
+                             onClick={() => downloadSummaryAsDOC(historyItem)}
+                           >
+                             <span className="download-icon">📝</span>
+                             Скачать DOC
+                           </button>
+                           <button 
+                             className="download-button txt-button"
+                             onClick={() => downloadSummaryAsTXT(historyItem)}
+                           >
+                             <span className="download-icon">📄</span>
+                             Скачать TXT
+                           </button>
                         </div>
                       </div>
                     </div>
