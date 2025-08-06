@@ -10,7 +10,6 @@ console.log('[CHECK] REACT_APP_OPENAI_API_KEY:', process.env.REACT_APP_OPENAI_AP
 const express = require('express');
 const cors = require('cors');
 const yts = require('yt-search');
-const OpenAI = require('openai');
 const { getTranscriptSummary } = require('./transcript-summarizer.cjs');
 
 
@@ -41,7 +40,8 @@ const corsOptions = {
 };
 
 app.use(cors(corsOptions));
-app.use(express.json());
+app.use(express.json({ limit: '100mb' }));
+app.use(express.urlencoded({ limit: '100mb', extended: true }));
 
 /**
  * Search videos using yt-search library with retry logic
@@ -472,7 +472,7 @@ app.post('/api/summarize-transcripts', async (req, res) => {
 // Новый endpoint для создания резюме из видео напрямую
 app.post('/api/summarize-videos', async (req, res) => {
   try {
-    const { videos, userQuery } = req.body;
+    const { videos, userQuery, model = 'openai/gpt-4o' } = req.body;
     
     if (!videos || !Array.isArray(videos) || !userQuery) {
       return res.status(400).json({ 
@@ -480,7 +480,7 @@ app.post('/api/summarize-videos', async (req, res) => {
       });
     }
     
-    console.log(`🔍 [API] Creating summary for ${videos.length} videos, query: "${userQuery}"`);
+    console.log(`🔍 [API] Creating summary for ${videos.length} videos, query: "${userQuery}", model: "${model}"`);
     
     // Фильтруем видео с transcriptами
     const videosWithTranscripts = videos.filter(video => video.transcript);
@@ -498,10 +498,21 @@ app.post('/api/summarize-videos', async (req, res) => {
       `Video: ${video.title}\nAuthor: ${video.author}\nTranscript: ${video.transcript}\n\n`
     ).join('---\n');
     
-    // Используем OpenAI для создания резюме
-    const openai = new OpenAI({
-      apiKey: process.env.OPENAI_API_KEY || 'sk-your-openai-api-key'
-    });
+    console.log('📄 [API] ALL_TRANSCRIPTS CONTENT:');
+    console.log('='.repeat(80));
+    console.log(allTranscripts);
+    console.log('='.repeat(80));
+    console.log(`📊 [API] Total length of allTranscripts: ${allTranscripts.length} characters`);
+    console.log(`📊 [API] Size in KB: ${(allTranscripts.length * 2) / 1024} KB`);
+    console.log(`📊 [API] Size in MB: ${(allTranscripts.length * 2) / (1024 * 1024)} MB`);
+    
+    // Используем OpenRouter API для создания резюме с выбранной моделью
+    const openRouterApiKey = process.env.REACT_APP_OPEN_ROUTER_API_KEY;
+    if (!openRouterApiKey) {
+      return res.status(500).json({ 
+        error: 'OpenRouter API key not configured. Please set REACT_APP_OPEN_ROUTER_API_KEY in .env file' 
+      });
+    }
     
     const prompt = `Based on the following YouTube video transcripts, create a comprehensive summary that answers the user's query: "${userQuery}"
 
@@ -516,18 +527,34 @@ Please provide a detailed summary that:
 
 Format the response in a clear, structured manner.`;
 
-    const completion = await openai.chat.completions.create({
-      model: "gpt-3.5-turbo",
-      messages: [
-        {
-          role: "user",
-          content: prompt
-        }
-      ],
-      max_tokens: 2000,
-      temperature: 0.7
+    // Отправляем запрос к OpenRouter API
+    const response = await fetch('https://openrouter.ai/api/v1/chat/completions', {
+      method: 'POST',
+      headers: {
+        'Authorization': `Bearer ${openRouterApiKey}`,
+        'HTTP-Referer': 'http://localhost:3001',
+        'X-Title': 'YouTube Searcher',
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({
+        model: model,
+        messages: [
+          {
+            role: "user",
+            content: prompt
+          }
+        ],
+        max_tokens: 2000,
+        temperature: 0.7
+      })
     });
 
+    if (!response.ok) {
+      const errorData = await response.json();
+      throw new Error(`OpenRouter API error: ${errorData.error?.message || response.statusText}`);
+    }
+
+    const completion = await response.json();
     const summary = completion.choices[0].message.content;
     
     const result = {

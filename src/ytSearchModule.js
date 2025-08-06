@@ -166,7 +166,7 @@ export const searchVideosWithPhrases = async (phrases, videosPerPhrase = 10) => 
  * @param {Array} videos - Array of video objects with videoId
  * @returns {Promise<Array>} Videos with transcripts added
  */
-export const addTranscriptsToVideos = async (videos) => {
+export const addTranscriptsToVideos = async (videos, onProgressCallback = null) => {
   console.log(`\n📝 [YT-SEARCH] Adding transcripts to ${videos.length} videos using individual Supadata requests...`);
   
   try {
@@ -184,6 +184,7 @@ export const addTranscriptsToVideos = async (videos) => {
     console.log(`🚀 [SUPADATA] Получаем transcriptы для ${videoIds.length} видео по отдельности`);
     
     const results = [];
+    const videosWithTranscripts = [...videos]; // Копируем массив для инкрементального обновления
     
     for (let i = 0; i < videoIds.length; i++) {
       const videoId = videoIds[i];
@@ -240,6 +241,27 @@ export const addTranscriptsToVideos = async (videos) => {
           transcript: transcriptText
         });
         
+        // Обновляем видео с transcript в массиве
+        const videoIndex = videosWithTranscripts.findIndex(v => v.videoId === videoId);
+        if (videoIndex !== -1) {
+          videosWithTranscripts[videoIndex] = {
+            ...videosWithTranscripts[videoIndex],
+            transcript: transcriptText,
+            // Убеждаемся что есть все необходимые поля
+            thumbnail: videosWithTranscripts[videoIndex].thumbnail || `https://img.youtube.com/vi/${videoId}/default.jpg`,
+            url: videosWithTranscripts[videoIndex].url || `https://www.youtube.com/watch?v=${videoId}`,
+            author: videosWithTranscripts[videoIndex].author || videosWithTranscripts[videoIndex].channelTitle || 'Unknown Channel',
+            duration: videosWithTranscripts[videoIndex].duration || 'N/A',
+            views: videosWithTranscripts[videoIndex].views || 'N/A',
+            publishedAt: videosWithTranscripts[videoIndex].publishedAt || 'N/A'
+          };
+          
+          // Вызываем callback для инкрементального обновления UI
+          if (onProgressCallback) {
+            onProgressCallback([...videosWithTranscripts]);
+          }
+        }
+        
         // Небольшая задержка между запросами
         if (i < videoIds.length - 1) {
           await new Promise(resolve => setTimeout(resolve, 100));
@@ -251,30 +273,31 @@ export const addTranscriptsToVideos = async (videos) => {
           videoId: videoId,
           transcript: null
         });
+        
+        // Обновляем видео без transcript в массиве
+        const videoIndex = videosWithTranscripts.findIndex(v => v.videoId === videoId);
+        if (videoIndex !== -1) {
+          videosWithTranscripts[videoIndex] = {
+            ...videosWithTranscripts[videoIndex],
+            transcript: null,
+            // Убеждаемся что есть все необходимые поля
+            thumbnail: videosWithTranscripts[videoIndex].thumbnail || `https://img.youtube.com/vi/${videoId}/default.jpg`,
+            url: videosWithTranscripts[videoIndex].url || `https://www.youtube.com/watch?v=${videoId}`,
+            author: videosWithTranscripts[videoIndex].author || videosWithTranscripts[videoIndex].channelTitle || 'Unknown Channel',
+            duration: videosWithTranscripts[videoIndex].duration || 'N/A',
+            views: videosWithTranscripts[videoIndex].views || 'N/A',
+            publishedAt: videosWithTranscripts[videoIndex].publishedAt || 'N/A'
+          };
+          
+          // Вызываем callback для инкрементального обновления UI
+          if (onProgressCallback) {
+            onProgressCallback([...videosWithTranscripts]);
+          }
+        }
       }
     }
     
     console.log(`✅ [SUPADATA] Обработано ${results.length} видео`);
-    
-    // Создаем map для быстрого поиска transcriptов
-    const transcriptMap = {};
-    results.forEach(result => {
-      transcriptMap[result.videoId] = result.transcript;
-    });
-    
-    // Добавляем transcriptы к видео и убеждаемся что есть все необходимые поля
-    const videosWithTranscripts = videos.map(video => ({
-      ...video,
-      transcript: transcriptMap[video.videoId] || null,
-      // Убеждаемся что есть thumbnail и url
-      thumbnail: video.thumbnail || `https://img.youtube.com/vi/${video.videoId}/default.jpg`,
-      url: video.url || `https://www.youtube.com/watch?v=${video.videoId}`,
-      // Добавляем дополнительные поля если их нет
-      author: video.author || video.channelTitle || 'Unknown Channel',
-      duration: video.duration || 'N/A',
-      views: video.views || 'N/A',
-      publishedAt: video.publishedAt || 'N/A'
-    }));
     
     // Финальная проверка - убеждаемся что все transcriptы это строки или null
     videosWithTranscripts.forEach(video => {

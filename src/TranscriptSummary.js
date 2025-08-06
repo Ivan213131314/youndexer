@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import './TranscriptSummary.css';
 
-const TranscriptSummary = ({ videos, userQuery, onSummaryComplete }) => {
+const TranscriptSummary = ({ videos, userQuery, onSummaryComplete, selectedModel }) => {
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState(null);
 
@@ -27,9 +27,11 @@ const TranscriptSummary = ({ videos, userQuery, onSummaryComplete }) => {
       console.log(`📝 [SUMMARY] Видео с transcriptами: ${videosWithTranscripts.length}`);
       console.log(`🔍 [SUMMARY] Запрос: "${userQuery}"`);
 
+      // Отправляем полные transcriptы для качественного резюме
       const requestBody = {
         videos: videosWithTranscripts,
-        userQuery
+        userQuery,
+        model: selectedModel
       };
 
       console.log('📤 [SUMMARY] Отправляем запрос к серверу:');

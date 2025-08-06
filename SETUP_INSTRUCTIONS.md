@@ -5,22 +5,19 @@
 Создайте файл `.env` в корневой папке проекта со следующим содержимым:
 
 ```bash
-# OpenAI API Key
-OPENAI_API_KEY=your-actual-openai-api-key-here
+# OpenRouter API Key (для доступа к различным LLM моделям)
+REACT_APP_OPEN_ROUTER_API_KEY=your-actual-openrouter-api-key-here
 
 # Supadata API Key (уже настроен в коде)
 SUPADATA_API_KEY=sd_cf39c3a6069af680097faf6f996b8c16
-
-# React App OpenAI Key (для фронтенда)
-REACT_APP_OPENAI_API_KEY=your-actual-openai-api-key-here
 
 # API Server URL (для продакшена измените на ваш домен)
 REACT_APP_API_URL=http://localhost:3001
 ```
 
-## 2. Получение OpenAI API Key
+## 2. Получение OpenRouter API Key
 
-1. Зайдите на https://platform.openai.com/
+1. Зайдите на https://openrouter.ai/
 2. Войдите в свой аккаунт или создайте новый
 3. Перейдите в раздел "API Keys"
 4. Создайте новый API ключ
@@ -58,6 +55,8 @@ node test-summary.js
 
 ## Примечания
 
-- Убедитесь, что у вас есть активный OpenAI API ключ с достаточным балансом
+- Убедитесь, что у вас есть активный OpenRouter API ключ с достаточным балансом
+- OpenRouter предоставляет доступ к множеству LLM моделей (GPT-4, Gemini, Claude, Llama и др.)
+- Вы можете выбрать модель в интерфейсе приложения
 - Файл `.env` должен быть добавлен в `.gitignore` для безопасности
 - Не коммитьте реальные API ключи в репозиторий 

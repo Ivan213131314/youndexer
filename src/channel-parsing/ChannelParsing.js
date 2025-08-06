@@ -80,51 +80,85 @@ function ChannelParsing({ onBackToMain }) {
              // Преобразуем в формат как на главном экране
        const videoIds = channelVideos.videoIds || [];
        
-               // Получаем полную информацию о видео через Supadata
-        console.log(`📝 [CHANNEL] Getting full video info for ${videoIds.length} videos...`);
-        const videosWithInfo = await Promise.all(
-          videoIds.map(async (videoId) => {
-            try {
-              const videoInfo = await supadata.youtube.video({
-                id: videoId
-              });
-              
-              return {
-                videoId: videoId,
-                title: videoInfo.title || `Video ${videoId}`,
-                author: videoInfo.channel?.name || parsingResults.channelName,
-                duration: videoInfo.duration || 'N/A',
-                url: `https://youtube.com/watch?v=${videoId}`,
-                thumbnail: videoInfo.thumbnail || `https://img.youtube.com/vi/${videoId}/default.jpg`,
-                views: videoInfo.viewCount || 'N/A',
-                publishedAt: videoInfo.uploadDate || 'N/A'
-              };
-            } catch (error) {
-              console.warn(`⚠️ [CHANNEL] Failed to get info for video ${videoId}:`, error);
-              // Fallback если не удалось получить информацию
-              return {
-                videoId: videoId,
-                title: `Video ${videoId}`,
-                author: parsingResults.channelName,
-                duration: 'N/A',
-                url: `https://youtube.com/watch?v=${videoId}`,
-                thumbnail: `https://img.youtube.com/vi/${videoId}/default.jpg`,
-                views: 'N/A',
-                publishedAt: 'N/A'
-              };
-            }
-          })
-        );
+                       // Получаем полную информацию о видео через Supadata инкрементально
+         console.log(`📝 [CHANNEL] Getting full video info for ${videoIds.length} videos...`);
+         
+         const videosWithInfo = [];
+         
+         // Обрабатываем видео по одному для инкрементального отображения
+         for (let i = 0; i < videoIds.length; i++) {
+           const videoId = videoIds[i];
+           console.log(`📝 [CHANNEL] Processing video ${i + 1}/${videoIds.length}: ${videoId}`);
+           
+           try {
+             const videoInfo = await supadata.youtube.video({
+               id: videoId
+             });
+             
+             const video = {
+               videoId: videoId,
+               title: videoInfo.title || `Video ${videoId}`,
+               author: videoInfo.channel?.name || parsingResults.channelName,
+               duration: videoInfo.duration || 'N/A',
+               url: `https://youtube.com/watch?v=${videoId}`,
+               thumbnail: videoInfo.thumbnail || `https://img.youtube.com/vi/${videoId}/default.jpg`,
+               views: videoInfo.viewCount || 'N/A',
+               publishedAt: videoInfo.uploadDate || 'N/A'
+             };
+             
+             videosWithInfo.push(video);
+             
+             // Немедленно обновляем состояние для отображения видео
+             setChannelVideosResults(prev => ({
+               videos: [...videosWithInfo],
+               totalCount: videosWithInfo.length
+             }));
+             
+             console.log(`✅ [CHANNEL] Video ${i + 1}/${videoIds.length} added to display:`, video.title);
+             
+           } catch (error) {
+             console.warn(`⚠️ [CHANNEL] Failed to get info for video ${videoId}:`, error);
+             // Fallback если не удалось получить информацию
+             const fallbackVideo = {
+               videoId: videoId,
+               title: `Video ${videoId}`,
+               author: parsingResults.channelName,
+               duration: 'N/A',
+               url: `https://youtube.com/watch?v=${videoId}`,
+               thumbnail: `https://img.youtube.com/vi/${videoId}/default.jpg`,
+               views: 'N/A',
+               publishedAt: 'N/A'
+             };
+             
+             videosWithInfo.push(fallbackVideo);
+             
+             // Немедленно обновляем состояние для отображения видео
+             setChannelVideosResults(prev => ({
+               videos: [...videosWithInfo],
+               totalCount: videosWithInfo.length
+             }));
+             
+             console.log(`⚠️ [CHANNEL] Fallback video ${i + 1}/${videoIds.length} added to display:`, fallbackVideo.title);
+           }
+         }
+        
+        console.log(`✅ [CHANNEL] Full video info received for all ${videosWithInfo.length} videos`);
        
-       console.log(`✅ [CHANNEL] Full video info received:`, videosWithInfo);
-      
-             console.log(`📝 [CHANNEL] Getting transcripts for ${videosWithInfo.length} videos...`);
-       const videosWithTranscripts = await addTranscriptsToVideos(videosWithInfo);
-      
-      setChannelVideosResults({
-        videos: videosWithTranscripts,
-        totalCount: videosWithTranscripts.length
-      });
+        // Теперь получаем transcriptы инкрементально
+        console.log(`📝 [CHANNEL] Getting transcripts for ${videosWithInfo.length} videos...`);
+        const videosWithTranscripts = await addTranscriptsToVideos(videosWithInfo, (updatedVideos) => {
+          // Callback для обновления состояния при получении каждого transcript
+          setChannelVideosResults(prev => ({
+            videos: updatedVideos,
+            totalCount: updatedVideos.length
+          }));
+        });
+       
+       // Финальное обновление состояния
+       setChannelVideosResults({
+         videos: videosWithTranscripts,
+         totalCount: videosWithTranscripts.length
+       });
       
       console.log(`✅ [CHANNEL] Channel videos with transcripts received successfully:`, videosWithTranscripts);
       

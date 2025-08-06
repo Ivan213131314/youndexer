@@ -1,52 +1,49 @@
 /**
- * Video relevance filter using GPT
+ * Video relevance filter using OpenRouter API
  */
 
-import OpenAI from 'openai';
-
-// Создаем OpenAI клиент только когда он нужен
-const createOpenAIClient = () => {
-  const apiKey = process.env.REACT_APP_OPENAI_API_KEY;
+// Создаем OpenRouter клиент только когда он нужен
+const createOpenRouterClient = () => {
+  const apiKey = process.env.REACT_APP_OPEN_ROUTER_API_KEY;
   if (!apiKey) {
-    console.warn('⚠️ REACT_APP_OPENAI_API_KEY не установлен. Видео фильтрация будет отключена.');
+    console.warn('⚠️ REACT_APP_OPEN_ROUTER_API_KEY не установлен. Видео фильтрация будет отключена.');
     return null;
   }
-  return new OpenAI({
-    apiKey: apiKey,
-    dangerouslyAllowBrowser: true
-  });
+  return { apiKey };
 };
 
 /**
- * Filter videos based on user query using GPT
+ * Filter videos based on user query using OpenRouter API
  * @param {Array} videos - Array of video objects with id, title, description, videoId
  * @param {string} userQuery - User's search query
+ * @param {string} model - Model to use for filtering (default: 'openai/gpt-4o')
  * @returns {Promise<Array>} Array of relevant video IDs
  */
-export const filterVideosWithGPT = async (videos, userQuery) => {
-  console.log(`\n🤖 [VIDEO FILTER] Starting GPT filtering for query: "${userQuery}"`);
+export const filterVideosWithGPT = async (videos, userQuery, model = 'openai/gpt-4o') => {
+  console.log(`\n🤖 [VIDEO FILTER] Starting OpenRouter filtering for query: "${userQuery}"`);
   console.log(`📊 [VIDEO FILTER] Total videos to analyze: ${videos.length}`);
+  console.log(`🤖 [VIDEO FILTER] Using model: ${model}`);
 
-  // Создаем OpenAI клиент
-  const openai = createOpenAIClient();
-  if (!openai) {
-    console.warn('⚠️ [VIDEO FILTER] OpenAI клиент не инициализирован. Возвращаем все видео.');
+  // Создаем OpenRouter клиент
+  const openRouter = createOpenRouterClient();
+  if (!openRouter) {
+    console.warn('⚠️ [VIDEO FILTER] OpenRouter клиент не инициализирован. Возвращаем все видео.');
     return videos.map((_, index) => index + 1);
   }
 
   try {
-         // Prepare video data for GPT
-     const videoData = videos.map((video, index) => ({
-       id: index + 1, // Simple number starting from 1
-       title: video.title,
-       description: video.description,
-       videoId: video.videoId
-     }));
+    // Prepare video data for LLM
+    const videoData = videos.map((video, index) => ({
+      id: index + 1, // Simple number starting from 1
+      title: video.title,
+      description: video.description,
+      videoId: video.videoId
+    }));
 
-    console.log(`📋 [VIDEO FILTER] Video data to send to GPT:`);
+    console.log(`📋 [VIDEO FILTER] Video data to send to LLM:`);
     console.log(JSON.stringify(videoData, null, 2));
 
-    // Create prompt for GPT
+    // Create prompt for LLM
     const prompt = `You are a video relevance filter. Your task is to analyze a list of YouTube videos. Each video has an id (number), a title, a description, and a videoId. The goal is to return an array of ids of the most relevant videos based on the user query.
 
 If the query is narrow or niche, return fewer ids (around 1–10). If the query is broad, return more (up to 30). Use your judgment to balance relevance and completeness. Ignore duplicate content — the list is already deduplicated.
@@ -58,32 +55,55 @@ User query: "${userQuery}"
 Videos to analyze:
 ${JSON.stringify(videoData, null, 2)}`;
 
-    console.log(`📝 [VIDEO FILTER] Sending request to GPT...`);
+    console.log(`📝 [VIDEO FILTER] Sending request to OpenRouter...`);
 
-    // Call GPT
-    const completion = await openai.chat.completions.create({
-      model: "gpt-3.5-turbo",
-      messages: [
-        {
-          role: "user",
-          content: prompt
-        }
-      ],
-      temperature: 0.3,
-      max_tokens: 1000
+    // Call OpenRouter API
+    const response = await fetch('https://openrouter.ai/api/v1/chat/completions', {
+      method: 'POST',
+      headers: {
+        'Authorization': `Bearer ${openRouter.apiKey}`,
+        'HTTP-Referer': 'http://localhost:3000',
+        'X-Title': 'YouTube Searcher',
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({
+        model: model,
+        messages: [
+          {
+            role: "user",
+            content: prompt
+          }
+        ],
+        temperature: 0.3,
+        max_tokens: 1000
+      })
     });
 
-    const gptResponse = completion.choices[0].message.content;
-    console.log(`✅ [VIDEO FILTER] GPT response received:`);
-    console.log(gptResponse);
+    if (!response.ok) {
+      const errorData = await response.json();
+      throw new Error(`OpenRouter API error: ${errorData.error?.message || response.statusText}`);
+    }
 
-    // Parse JSON response
+    const completion = await response.json();
+    const llmResponse = completion.choices[0].message.content;
+    console.log(`✅ [VIDEO FILTER] OpenRouter response received:`);
+    console.log(llmResponse);
+
+    // Parse JSON response - очищаем от markdown разметки
     let relevantIds;
     try {
-      relevantIds = JSON.parse(gptResponse);
+      // Убираем markdown разметку (```json, ```, и т.д.)
+      const cleanedResponse = llmResponse
+        .replace(/```json\s*/g, '')
+        .replace(/```\s*/g, '')
+        .trim();
+      
+      console.log(`🧹 [VIDEO FILTER] Cleaned response:`, cleanedResponse);
+      
+      relevantIds = JSON.parse(cleanedResponse);
       
       if (!Array.isArray(relevantIds)) {
-        console.error(`❌ [VIDEO FILTER] GPT returned non-array response:`, relevantIds);
+        console.error(`❌ [VIDEO FILTER] LLM returned non-array response:`, relevantIds);
         return [];
       }
 
@@ -93,13 +113,13 @@ ${JSON.stringify(videoData, null, 2)}`;
       return relevantIds;
 
     } catch (parseError) {
-      console.error(`❌ [VIDEO FILTER] Failed to parse GPT response as JSON:`, parseError);
-      console.error(`📄 [VIDEO FILTER] Raw response:`, gptResponse);
+      console.error(`❌ [VIDEO FILTER] Failed to parse LLM response as JSON:`, parseError);
+      console.error(`📄 [VIDEO FILTER] Raw response:`, llmResponse);
       return [];
     }
 
   } catch (error) {
-    console.error(`❌ [VIDEO FILTER] Error during GPT filtering:`, error);
+    console.error(`❌ [VIDEO FILTER] Error during OpenRouter filtering:`, error);
     console.error(`🔍 [VIDEO FILTER] Error details:`, {
       name: error.name,
       message: error.message,

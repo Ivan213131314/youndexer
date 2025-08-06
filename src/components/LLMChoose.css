@@ -1,0 +1,132 @@
+.llm-choose {
+    background: #ffffff;
+    border: 1px solid #e1e5e9;
+    border-radius: 8px;
+    padding: 16px;
+    margin-bottom: 16px;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+  }
+  
+  .llm-header {
+    margin-bottom: 16px;
+  }
+  
+  .llm-header h3 {
+    margin: 0 0 8px 0;
+    font-size: 16px;
+    font-weight: 600;
+    color: #2c3e50;
+  }
+  
+  .llm-description {
+    margin: 0;
+    font-size: 14px;
+    color: #6c757d;
+    line-height: 1.4;
+  }
+  
+  .llm-selector {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    margin-bottom: 16px;
+  }
+  
+  .llm-label {
+    font-size: 14px;
+    font-weight: 500;
+    color: #495057;
+    white-space: nowrap;
+  }
+  
+  .llm-select {
+    flex: 1;
+    padding: 8px 12px;
+    border: 1px solid #ced4da;
+    border-radius: 6px;
+    font-size: 14px;
+    background: #ffffff;
+    color: #495057;
+    cursor: pointer;
+    transition: border-color 0.2s ease, box-shadow 0.2s ease;
+  }
+  
+  .llm-select:focus {
+    outline: none;
+    border-color: #007bff;
+    box-shadow: 0 0 0 2px rgba(0, 123, 255, 0.25);
+  }
+  
+  .llm-select:hover {
+    border-color: #adb5bd;
+  }
+  
+  .model-info {
+    background: #f8f9fa;
+    border: 1px solid #e9ecef;
+    border-radius: 6px;
+    padding: 12px;
+  }
+  
+  .model-details {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+  }
+  
+  .model-name {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+  }
+  
+  .model-name strong {
+    font-size: 16px;
+    color: #2c3e50;
+  }
+  
+  .model-provider {
+    font-size: 12px;
+    color: #6c757d;
+    background: #e9ecef;
+    padding: 2px 6px;
+    border-radius: 4px;
+  }
+  
+  .model-description {
+    font-size: 14px;
+    color: #495057;
+    line-height: 1.4;
+  }
+  
+  .model-stats {
+    display: flex;
+    gap: 16px;
+    font-size: 12px;
+  }
+  
+  .model-price,
+  .model-speed {
+    display: flex;
+    align-items: center;
+    gap: 4px;
+    color: #6c757d;
+  }
+  
+  /* Responsive design */
+  @media (max-width: 768px) {
+    .llm-selector {
+      flex-direction: column;
+      align-items: stretch;
+      gap: 8px;
+    }
+    
+    .llm-label {
+      text-align: left;
+    }
+    
+    .model-stats {
+      flex-direction: column;
+      gap: 8px;
+    }
+  }

@@ -1,8 +1,8 @@
-import React, { useState } from 'react';
-import OpenAI from 'openai';
+import React, { useState, useEffect } from 'react';
 import { fetchVideosByPhrase, searchVideosWithPhrases, addTranscriptsToVideos } from './ytSearchModule';
 import { filterVideosWithGPT, getFilteredVideos } from './videoFilter';
 import TranscriptSummary from './TranscriptSummary';
+import LLMChoose from './components/LLMChoose';
 import History from './history/History';
 import ChannelParsing from './channel-parsing/ChannelParsing';
 import VideoItem from './components/VideoItem';
@@ -24,11 +24,11 @@ function AppContent() {
   const [isResizing, setIsResizing] = useState(false);
   const [leftColumnWidth, setLeftColumnWidth] = useState(50); // процент от общей ширины
   const [currentPage, setCurrentPage] = useState('main'); // 'main', 'history', или 'channel-parsing'
+  const [selectedModel, setSelectedModel] = useState('openai/gpt-4o'); // выбранная LLM модель
 
-  const openai = new OpenAI({
-    apiKey: process.env.REACT_APP_OPENAI_API_KEY,
-    dangerouslyAllowBrowser: true // Only for development - use backend in production
-  });
+
+
+
 
   const handleSearch = async () => {
     if (!query.trim()) {
@@ -77,9 +77,9 @@ function AppContent() {
                });
              }
 
-             // Step 2: Filter videos with GPT
+             // Step 2: Filter videos with GPT (всегда используем GPT модель)
              console.log(`\n🤖 [APP] Starting GPT filtering...`);
-             const relevantIds = await filterVideosWithGPT(allVideos, query);
+             const relevantIds = await filterVideosWithGPT(allVideos, query, 'openai/gpt-4o');
              
              if (relevantIds.length > 0) {
                const filteredVideos = getFilteredVideos(allVideos, relevantIds);
@@ -90,14 +90,32 @@ function AppContent() {
                
                // Step 3: Get transcripts for filtered videos
                console.log(`\n📝 [APP] Getting transcripts for ${filteredVideos.length} filtered videos...`);
-               const videosWithTranscripts = await addTranscriptsToVideos(filteredVideos);
+               
+               // Сначала отображаем видео без transcriptов
+               setSearchResults(filteredVideos.map(video => ({
+                 ...video,
+                 transcript: null,
+                 // Убеждаемся что есть все необходимые поля
+                 thumbnail: video.thumbnail || `https://img.youtube.com/vi/${video.videoId}/default.jpg`,
+                 url: video.url || `https://www.youtube.com/watch?v=${video.videoId}`,
+                 author: video.author || video.channelTitle || 'Unknown Channel',
+                 duration: video.duration || 'N/A',
+                 views: video.views || 'N/A',
+                 publishedAt: video.publishedAt || 'N/A'
+               })));
+               
+               // Затем получаем transcriptы инкрементально
+               const videosWithTranscripts = await addTranscriptsToVideos(filteredVideos, (updatedVideos) => {
+                 // Callback для обновления состояния при получении каждого transcript
+                 setSearchResults(updatedVideos);
+               });
                
                console.log(`\n📊 [APP] Final Results with Transcripts:`);
                console.log(`- Videos with transcripts: ${videosWithTranscripts.filter(v => v.transcript).length}`);
                console.log(`- Videos without transcripts: ${videosWithTranscripts.filter(v => !v.transcript).length}`);
                console.log(`\n🎬 [APP] Complete video objects with transcripts:`, videosWithTranscripts);
                
-               // Сохраняем результаты для отображения
+               // Финальное обновление состояния
                setSearchResults(videosWithTranscripts);
              } else {
                console.log(`\n⚠️ [APP] GPT filtering failed or returned no results`);
@@ -231,6 +249,14 @@ function AppContent() {
             </div>
           </div>
 
+          {/* LLM Model Selector */}
+          <div className="llm-selector-section">
+            <LLMChoose 
+              selectedModel={selectedModel}
+              onModelChange={setSelectedModel}
+            />
+          </div>
+
           {/* Основной контент с двумя колонками */}
           <div 
             className="main-content"
@@ -252,6 +278,7 @@ function AppContent() {
                 videos={searchResults}
                 userQuery={query}
                 onSummaryComplete={handleSummaryComplete}
+                selectedModel={selectedModel}
               />
             )}
 

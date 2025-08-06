@@ -2,24 +2,19 @@
 require('dotenv').config();
 
 const { Supadata } = require('@supadata/js');
-const OpenAI = require('openai');
 
 // Initialize the clients
 const supadata = new Supadata({
     apiKey: 'sd_cf39c3a6069af680097faf6f996b8c16'
 });
 
-// Проверяем наличие OpenAI API ключа
-const openaiApiKey = process.env.OPENAI_API_KEY || process.env.REACT_APP_OPENAI_API_KEY;
-if (!openaiApiKey || openaiApiKey === 'your-openai-api-key-here') {
-    console.error('❌ Ошибка: Не установлен OPENAI_API_KEY или REACT_APP_OPENAI_API_KEY в переменных окружения');
-    console.error('📝 Создайте файл .env с вашим OpenAI API ключом');
+// Проверяем наличие OpenRouter API ключа
+const openRouterApiKey = process.env.REACT_APP_OPEN_ROUTER_API_KEY;
+if (!openRouterApiKey) {
+    console.error('❌ Ошибка: Не установлен REACT_APP_OPEN_ROUTER_API_KEY в переменных окружения');
+    console.error('📝 Создайте файл .env с вашим OpenRouter API ключом');
     process.exit(1);
 }
-
-const openai = new OpenAI({
-    apiKey: openaiApiKey
-});
 
 /**
  * Получает результаты batch job из Supadata, извлекает transcript поля
@@ -83,52 +78,59 @@ async function getTranscriptSummary(jobId, userQuery) {
         // Объединяем все transcript в один текст
         const combinedTranscripts = transcripts.join('\n\n---\n\n');
         
-        console.log('🤖 Отправляем в OpenAI для создания резюме...');
+        console.log('🤖 Отправляем в OpenRouter для создания резюме...');
         
-        // Формируем запрос для ChatGPT
+        // Формируем запрос для LLM
         const systemPrompt = 'Ты - эксперт по анализу видео контента. Создавай краткие и информативные резюме на основе транскриптов видео.';
         const userPrompt = `Запрос: ${userQuery}\n\nТранскрипты:\n${combinedTranscripts}`;
         
-        console.log('📤 [OPENAI] System Prompt:');
+        console.log('📤 [OPENROUTER] System Prompt:');
         console.log('='.repeat(80));
         console.log(systemPrompt);
         console.log('='.repeat(80));
-        console.log('\n📤 [OPENAI] User Prompt (ПОЛНЫЙ ЗАПРОС):');
+        console.log('\n📤 [OPENROUTER] User Prompt (ПОЛНЫЙ ЗАПРОС):');
         console.log('='.repeat(80));
         console.log(userPrompt);
         console.log('='.repeat(80));
-        console.log(`\n📊 [OPENAI] Общая длина запроса: ${userPrompt.length} символов`);
+        console.log(`\n📊 [OPENROUTER] Общая длина запроса: ${userPrompt.length} символов`);
         
-        // Отправляем в OpenAI для создания резюме
-        const requestConfig = {
-            model: 'gpt-4o',
-            messages: [
-                {
-                    role: 'system',
-                    content: systemPrompt
-                },
-                {
-                    role: 'user',
-                    content: userPrompt
-                }
-            ],
-            max_tokens: 2000,
-            temperature: 0.7
-        };
-        
-        console.log('⚙️ [OPENAI] Параметры запроса:');
-        console.log(`   - Model: ${requestConfig.model}`);
-        console.log(`   - Max tokens: ${requestConfig.max_tokens}`);
-        console.log(`   - Temperature: ${requestConfig.temperature}`);
-        console.log(`   - Messages count: ${requestConfig.messages.length}`);
-        
-        const completion = await openai.chat.completions.create(requestConfig);
-        
+        // Отправляем в OpenRouter для создания резюме
+        const response = await fetch('https://openrouter.ai/api/v1/chat/completions', {
+            method: 'POST',
+            headers: {
+                'Authorization': `Bearer ${openRouterApiKey}`,
+                'HTTP-Referer': 'http://localhost:3001',
+                'X-Title': 'YouTube Searcher',
+                'Content-Type': 'application/json',
+            },
+            body: JSON.stringify({
+                model: 'openai/gpt-4o',
+                messages: [
+                    {
+                        role: 'system',
+                        content: systemPrompt
+                    },
+                    {
+                        role: 'user',
+                        content: userPrompt
+                    }
+                ],
+                max_tokens: 2000,
+                temperature: 0.7
+            })
+        });
+
+        if (!response.ok) {
+            const errorData = await response.json();
+            throw new Error(`OpenRouter API error: ${errorData.error?.message || response.statusText}`);
+        }
+
+        const completion = await response.json();
         const summary = completion.choices[0].message.content;
         console.log('✅ Резюме создано успешно!');
-        console.log('📥 [OPENAI] Ответ от ChatGPT:');
+        console.log('📥 [OPENROUTER] Ответ от LLM:');
         console.log(summary);
-        console.log(`📊 [OPENAI] Длина ответа: ${summary.length} символов`);
+        console.log(`📊 [OPENROUTER] Длина ответа: ${summary.length} символов`);
         
         return {
             summary,
