@@ -31,9 +31,13 @@ export const parseChannel = async (channelUrl) => {
 };
 
 const transformChannelData = (channel) => {
-  return {
+  console.log(`🔍 [CHANNEL SERVICE] Raw channel data:`, channel);
+  console.log(`🔍 [CHANNEL SERVICE] Channel name:`, channel.name);
+  console.log(`🔍 [CHANNEL SERVICE] Channel id:`, channel.id);
+  
+  const transformed = {
     channelId: channel.id,
-    channelName: channel.title,
+    channelName: channel.name,
     subscriberCount: channel.subscriberCount,
     videoCount: channel.videoCount,
     description: channel.description,
@@ -47,6 +51,9 @@ const transformChannelData = (channel) => {
       thumbnail: video.thumbnail
     })) || []
   };
+  
+  console.log(`🔍 [CHANNEL SERVICE] Transformed data:`, transformed);
+  return transformed;
 };
 
 const formatViews = (views) => {

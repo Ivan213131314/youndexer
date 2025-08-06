@@ -93,29 +93,48 @@ function ChannelParsing({ onBackToMain }) {
         <div className="channel-results">
           {parsingResults ? (
             <div className="results-section">
-              <div className="channel-info">
-                <h2>📺 Информация о канале</h2>
-                <div className="channel-details">
-                  <div className="detail-item">
-                    <span className="detail-label">Название канала:</span>
-                    <span className="detail-value">{parsingResults.channelName}</span>
-                  </div>
-                  <div className="detail-item">
-                    <span className="detail-label">Подписчики:</span>
-                    <span className="detail-value">{parsingResults.subscriberCount?.toLocaleString() || 'N/A'}</span>
-                  </div>
-                  <div className="detail-item">
-                    <span className="detail-label">Количество видео:</span>
-                    <span className="detail-value">{parsingResults.videoCount}</span>
-                  </div>
-                  {parsingResults.description && (
-                    <div className="detail-item">
-                      <span className="detail-label">Описание:</span>
-                      <span className="detail-value description">{parsingResults.description}</span>
-                    </div>
-                  )}
-                </div>
-              </div>
+                             <div className="channel-info">
+                 <div className="channel-info-header">
+                   <h2>📺 Информация о канале</h2>
+                 </div>
+                 <div className="channel-info-content">
+                   <div className="channel-details">
+                     <div className="detail-item">
+                       <span className="detail-label">Название канала:</span>
+                       <span className="detail-value">{parsingResults.channelName || 'Не найдено'}</span>
+                     </div>
+                     <div className="detail-item">
+                       <span className="detail-label">Подписчики:</span>
+                       <span className="detail-value">{parsingResults.subscriberCount?.toLocaleString() || 'N/A'}</span>
+                     </div>
+                     <div className="detail-item">
+                       <span className="detail-label">Количество видео:</span>
+                       <span className="detail-value">{parsingResults.videoCount}</span>
+                     </div>
+                     {parsingResults.description && (
+                       <div className="detail-item">
+                         <span className="detail-label">Описание:</span>
+                         <span className="detail-value description">{parsingResults.description}</span>
+                       </div>
+                     )}
+                   </div>
+                   <div className="channel-actions">
+                     <button className="get-videos-button">
+                       Получить видео
+                     </button>
+                     <div className="video-count-selector">
+                       <label htmlFor="videoCount">Количество видео:</label>
+                       <select id="videoCount" className="video-count-select">
+                         <option value="10">10</option>
+                         <option value="25">25</option>
+                         <option value="50">50</option>
+                         <option value="100">100</option>
+                         <option value="200">200</option>
+                       </select>
+                     </div>
+                   </div>
+                 </div>
+               </div>
 
               <div className="videos-section">
                 <h2>📋 Список видео ({parsingResults.videos.length})</h2>
