@@ -1,7 +1,10 @@
 import {
   Supadata,
-  YoutubeChannel
+  YoutubeChannel,
+  VideoIds
 } from '@supadata/js';
+import { getVideoTranscript } from '../supadata-client';
+
 const apiKeySupadata = "sd_cf39c3a6069af680097faf6f996b8c16";
 // Initialize the client
 const supadata = new Supadata({
@@ -64,6 +67,91 @@ const formatViews = (views) => {
     return `${(views / 1000).toFixed(1)}K`;
   }
   return views.toString();
+};
+
+export const getChannelVideos = async (channelUrl, limit) => {
+  console.log(`🔍 [CHANNEL SERVICE] Getting videos for channel: ${channelUrl} with limit: ${limit}`);
+  
+  try {
+    console.log(`📺 [CHANNEL SERVICE] Using Supadata to fetch channel videos`);
+    
+    // Use Supadata to get channel videos with limit
+    const channelVideos = await supadata.youtube.channel.videos({
+      id: channelUrl, // can be url, channel id, handle
+      type: 'all', // 'video', 'short', 'live', 'all'
+      limit: limit,
+    });
+    
+    console.log(`✅ [CHANNEL SERVICE] Channel videos received:`, channelVideos);
+    
+    // Transform Supadata response to our format
+    return transformChannelVideosData(channelVideos);
+    
+  } catch (error) {
+    console.error('❌ [CHANNEL SERVICE] Error getting channel videos:', error);
+    throw new Error(`Failed to get channel videos: ${error.message}`);
+  }
+};
+
+const transformChannelVideosData = async (channelVideos) => {
+  console.log(`🔍 [CHANNEL SERVICE] Raw channel videos data:`, channelVideos);
+  
+  // API возвращает videoIds (массив ID), а не videos (массив объектов)
+  const videoIds = channelVideos.videoIds || [];
+  
+  console.log(`📝 [CHANNEL SERVICE] Getting transcripts for ${videoIds.length} videos...`);
+  
+  // Получаем транскрипции для каждого видео
+  const videosWithTranscripts = [];
+  
+  for (let i = 0; i < videoIds.length; i++) {
+    const videoId = videoIds[i];
+    console.log(`📝 [CHANNEL SERVICE] Processing video ${i + 1}/${videoIds.length}: ${videoId}`);
+    
+    try {
+      // Получаем транскрипцию для видео
+      const transcript = await getVideoTranscript(videoId);
+      
+      videosWithTranscripts.push({
+        id: videoId,
+        title: `Video ${videoId}`, // Временное название, так как у нас нет полных данных
+        url: `https://youtube.com/watch?v=${videoId}`,
+        views: 'N/A', // Нет данных о просмотрах
+        publishedAt: 'N/A', // Нет данных о дате
+        duration: 'N/A', // Нет данных о длительности
+        thumbnail: `https://img.youtube.com/vi/${videoId}/default.jpg`, // Дефолтная превью
+        description: 'N/A', // Нет описания
+        transcript: transcript?.text || null // Добавляем транскрипцию
+      });
+      
+      // Небольшая задержка между запросами
+      if (i < videoIds.length - 1) {
+        await new Promise(resolve => setTimeout(resolve, 100));
+      }
+      
+    } catch (error) {
+      console.error(`❌ [CHANNEL SERVICE] Error getting transcript for video ${videoId}:`, error);
+      videosWithTranscripts.push({
+        id: videoId,
+        title: `Video ${videoId}`,
+        url: `https://youtube.com/watch?v=${videoId}`,
+        views: 'N/A',
+        publishedAt: 'N/A',
+        duration: 'N/A',
+        thumbnail: `https://img.youtube.com/vi/${videoId}/default.jpg`,
+        description: 'N/A',
+        transcript: null
+      });
+    }
+  }
+  
+  const transformed = {
+    videos: videosWithTranscripts,
+    totalCount: videoIds.length
+  };
+  
+  console.log(`🔍 [CHANNEL SERVICE] Transformed videos data with transcripts:`, transformed);
+  return transformed;
 };
 
 export const validateChannelUrl = (url) => {
