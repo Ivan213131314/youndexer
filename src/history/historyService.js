@@ -1,4 +1,4 @@
-import { collection, addDoc, getDocs, query, orderBy, limit, doc, getDoc } from 'firebase/firestore';
+import { collection, addDoc, getDocs, query, orderBy, limit, doc, getDoc, deleteDoc, writeBatch } from 'firebase/firestore';
 import { db } from '../firebase';
 
 // Сохранение результатов поиска в историю
@@ -96,6 +96,47 @@ export const getHistoryItem = async (historyId) => {
     }
   } catch (error) {
     console.error('❌ [HISTORY] Error getting history item:', error);
+    throw error;
+  }
+};
+
+// Удаление записи из истории
+export const deleteHistoryItem = async (historyId) => {
+  try {
+    const docRef = doc(db, 'searchHistory', historyId);
+    await deleteDoc(docRef);
+    console.log('✅ [HISTORY] History item deleted:', historyId);
+    return true;
+  } catch (error) {
+    console.error('❌ [HISTORY] Error deleting history item:', error);
+    throw error;
+  }
+};
+
+// Удаление всей истории
+export const deleteAllHistory = async () => {
+  try {
+    const q = query(collection(db, 'searchHistory'));
+    const querySnapshot = await getDocs(q);
+    
+    if (querySnapshot.empty) {
+      console.log('✅ [HISTORY] No history items to delete');
+      return 0;
+    }
+
+    const batch = writeBatch(db);
+    let deletedCount = 0;
+
+    querySnapshot.forEach((doc) => {
+      batch.delete(doc.ref);
+      deletedCount++;
+    });
+
+    await batch.commit();
+    console.log(`✅ [HISTORY] Deleted ${deletedCount} history items`);
+    return deletedCount;
+  } catch (error) {
+    console.error('❌ [HISTORY] Error deleting all history:', error);
     throw error;
   }
 };

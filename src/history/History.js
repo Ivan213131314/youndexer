@@ -2,9 +2,10 @@ import React, { useState } from 'react';
 import html2canvas from 'html2canvas';
 import { jsPDF } from 'jspdf';
 import { Document, Packer, Paragraph, TextRun, HeadingLevel } from 'docx';
-import { useSearchHistory, useHistoryItem } from './historyHooks';
+import { useSearchHistory, useHistoryItem, useDeleteHistoryItem, useDeleteAllHistory, clearHistoryCache } from './historyHooks';
 import { formatHistoryDate, truncateQuery, hasSummary, hasSearchResults, getHistoryStats } from './historyUtils';
 import TranscriptSummary from '../TranscriptSummary';
+import VideoItem from '../components/VideoItem';
 import './History.css';
 
 
@@ -13,6 +14,8 @@ const History = ({ onBackToMain }) => {
   const { history, loading, error, refreshHistory } = useSearchHistory();
   const [selectedHistoryId, setSelectedHistoryId] = useState(null);
   const { historyItem, loading: itemLoading } = useHistoryItem(selectedHistoryId);
+  const { deleteItem, deleting } = useDeleteHistoryItem();
+  const { deleteAll, deletingAll } = useDeleteAllHistory();
   const [isResizing, setIsResizing] = useState(false);
   const [leftColumnWidth, setLeftColumnWidth] = useState(50);
 
@@ -46,8 +49,38 @@ const History = ({ onBackToMain }) => {
     setIsResizing(false);
   };
 
+  const handleDeleteItem = async (historyId, event) => {
+    event.stopPropagation(); // Предотвращаем открытие детального вида
+    
+    if (window.confirm('Вы уверены, что хотите удалить эту запись из истории?')) {
+      const success = await deleteItem(historyId);
+      if (success) {
+        // Если удаляемый элемент был выбран, закрываем детальный вид
+        if (selectedHistoryId === historyId) {
+          setSelectedHistoryId(null);
+        }
+        // Обновляем список истории
+        refreshHistory();
+      }
+    }
+  };
+
+  const handleDeleteAllHistory = async () => {
+    if (window.confirm('Вы уверены, что хотите удалить ВСЮ историю поиска? Это действие нельзя отменить!')) {
+      const deletedCount = await deleteAll();
+      if (deletedCount > 0) {
+        // Закрываем детальный вид если он открыт
+        setSelectedHistoryId(null);
+        // Обновляем список истории
+        refreshHistory();
+      }
+    }
+  };
+
   const handleSummaryComplete = (summaryResult) => {
     console.log('🎉 [HISTORY] Summary completed:', summaryResult);
+    // Очищаем кэш при создании нового summary, чтобы убрать устаревшие данные
+    clearHistoryCache();
     // Обновляем историю после создания нового summary
     refreshHistory();
   };
@@ -284,6 +317,16 @@ ${historyItem.summaryData.summary}`;
           ← Назад к поиску
         </button>
         <h1>История поиска</h1>
+        {history.length > 0 && (
+          <button 
+            className="delete-all-button"
+            onClick={handleDeleteAllHistory}
+            disabled={deletingAll}
+            title="Удалить всю историю"
+          >
+            {deletingAll ? '🗑️ Удаляем...' : '🗑️ Удалить всю историю'}
+          </button>
+        )}
       </div>
 
       {selectedHistoryId ? (
@@ -299,13 +342,41 @@ ${historyItem.summaryData.summary}`;
             className="left-column"
             style={{ width: `${leftColumnWidth}%` }}
           >
-            <div className="summary-section">
-              <div className="history-item-header">
-                <h2>📋 Общий вывод</h2>
-                <button className="close-button" onClick={handleBackClick}>
-                  ✕
-                </button>
-              </div>
+                         <div className="summary-section">
+               <div className="history-item-header">
+                 <h2>📋 Общий вывод</h2>
+                 <div className="header-actions">
+                   {/* Кнопки скачивания для истории */}
+                   {hasSummary(historyItem) && (
+                     <div className="download-buttons">
+                       <button 
+                         className="download-button pdf-button"
+                         onClick={() => downloadSummaryAsPDF(historyItem)}
+                       >
+                         <span className="download-icon">📄</span>
+                         PDF
+                       </button>
+                       <button 
+                         className="download-button doc-button"
+                         onClick={() => downloadSummaryAsDOC(historyItem)}
+                       >
+                         <span className="download-icon">📝</span>
+                         DOC
+                       </button>
+                       <button 
+                         className="download-button txt-button"
+                         onClick={() => downloadSummaryAsTXT(historyItem)}
+                       >
+                         <span className="download-icon">📄</span>
+                         TXT
+                       </button>
+                     </div>
+                   )}
+                   <button className="close-button" onClick={handleBackClick}>
+                     ✕
+                   </button>
+                 </div>
+               </div>
               
               {itemLoading ? (
                 <div className="loading-message">Загрузка данных...</div>
@@ -346,35 +417,8 @@ ${historyItem.summaryData.summary}`;
                             <p key={index}>{line}</p>
                           ))}
                         </div>
-                      </div>
-
-                      {/* Кнопки скачивания для истории */}
-                      <div className="download-section">
-                        <div className="download-buttons">
-                          <button 
-                            className="download-button pdf-button"
-                            onClick={() => downloadSummaryAsPDF(historyItem)}
-                          >
-                            <span className="download-icon">📄</span>
-                            Скачать PDF
-                          </button>
-                                                     <button 
-                             className="download-button doc-button"
-                             onClick={() => downloadSummaryAsDOC(historyItem)}
-                           >
-                             <span className="download-icon">📝</span>
-                             Скачать DOC
-                           </button>
-                           <button 
-                             className="download-button txt-button"
-                             onClick={() => downloadSummaryAsTXT(historyItem)}
-                           >
-                             <span className="download-icon">📄</span>
-                             Скачать TXT
-                           </button>
-                        </div>
-                      </div>
-                    </div>
+                                             </div>
+                     </div>
                   )}
 
                   {/* Если нет ни summary, ни результатов */}
@@ -403,24 +447,12 @@ ${historyItem.summaryData.summary}`;
               
               {itemLoading ? (
                 <div className="loading-message">Загрузка видео...</div>
-              ) : historyItem && hasSearchResults(historyItem) ? (
-                <div className="videos-list">
-                  {historyItem.searchResults.map((video, index) => (
-                    <div key={index} className="video-item">
-                      <h4>{video.title}</h4>
-                      <p>Канал: {video.author}</p>
-                      <p>Длительность: {video.duration}</p>
-                      {video.transcript && (
-                        <details>
-                          <summary>► Показать transcript</summary>
-                          <div className="transcript-content">
-                            {typeof video.transcript === 'string' ? video.transcript : 'Transcript недоступен'}
-                          </div>
-                        </details>
-                      )}
-                    </div>
-                  ))}
-                </div>
+                             ) : historyItem && hasSearchResults(historyItem) ? (
+                 <div className="videos-list">
+                   {historyItem.searchResults.map((video, index) => (
+                     <VideoItem key={index} video={video} index={index} />
+                   ))}
+                 </div>
               ) : (
                 <div className="placeholder">
                   <p>Видео не найдены</p>
@@ -459,9 +491,17 @@ ${historyItem.summaryData.summary}`;
                         )}
                       </div>
                     </div>
-                    <div className="history-item-actions">
-                      <span className="checkmark">✓</span>
-                    </div>
+                                         <div className="history-item-actions">
+                       <button 
+                         className="delete-button"
+                         onClick={(e) => handleDeleteItem(item.id, e)}
+                         disabled={deleting}
+                         title="Удалить запись"
+                       >
+                         {deleting ? '🗑️' : '🗑️'}
+                       </button>
+                       <span className="checkmark">✓</span>
+                     </div>
                   </div>
                 </div>
               );
