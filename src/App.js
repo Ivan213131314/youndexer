@@ -765,7 +765,7 @@ function AppContent() {
                           <div className="channel-actions-top">
                             <div className="channel-header-left">
                               <h2>📺 Информация о {channelVideosResults && channelVideosResults.totalCount === 1 ? 'видео' : 'канале'}</h2>
-                              {(!channelVideosResults || channelVideosResults.totalCount > 1) && (
+                              {parsingResults && (
                                 <div className="channel-actions-right">
                                   <div className="video-count-selector">
                                     <label htmlFor="videoCount">Количество видео:</label>
