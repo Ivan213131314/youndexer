@@ -763,37 +763,51 @@ function AppContent() {
                         <div className="channel-info">
                           {/* Кнопки управления */}
                           <div className="channel-actions-top">
-                            <h2>📺 Информация о {channelVideosResults && channelVideosResults.totalCount === 1 ? 'видео' : 'канале'}</h2>
-                            {(!channelVideosResults || channelVideosResults.totalCount > 1) && (
-                              <div className="channel-actions-right">
-                                <div className="video-count-selector">
-                                  <label htmlFor="videoCount">Количество видео:</label>
-                                  <select 
-                                    id="videoCount" 
-                                    className="video-count-select"
-                                    value={selectedVideoCount}
-                                    onChange={(e) => setSelectedVideoCount(parseInt(e.target.value))}
+                            <div className="channel-header-left">
+                              <h2>📺 Информация о {channelVideosResults && channelVideosResults.totalCount === 1 ? 'видео' : 'канале'}</h2>
+                              {(!channelVideosResults || channelVideosResults.totalCount > 1) && (
+                                <div className="channel-actions-right">
+                                  <div className="video-count-selector">
+                                    <label htmlFor="videoCount">Количество видео:</label>
+                                    <select 
+                                      id="videoCount" 
+                                      className="video-count-select"
+                                      value={selectedVideoCount}
+                                      onChange={(e) => setSelectedVideoCount(parseInt(e.target.value))}
+                                    >
+                                      <option value="1">1</option>
+                                      <option value="5">5</option>
+                                      <option value="10">10</option>
+                                      <option value="15">15</option>
+                                      <option value="20">20</option>
+                                      <option value="25">25</option>
+                                      <option value="30">30</option>
+                                      <option value="35">35</option>
+                                      <option value="40">40</option>
+                                      <option value="45">45</option>
+                                      <option value="50">50</option>
+                                    </select>
+                                  </div>
+                                  <button 
+                                    className="get-videos-button"
+                                    onClick={handleGetVideos}
+                                    disabled={isLoadingVideos}
                                   >
-                                    <option value="1">1</option>
-                                    <option value="5">5</option>
-                                    <option value="10">10</option>
-                                    <option value="15">15</option>
-                                    <option value="20">20</option>
-                                    <option value="25">25</option>
-                                    <option value="30">30</option>
-                                    <option value="35">35</option>
-                                    <option value="40">40</option>
-                                    <option value="45">45</option>
-                                    <option value="50">50</option>
-                                  </select>
+                                    {isLoadingVideos ? 'Получение...' : 'Получить видео'}
+                                  </button>
                                 </div>
-                                <button 
-                                  className="get-videos-button"
-                                  onClick={handleGetVideos}
-                                  disabled={isLoadingVideos}
-                                >
-                                  {isLoadingVideos ? 'Получение...' : 'Получить видео'}
-                                </button>
+                              )}
+                            </div>
+                            {/* Channel Thumbnail */}
+                            {parsingResults.channelThumbnail && (
+                              <div className="channel-thumbnail-preview-container">
+                                <img 
+                                  src={parsingResults.channelThumbnail} 
+                                  alt={`${parsingResults.channelName} thumbnail`}
+                                  className="channel-thumbnail-preview"
+                                  onLoad={() => console.log('✅ [CHANNEL] Thumbnail loaded successfully')}
+                                  onError={(e) => console.error('❌ [CHANNEL] Failed to load thumbnail:', e.target.src)}
+                                />
                               </div>
                             )}
                           </div>

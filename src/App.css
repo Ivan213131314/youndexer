@@ -170,7 +170,7 @@ body {
 .channel-actions-top {
   display: flex;
   justify-content: space-between;
-  align-items: center;
+  align-items: flex-start;
   margin-bottom: 1.5rem;
   flex-wrap: wrap;
   gap: 1rem;
@@ -644,5 +644,44 @@ body {
   
   .video-item h4 {
     font-size: 1rem;
+  }
+}
+
+/* Стили для thumbnail (аватарки) канала */
+.channel-thumbnail-preview-container {
+  flex-shrink: 0;
+}
+
+.channel-thumbnail-preview {
+  width: 80px;
+  height: 80px;
+  border-radius: 50%;
+  object-fit: cover;
+  border: 3px solid #e8f0fe;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+}
+
+.channel-header-left {
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+}
+
+/* Responsive стили для thumbnail */
+@media (max-width: 768px) {
+  .channel-actions-top {
+    flex-direction: column;
+    align-items: center;
+    text-align: center;
+  }
+  
+  .channel-thumbnail-preview {
+    width: 100px;
+    height: 100px;
+  }
+  
+  .channel-header-left {
+    align-items: center;
+    text-align: center;
   }
 }

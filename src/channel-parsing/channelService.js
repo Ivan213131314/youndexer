@@ -37,6 +37,8 @@ const transformChannelData = (channel) => {
   console.log(`🔍 [CHANNEL SERVICE] Raw channel data:`, channel);
   console.log(`🔍 [CHANNEL SERVICE] Channel name:`, channel.name);
   console.log(`🔍 [CHANNEL SERVICE] Channel id:`, channel.id);
+  console.log(`🔍 [CHANNEL SERVICE] Channel thumbnail:`, channel.thumbnail);
+  console.log(`🔍 [CHANNEL SERVICE] Channel banner:`, channel.banner);
   
   const transformed = {
     channelId: channel.id,
@@ -44,6 +46,8 @@ const transformChannelData = (channel) => {
     subscriberCount: channel.subscriberCount,
     videoCount: channel.videoCount,
     description: channel.description,
+    channelThumbnail: channel.thumbnail || null,
+    channelBanner: channel.banner || null,
     videos: channel.videos?.map(video => ({
       id: video.id,
       title: video.title,
