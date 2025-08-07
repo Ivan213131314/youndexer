@@ -319,24 +319,20 @@
 /* Основной контент */
 .main-content {
   display: flex;
-  gap: 20px;
+  gap: 8px;
   min-height: 600px;
 }
 
 .left-column {
   background: white;
   border-radius: 12px;
-  padding: 25px;
-  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.08);
-  border: 1px solid #e8eaed;
+  padding: 25px 0 25px 25px;
 }
 
 .right-column {
   background: white;
   border-radius: 12px;
-  padding: 25px;
-  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.08);
-  border: 1px solid #e8eaed;
+  padding: 25px 25px 25px 0;
   flex: 1;
 }
 
@@ -363,11 +359,11 @@
 
 /* Разделитель колонок */
 .column-resizer {
-  width: 4px;
+  width: 2px;
   background: #e8eaed;
   cursor: col-resize;
   transition: background-color 0.2s ease;
-  border-radius: 2px;
+  border-radius: 1px;
 }
 
 .column-resizer:hover {

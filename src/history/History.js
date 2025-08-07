@@ -17,7 +17,7 @@ const History = ({ onBackToMain }) => {
   const { deleteItem, deleting } = useDeleteHistoryItem();
   const { deleteAll, deletingAll } = useDeleteAllHistory();
   const [isResizing, setIsResizing] = useState(false);
-  const [leftColumnWidth, setLeftColumnWidth] = useState(50);
+  const [leftColumnWidth, setLeftColumnWidth] = useState(70);
 
   const handleHistoryItemClick = (historyId) => {
     setSelectedHistoryId(historyId);
