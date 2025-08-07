@@ -149,26 +149,6 @@ function AppContent() {
     setSummaryData(null);
     
     try {
-      // Проверяем, является ли запрос YouTube URL
-      const videoId = extractVideoId(query);
-      
-      if (videoId) {
-        // Это YouTube URL - показываем ошибку и предлагаем переключиться в режим parsing
-        console.log(`\n🎯 [APP] YouTube URL detected in request mode, showing error`);
-        setChannelError('Change mode to "Parsing video or channel" in order to parse URL');
-        setIsLoading(false);
-        return;
-      }
-      
-      // Проверяем, является ли это ссылкой на канал
-      if (validateChannelUrl(query)) {
-        // Это канал - показываем ошибку и предлагаем переключиться в режим parsing
-        console.log(`\n📺 [APP] Channel URL detected in request mode, showing error`);
-        setChannelError('Change mode to "Parsing video or channel" in order to parse URL');
-        setIsLoading(false);
-        return;
-      }
-      
       // Обычный поиск по запросу
       console.log(`\n🔍 [APP] Regular search for query: "${query}"`);
       const allVideos = await searchVideosWithPhrases([query], videoSearchCountPerRequest);
@@ -588,52 +568,69 @@ function AppContent() {
           <div className="header">
             <h1 className="main-heading">YouTube Semantic Searcher</h1>
             <div className="search-box">
-              <div className="search-mode-toggle">
-                                 <button
-                   className={`toggle-button ${searchMode === 'request' ? 'active' : ''}`}
-                   onClick={() => {
-                     setSearchMode('request');
-                     setChannelError(null);
-                   }}
-                   disabled={isLoading}
-                 >
-                   Write your request
-                 </button>
-                 <button
-                   className={`toggle-button ${searchMode === 'parsing' ? 'active' : ''}`}
-                   onClick={() => {
-                     setSearchMode('parsing');
-                     setChannelError(null);
-                   }}
-                   disabled={isLoading}
-                 >
-                   Parsing video or channel
-                 </button>
+              <div className="search-input-group">
+                <div className="search-input-row">
+                  <input
+                    type="text"
+                    className="search-input"
+                    placeholder={searchMode === 'request' ? "Write your request..." : "Paste YouTube video or channel URL..."}
+                    value={searchMode === 'request' ? query : channelUrl}
+                                     onChange={(e) => {
+                       if (searchMode === 'request') {
+                         const newValue = e.target.value;
+                         setQuery(newValue);
+                         setChannelError(null); // Очищаем ошибку при изменении запроса
+                         
+                         // Проверяем, является ли введенное значение YouTube URL
+                         const videoId = extractVideoId(newValue);
+                         const isChannelUrl = validateChannelUrl(newValue);
+                         
+                         if (videoId || isChannelUrl) {
+                           // Автоматически переключаемся на режим parsing
+                           setSearchMode('parsing');
+                           setChannelUrl(newValue);
+                           setQuery(''); // Очищаем поле запроса
+                           console.log(`🔄 [APP] Auto-switched to parsing mode for URL: ${newValue}`);
+                         }
+                       } else {
+                         setChannelUrl(e.target.value);
+                         setChannelError(null); // Очищаем ошибку при изменении URL
+                       }
+                     }}
+                    onKeyPress={searchMode === 'request' ? handleKeyPress : handleChannelKeyPress}
+                    disabled={isLoading}
+                  />
+                  <button 
+                    className="search-button"
+                    onClick={searchMode === 'request' ? handleSearch : handleVideoOrChannelParse}
+                    disabled={isLoading}
+                  >
+                    {isLoading ? (searchMode === 'request' ? 'Searching...' : 'Parsing...') : (searchMode === 'request' ? 'Search' : 'Parse')}
+                  </button>
+                </div>
+                <div className="search-mode-toggle">
+                                   <button
+                     className={`toggle-button ${searchMode === 'request' ? 'active' : ''}`}
+                     onClick={() => {
+                       setSearchMode('request');
+                       setChannelError(null);
+                     }}
+                     disabled={isLoading}
+                   >
+                     Write your request
+                   </button>
+                   <button
+                     className={`toggle-button ${searchMode === 'parsing' ? 'active' : ''}`}
+                     onClick={() => {
+                       setSearchMode('parsing');
+                       setChannelError(null);
+                     }}
+                     disabled={isLoading}
+                   >
+                     Summorise video or channel
+                   </button>
+                </div>
               </div>
-              <input
-                type="text"
-                className="search-input"
-                placeholder={searchMode === 'request' ? "Write your request..." : "Paste YouTube video or channel URL..."}
-                value={searchMode === 'request' ? query : channelUrl}
-                                 onChange={(e) => {
-                   if (searchMode === 'request') {
-                     setQuery(e.target.value);
-                     setChannelError(null); // Очищаем ошибку при изменении запроса
-                   } else {
-                     setChannelUrl(e.target.value);
-                     setChannelError(null); // Очищаем ошибку при изменении URL
-                   }
-                 }}
-                onKeyPress={searchMode === 'request' ? handleKeyPress : handleChannelKeyPress}
-                disabled={isLoading}
-              />
-              <button 
-                className="search-button"
-                onClick={searchMode === 'request' ? handleSearch : handleVideoOrChannelParse}
-                disabled={isLoading}
-              >
-                {isLoading ? (searchMode === 'request' ? 'Searching...' : 'Parsing...') : (searchMode === 'request' ? 'Search' : 'Parse')}
-              </button>
             </div>
           </div>
 
