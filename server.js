@@ -514,19 +514,19 @@ app.post('/api/summarize-videos', async (req, res) => {
       });
     }
     
-    const prompt = `Based on the following YouTube video transcripts, create a comprehensive summary that answers the user's query: "${userQuery}"
+    const prompt = `Based on the following YouTube video transcripts, generate a clear and structured summary that directly answers the user's request:"${userQuery}"
 
-Videos and their transcripts:
-${allTranscripts}
-
-provide a detailed summary that:
-1. Directly addresses the user's query
-2. Highlights key points from the videos
-3. Identifies common themes or patterns
-4. Provides actionable insights or conclusions
-5. Use language that used user in his request
-
-Format the response in a clear, structured manner.`;
+Instructions for generating the summary:
+1. Start by answering the user’s query as directly as possible.
+2. Use only information from the transcripts. Do not invent or assume anything not found in the transcripts.
+3. Identify and include the most important points from each transcript that relate to the user’s query.
+4. If multiple transcripts discuss similar ideas or themes, highlight those recurring points.
+5. If applicable, provide practical conclusions, lessons, or recommendations based on the transcripts.
+6. Do not refer to the videos themselves (e.g., titles, URLs, creators, or platforms). Focus only on the content.
+7. Write in simple, natural English. Avoid overly formal or academic tone.
+8. Use formating the output with bullet points, emojis, or markdown. Use plain text and paragraphs only.
+Transciptions:
+${allTranscripts}`;
 
     // Отправляем запрос к OpenRouter API
     const response = await fetch('https://openrouter.ai/api/v1/chat/completions', {

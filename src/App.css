@@ -381,11 +381,39 @@ body {
   overflow: hidden;
 }
 
+.summary-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 1rem;
+}
+
+.summary-header .summary-button {
+  background: #1a73e8;
+  color: white;
+  border: none;
+  padding: 8px 16px;
+  border-radius: 6px;
+  font-size: 14px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.summary-header .summary-button:hover {
+  background: #1557b0;
+  transform: translateY(-1px);
+}
+
+.summary-header .summary-button:active {
+  transform: translateY(0);
+}
+
 .summary-section h2 {
   color: #202124;
   font-size: 1.5rem;
   font-weight: 500;
-  margin-bottom: 1.5rem;
+  margin: 0;
   padding-bottom: 0.5rem;
   border-bottom: 2px solid #4285f4;
 }

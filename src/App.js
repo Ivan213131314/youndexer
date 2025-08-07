@@ -15,7 +15,7 @@ import { AuthProvider, useAuth } from './auth/AuthContext';
 import { parseChannel, validateChannelUrl } from './channel-parsing/channelService';
 import './App.css';
 
-const videoSearchCountPerRequest = 4;
+const videoSearchCountPerRequest = 10;
 
 function AppContent() {
   const [query, setQuery] = useState('');
@@ -664,7 +664,24 @@ function AppContent() {
                 style={{ width: `${leftColumnWidth}%` }}
               >
                 <div className="summary-section">
-                  <h2>📋 Общий вывод</h2>
+                  <div className="summary-header">
+                    <h2>📋 Общий вывод</h2>
+                    {searchResults && searchResults.length > 0 && (
+                      <button 
+                        className="summary-button"
+                        onClick={() => {
+                          // Находим кнопку в TranscriptSummary и кликаем по ней
+                          const summaryButton = document.querySelector('.transcript-summary .summary-button');
+                          if (summaryButton) {
+                            summaryButton.click();
+                          }
+                        }}
+                        disabled={isLoading}
+                      >
+                        {isLoading ? 'Создаем резюме...' : 'Создать резюме'}
+                      </button>
+                    )}
+                  </div>
                   
                   {/* Показываем компонент для создания резюме */}
                   {searchResults && searchResults.length > 0 && (

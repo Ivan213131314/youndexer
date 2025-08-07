@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import html2canvas from 'html2canvas';
 import { jsPDF } from 'jspdf';
 import { Document, Packer, Paragraph, TextRun, HeadingLevel } from 'docx';
@@ -12,6 +12,24 @@ const TranscriptSummary = ({ videos, userQuery, onSummaryComplete, selectedModel
   const [error, setError] = useState(null);
   const [isDownloading, setIsDownloading] = useState(false);
   const [summaryPrompt, setSummaryPrompt] = useState('');
+
+
+
+  // Функция для автоматического изменения высоты textarea
+  const adjustTextareaHeight = (element) => {
+    if (element) {
+      element.style.height = 'auto';
+      element.style.height = element.scrollHeight + 'px';
+    }
+  };
+
+  // Устанавливаем правильную высоту при изменении summaryPrompt
+  useEffect(() => {
+    const textarea = document.querySelector('.summary-prompt-input');
+    if (textarea) {
+      adjustTextareaHeight(textarea);
+    }
+  }, [summaryPrompt]);
 
   // Функции для автоподставки текста
   const setPromptText = (text) => {
@@ -347,20 +365,25 @@ ${summaryData.summary}`;
 
   return (
     <div className="transcript-summary">
-      <div className="summary-header">
-        <div className="summary-stats">
-          <span>Всего видео: {videos ? videos.length : 0}</span>
-          <span>С transcriptами: {videosWithTranscripts.length}</span>
-        </div>
-        
-        {/* Текстовое поле для настройки вывода */}
-        <div className="summary-prompt-section">
-          <input
-            type="text"
+      {/* Статистика видео */}
+      <div className="summary-stats">
+        <span>Всего видео: {videos ? videos.length : 0}</span>
+        <span>С transcriptами: {videosWithTranscripts.length}</span>
+      </div>
+      
+      {/* Текстовое поле для настройки вывода */}
+      <div className="summary-prompt-section">
+          <textarea
             className="summary-prompt-input"
             placeholder="describe what you want to see in summary"
             value={summaryPrompt}
-            onChange={(e) => setSummaryPrompt(e.target.value)}
+            onChange={(e) => {
+              setSummaryPrompt(e.target.value);
+              adjustTextareaHeight(e.target);
+            }}
+            onFocus={(e) => {
+              adjustTextareaHeight(e.target);
+            }}
           />
           
           {/* Кнопки для автоподставки */}
@@ -389,14 +412,15 @@ ${summaryData.summary}`;
           </div>
         </div>
         
+        {/* Скрытая кнопка для программного вызова */}
         <button 
           className="summary-button"
           onClick={createSummary}
           disabled={isLoading || !hasTranscripts || !userQuery}
+          style={{ display: 'none' }}
         >
           {isLoading ? 'Создаем резюме...' : 'Создать резюме'}
         </button>
-      </div>
 
       {/* Кнопки скачивания - показываются только если резюме готово */}
       {hasSummary && (

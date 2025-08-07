@@ -1,10 +1,7 @@
 .transcript-summary {
-  margin-top: 2rem;
-  padding: 1.5rem;
+  
   background: #ffffff;
-  border-radius: 12px;
-  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
-  border: 1px solid #e1e5e9;
+  
 }
 
 .summary-header {
@@ -104,11 +101,13 @@
 
 .summary-stats {
   display: flex;
-  gap: 2rem;
-  margin-bottom: 1.5rem;
-  padding: 1rem;
+  gap: 1rem;
+  margin-bottom: 1rem;
+  padding: 0.5rem 1rem;
   background: #f8fafc;
   border-radius: 8px;
+  font-size: 14px;
+  color: #64748b;
 }
 
 .stat-item {
@@ -203,7 +202,7 @@
   }
   
   .summary-stats {
-    flex-direction: column;
+    flex-direction: row;
     gap: 1rem;
   }
   
@@ -324,6 +323,8 @@
 
 .summary-prompt-input {
   width: 100%;
+  min-height: 44px;
+  max-height: 400px;
   padding: 12px 16px;
   border: 2px solid #e1e5e9;
   border-radius: 8px;
@@ -331,6 +332,9 @@
   font-family: inherit;
   background: #ffffff;
   transition: border-color 0.2s ease, box-shadow 0.2s ease;
+  resize: none;
+  overflow-y: auto;
+  line-height: 1.4;
 }
 
 .summary-prompt-input:focus {
