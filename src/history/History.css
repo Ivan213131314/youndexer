@@ -1,93 +1,79 @@
 .history-container {
-  min-height: 100vh;
-  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  max-width: 1200px;
+  margin: 0 auto;
   padding: 20px;
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', 'Oxygen',
+    'Ubuntu', 'Cantarell', 'Fira Sans', 'Droid Sans', 'Helvetica Neue',
+    sans-serif;
 }
 
 .history-header {
   display: flex;
   align-items: center;
-  margin-bottom: 30px;
-  gap: 20px;
+  margin-bottom: 40px;
+  padding-bottom: 20px;
+  border-bottom: 2px solid #e8f0fe;
 }
 
-.back-button {
-  background: rgba(255, 255, 255, 0.2);
-  border: 1px solid rgba(255, 255, 255, 0.3);
+/* Кнопка "Назад" больше не нужна - навигация через меню */
+
+.history-header h1 {
+  font-size: 2.5rem;
+  font-weight: 400;
+  color: #202124;
+  margin: 0;
+  flex: 1;
+}
+
+.delete-all-button {
+  background: #dc3545;
   color: white;
+  border: none;
   padding: 10px 20px;
-  border-radius: 25px;
+  border-radius: 8px;
   cursor: pointer;
   font-size: 14px;
-  transition: all 0.3s ease;
-  backdrop-filter: blur(10px);
+  font-weight: 500;
+  transition: all 0.2s ease;
 }
 
-.back-button:hover {
-  background: rgba(255, 255, 255, 0.3);
-  transform: translateY(-2px);
+.delete-all-button:hover:not(:disabled) {
+  background: #c82333;
+  transform: translateY(-1px);
 }
 
- .history-header h1 {
-   color: white;
-   margin: 0;
-   font-size: 2.5rem;
-   font-weight: 300;
-   text-shadow: 0 2px 4px rgba(0, 0, 0, 0.3);
- }
-
- .delete-all-button {
-   background: rgba(220, 53, 69, 0.2);
-   border: 1px solid rgba(220, 53, 69, 0.4);
-   color: white;
-   padding: 10px 20px;
-   border-radius: 25px;
-   cursor: pointer;
-   font-size: 14px;
-   transition: all 0.3s ease;
-   backdrop-filter: blur(10px);
-   margin-left: auto;
- }
-
- .delete-all-button:hover:not(:disabled) {
-   background: rgba(220, 53, 69, 0.4);
-   border-color: rgba(220, 53, 69, 0.6);
-   transform: translateY(-2px);
- }
-
- .delete-all-button:disabled {
-   opacity: 0.6;
-   cursor: not-allowed;
-   transform: none;
- }
+.delete-all-button:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+  transform: none;
+}
 
 /* Список истории */
 .history-list {
-  max-width: 800px;
-  margin: 0 auto;
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
 }
 
 .history-item {
-  background: rgba(255, 255, 255, 0.95);
-  border-radius: 15px;
-  margin-bottom: 15px;
+  background: white;
+  border-radius: 12px;
   cursor: pointer;
   transition: all 0.3s ease;
-  box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1);
-  border: 1px solid rgba(255, 255, 255, 0.2);
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.08);
+  border: 1px solid #e8eaed;
 }
 
 .history-item:hover {
   transform: translateY(-3px);
-  box-shadow: 0 8px 25px rgba(0, 0, 0, 0.15);
-  background: rgba(255, 255, 255, 1);
+  box-shadow: 0 8px 30px rgba(0, 0, 0, 0.12);
 }
 
 .history-item-content {
   display: flex;
   align-items: center;
   justify-content: space-between;
-  padding: 20px;
+  padding: 25px;
 }
 
 .history-item-main {
@@ -95,97 +81,113 @@
 }
 
 .history-query {
-  margin: 0 0 8px 0;
-  font-size: 1.1rem;
-  color: #333;
-  font-weight: 500;
+  margin: 0 0 10px 0;
+  font-size: 1.2rem;
+  color: #202124;
+  font-weight: 600;
+  line-height: 1.4;
 }
 
 .history-meta {
   display: flex;
-  gap: 15px;
-  font-size: 0.9rem;
-  color: #666;
+  gap: 20px;
+  font-size: 0.95rem;
+  color: #5f6368;
 }
 
 .history-date {
-  color: #888;
-}
-
-.history-stats {
-  color: #667eea;
+  color: #5f6368;
   font-weight: 500;
 }
 
- .history-item-actions {
-   display: flex;
-   align-items: center;
-   gap: 10px;
- }
+.history-stats {
+  color: #1a73e8;
+  font-weight: 600;
+}
+
+.history-item-actions {
+  display: flex;
+  align-items: center;
+  gap: 15px;
+}
 
 .checkmark {
-  color: #4CAF50;
-  font-size: 1.2rem;
+  color: #28a745;
+  font-size: 1.3rem;
   font-weight: bold;
-  padding: 8px;
+  padding: 10px;
   border-radius: 50%;
-  background: rgba(76, 175, 80, 0.1);
+  background: rgba(40, 167, 69, 0.1);
   transition: all 0.3s ease;
 }
 
- .history-item:hover .checkmark {
-   background: rgba(76, 175, 80, 0.2);
-   transform: scale(1.1);
- }
+.history-item:hover .checkmark {
+  background: rgba(40, 167, 69, 0.2);
+  transform: scale(1.1);
+}
 
- .delete-button {
-   background: none;
-   border: none;
-   color: #dc3545;
-   font-size: 1.2rem;
-   cursor: pointer;
-   padding: 8px;
-   border-radius: 50%;
-   transition: all 0.3s ease;
-   opacity: 0.7;
- }
+.delete-button {
+  background: none;
+  border: none;
+  color: #dc3545;
+  font-size: 1.2rem;
+  cursor: pointer;
+  padding: 10px;
+  border-radius: 50%;
+  transition: all 0.3s ease;
+  opacity: 0.7;
+}
 
- .delete-button:hover {
-   background: rgba(220, 53, 69, 0.1);
-   opacity: 1;
-   transform: scale(1.1);
- }
+.delete-button:hover {
+  background: rgba(220, 53, 69, 0.1);
+  opacity: 1;
+  transform: scale(1.1);
+}
 
- .delete-button:disabled {
-   opacity: 0.4;
-   cursor: not-allowed;
-   transform: none;
- }
+.delete-button:disabled {
+  opacity: 0.4;
+  cursor: not-allowed;
+  transform: none;
+}
 
 /* Пустая история */
 .empty-history {
   text-align: center;
-  color: white;
-  padding: 60px 20px;
+  color: #5f6368;
+  padding: 80px 20px;
+  background: white;
+  border-radius: 12px;
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.08);
+  border: 1px solid #e8eaed;
 }
 
 .empty-history p {
   margin: 10px 0;
   font-size: 1.1rem;
-  opacity: 0.8;
+  color: #5f6368;
+}
+
+.empty-history p:first-child {
+  font-size: 1.3rem;
+  font-weight: 600;
+  color: #202124;
 }
 
 /* Загрузка и ошибки */
 .loading-message,
 .error-message {
   text-align: center;
-  color: white;
-  padding: 40px 20px;
+  color: #5f6368;
+  padding: 60px 20px;
   font-size: 1.1rem;
+  background: white;
+  border-radius: 12px;
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.08);
+  border: 1px solid #e8eaed;
 }
 
 .error-message {
-  color: #ff6b6b;
+  color: #dc3545;
 }
 
 /* Детальный вид */
@@ -193,28 +195,37 @@
   display: flex;
   justify-content: space-between;
   align-items: center;
-  margin-bottom: 20px;
+  margin-bottom: 25px;
+  padding-bottom: 15px;
+  border-bottom: 1px solid #e8eaed;
+}
+
+.history-item-header h2 {
+  font-size: 1.8rem;
+  color: #202124;
+  margin: 0;
+  font-weight: 600;
 }
 
 .header-actions {
   display: flex;
   align-items: center;
-  gap: 10px;
+  gap: 15px;
 }
 
 .download-buttons {
   display: flex;
-  gap: 8px;
+  gap: 10px;
 }
 
 .download-button {
   display: flex;
   align-items: center;
-  gap: 4px;
-  padding: 6px 12px;
+  gap: 6px;
+  padding: 8px 16px;
   border: none;
-  border-radius: 6px;
-  font-size: 12px;
+  border-radius: 8px;
+  font-size: 13px;
   font-weight: 500;
   cursor: pointer;
   transition: all 0.2s ease;
@@ -224,7 +235,7 @@
 
 .download-button:hover {
   transform: translateY(-1px);
-  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
 }
 
 .download-button:disabled {
@@ -269,24 +280,235 @@
   font-size: 14px;
 }
 
-.close-button {
-  background: #ff6b6b;
+.back-button {
+  background: #1a73e8;
   border: none;
   color: white;
-  width: 30px;
-  height: 30px;
-  border-radius: 50%;
+  padding: 10px 16px;
+  border-radius: 8px;
   cursor: pointer;
-  font-size: 16px;
+  font-size: 14px;
+  font-weight: 500;
   display: flex;
   align-items: center;
   justify-content: center;
   transition: all 0.3s ease;
+  margin-right: 15px;
+  gap: 6px;
 }
 
-.close-button:hover {
-  background: #ff5252;
-  transform: scale(1.1);
+.back-button:hover {
+  background: #1557b0;
+  transform: scale(1.05);
+}
+
+.detail-header {
+  display: flex;
+  align-items: center;
+  margin-bottom: 20px;
+  padding-bottom: 15px;
+  border-bottom: 1px solid #e8eaed;
+}
+
+.detail-header h1 {
+  margin: 0;
+  font-size: 24px;
+  color: #1a1a1a;
+}
+
+/* Основной контент */
+.main-content {
+  display: flex;
+  gap: 20px;
+  min-height: 600px;
+}
+
+.left-column {
+  background: white;
+  border-radius: 12px;
+  padding: 25px;
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.08);
+  border: 1px solid #e8eaed;
+}
+
+.right-column {
+  background: white;
+  border-radius: 12px;
+  padding: 25px;
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.08);
+  border: 1px solid #e8eaed;
+  flex: 1;
+}
+
+.summary-section h2 {
+  font-size: 1.8rem;
+  color: #202124;
+  margin-bottom: 20px;
+  font-weight: 600;
+}
+
+.videos-section h2 {
+  font-size: 1.8rem;
+  color: #202124;
+  margin-bottom: 20px;
+  font-weight: 600;
+}
+
+.placeholder {
+  text-align: center;
+  color: #5f6368;
+  padding: 40px 20px;
+  font-size: 1.1rem;
+}
+
+/* Разделитель колонок */
+.column-resizer {
+  width: 4px;
+  background: #e8eaed;
+  cursor: col-resize;
+  transition: background-color 0.2s ease;
+  border-radius: 2px;
+}
+
+.column-resizer:hover {
+  background: #1a73e8;
+}
+
+.column-resizer::before {
+  content: '';
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  width: 20px;
+  height: 40px;
+  background: #1a73e8;
+  border-radius: 10px;
+  opacity: 0;
+  transition: opacity 0.2s ease;
+}
+
+.column-resizer:hover::before {
+  opacity: 1;
+}
+
+/* Стили для VideoItem в истории */
+.videos-list {
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+}
+
+.videos-list .video-item {
+  background: #f8f9fa;
+  border-radius: 12px;
+  padding: 20px;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.05);
+  border: 1px solid #e8eaed;
+  transition: all 0.3s ease;
+}
+
+.videos-list .video-item:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1);
+}
+
+.videos-list .video-item h4 {
+  margin: 0 0 15px 0;
+  color: #202124;
+  font-size: 1.1rem;
+  font-weight: 600;
+  line-height: 1.4;
+}
+
+.videos-list .video-item p {
+  margin: 5px 0;
+  color: #5f6368;
+  font-size: 14px;
+}
+
+.videos-list .video-link {
+  display: inline-block;
+  background: #1a73e8;
+  color: white;
+  padding: 8px 16px;
+  border-radius: 8px;
+  text-decoration: none;
+  font-size: 14px;
+  font-weight: 500;
+  margin-top: 10px;
+  transition: all 0.2s ease;
+}
+
+.videos-list .video-link:hover {
+  background: #1557b0;
+  transform: translateY(-1px);
+}
+
+.videos-list .transcript-details {
+  margin-top: 15px;
+}
+
+.videos-list .transcript-details summary {
+  cursor: pointer;
+  color: #1a73e8;
+  font-weight: 600;
+  padding: 10px 0;
+  transition: color 0.2s ease;
+}
+
+.videos-list .transcript-details summary:hover {
+  color: #1557b0;
+}
+
+.videos-list .transcript-content {
+  background: white;
+  padding: 15px;
+  border-radius: 8px;
+  margin-top: 10px;
+  font-size: 14px;
+  line-height: 1.6;
+  color: #202124;
+  max-height: 300px;
+  overflow-y: auto;
+  border: 1px solid #e8eaed;
+}
+
+.videos-list .video-thumbnail-container {
+  position: relative;
+  margin-bottom: 15px;
+  border-radius: 8px;
+  overflow: hidden;
+  cursor: pointer;
+}
+
+.videos-list .video-thumbnail {
+  width: 100%;
+  max-width: 120px;
+  height: auto;
+  display: block;
+}
+
+.videos-list .video-link-overlay {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  background: rgba(0, 0, 0, 0.8);
+  color: white;
+  padding: 8px 12px;
+  border-radius: 20px;
+  font-size: 12px;
+  opacity: 0;
+  transition: opacity 0.2s ease;
+}
+
+.videos-list .video-thumbnail-container:hover .video-link-overlay {
+  opacity: 1;
+}
+
+.videos-list .play-icon {
+  font-size: 14px;
 }
 
 /* Адаптивность */
@@ -295,27 +517,38 @@
     padding: 15px;
   }
   
-     .history-header h1 {
-     font-size: 2rem;
-   }
-   
-   .delete-all-button {
-     padding: 8px 16px;
-     font-size: 12px;
-   }
+  .history-header {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 15px;
+  }
   
-     .history-item-content {
-     padding: 15px;
-   }
-   
-   .history-item-actions {
-     gap: 8px;
-   }
-   
-   .delete-button {
-     font-size: 1rem;
-     padding: 6px;
-   }
+  .back-button {
+    margin-right: 10px;
+    margin-bottom: 0;
+  }
+  
+  .history-header h1 {
+    font-size: 2rem;
+  }
+  
+  .delete-all-button {
+    padding: 8px 16px;
+    font-size: 12px;
+  }
+  
+  .history-item-content {
+    padding: 20px;
+  }
+  
+  .history-item-actions {
+    gap: 10px;
+  }
+  
+  .delete-button {
+    font-size: 1rem;
+    padding: 8px;
+  }
   
   .history-meta {
     flex-direction: column;
@@ -337,16 +570,16 @@
   
   .header-actions {
     flex-direction: column;
-    gap: 8px;
+    gap: 10px;
   }
   
   .download-buttons {
-    gap: 6px;
+    gap: 8px;
   }
   
   .download-button {
-    padding: 5px 10px;
-    font-size: 11px;
+    padding: 6px 12px;
+    font-size: 12px;
   }
   
   .download-icon {
@@ -354,107 +587,25 @@
   }
 }
 
-/* Стили для VideoItem в истории */
-.videos-list {
-  display: flex;
-  flex-direction: column;
-  gap: 20px;
-}
-
-.videos-list .video-item {
-  background: white;
-  border-radius: 12px;
-  padding: 20px;
-  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
-  border: 1px solid #e1e5e9;
-}
-
-.videos-list .video-item h4 {
-  margin: 0 0 15px 0;
-  color: #202124;
-  font-size: 1.1rem;
-  font-weight: 500;
-  line-height: 1.4;
-}
-
-.videos-list .video-item p {
-  margin: 5px 0;
-  color: #666;
-  font-size: 14px;
-}
-
-.videos-list .video-link {
-  display: inline-block;
-  background: #007bff;
-  color: white;
-  padding: 8px 16px;
-  border-radius: 6px;
-  text-decoration: none;
-  font-size: 14px;
-  margin-top: 10px;
-  transition: background-color 0.2s ease;
-}
-
-.videos-list .video-link:hover {
-  background: #0056b3;
-}
-
-.videos-list .transcript-details {
-  margin-top: 15px;
-}
-
-.videos-list .transcript-details summary {
-  cursor: pointer;
-  color: #007bff;
-  font-weight: 500;
-  padding: 8px 0;
-}
-
-.videos-list .transcript-content {
-  background: #f8f9fa;
-  padding: 15px;
-  border-radius: 8px;
-  margin-top: 10px;
-  font-size: 14px;
-  line-height: 1.6;
-  color: #333;
-  max-height: 300px;
-  overflow-y: auto;
-}
-
-.videos-list .video-thumbnail-container {
-  position: relative;
-  margin-bottom: 15px;
-  border-radius: 8px;
-  overflow: hidden;
-  cursor: pointer;
-}
-
-.videos-list .video-thumbnail {
-  width: 100%;
-  max-width: 300px;
-  height: auto;
-  display: block;
-}
-
-.videos-list .video-link-overlay {
-  position: absolute;
-  top: 50%;
-  left: 50%;
-  transform: translate(-50%, -50%);
-  background: rgba(0, 0, 0, 0.7);
-  color: white;
-  padding: 8px 12px;
-  border-radius: 20px;
-  font-size: 12px;
-  opacity: 0;
-  transition: opacity 0.2s ease;
-}
-
-.videos-list .video-thumbnail-container:hover .video-link-overlay {
-  opacity: 1;
-}
-
-.videos-list .play-icon {
-  font-size: 14px;
+@media (max-width: 480px) {
+  .history-item-content {
+    padding: 15px;
+  }
+  
+  .history-query {
+    font-size: 1.1rem;
+  }
+  
+  .history-meta {
+    font-size: 0.9rem;
+  }
+  
+  .download-buttons {
+    flex-wrap: wrap;
+  }
+  
+  .download-button {
+    padding: 5px 10px;
+    font-size: 11px;
+  }
 }

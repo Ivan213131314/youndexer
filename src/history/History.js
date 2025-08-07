@@ -344,28 +344,21 @@ ${historyItem.summaryData.summary}`;
 
   return (
     <div className="history-container">
-      {/* Верхнее меню */}
-      <div className="top-menu">
-        <button className="menu-button active">History</button>
-        <button className="menu-button">About us</button>
-      </div>
-
-      <div className="history-header">
-        <button className="back-button" onClick={onBackToMain}>
-          ← Назад к поиску
-        </button>
-        <h1>История поиска</h1>
-        {history.length > 0 && (
-          <button 
-            className="delete-all-button"
-            onClick={handleDeleteAllHistory}
-            disabled={deletingAll}
-            title="Удалить всю историю"
-          >
-            {deletingAll ? '🗑️ Удаляем...' : '🗑️ Удалить всю историю'}
-          </button>
-        )}
-      </div>
+      {!selectedHistoryId && (
+        <div className="history-header">
+          <h1>История поиска</h1>
+          {history.length > 0 && (
+            <button 
+              className="delete-all-button"
+              onClick={handleDeleteAllHistory}
+              disabled={deletingAll}
+              title="Удалить всю историю"
+            >
+              {deletingAll ? '🗑️ Удаляем...' : '🗑️ Удалить всю историю'}
+            </button>
+          )}
+        </div>
+      )}
 
       {selectedHistoryId ? (
         // Детальный вид выбранной записи
@@ -376,13 +369,20 @@ ${historyItem.summaryData.summary}`;
           onMouseLeave={handleMouseUp}
         >
           {/* Левая колонка - Общий вывод */}
-          <div 
-            className="left-column"
-            style={{ width: `${leftColumnWidth}%` }}
-          >
-                         <div className="summary-section">
-               <div className="history-item-header">
-                 <h2>📋 Общий вывод</h2>
+                     <div 
+             className="left-column"
+             style={{ width: `${leftColumnWidth}%` }}
+           >
+             <div className="detail-header">
+               <button className="back-button" onClick={handleBackClick}>
+                 ← Back
+               </button>
+               <h1>История поиска</h1>
+             </div>
+             
+             <div className="summary-section">
+                <div className="history-item-header">
+                  <h2>📋 Общий вывод</h2>
                  <div className="header-actions">
                    {/* Кнопки скачивания для истории */}
                    {hasSummary(historyItem) && (
@@ -409,19 +409,16 @@ ${historyItem.summaryData.summary}`;
                          <span className="download-icon">📝</span>
                          DOC
                        </button>
-                       <button 
-                         className="download-button txt-button"
-                         onClick={() => downloadSummaryAsTXT(historyItem)}
-                       >
-                         <span className="download-icon">📄</span>
-                         TXT
-                       </button>
-                     </div>
-                   )}
-                   <button className="close-button" onClick={handleBackClick}>
-                     ✕
-                   </button>
-                 </div>
+                                               <button 
+                          className="download-button txt-button"
+                          onClick={() => downloadSummaryAsTXT(historyItem)}
+                        >
+                          <span className="download-icon">📄</span>
+                          TXT
+                        </button>
+                      </div>
+                    )}
+                  </div>
                </div>
               
               {itemLoading ? (

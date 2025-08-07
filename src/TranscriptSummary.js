@@ -11,6 +11,23 @@ const TranscriptSummary = ({ videos, userQuery, onSummaryComplete, selectedModel
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState(null);
   const [isDownloading, setIsDownloading] = useState(false);
+  const [summaryPrompt, setSummaryPrompt] = useState('');
+
+  // Функции для автоподставки текста
+  const setPromptText = (text) => {
+    setSummaryPrompt(prevPrompt => {
+      // Если текст уже есть в промпте, не добавляем его снова
+      if (prevPrompt.includes(text)) {
+        return prevPrompt;
+      }
+      // Если промпт пустой, просто добавляем текст
+      if (!prevPrompt.trim()) {
+        return text;
+      }
+      // Иначе добавляем текст через запятую и пробел
+      return `${prevPrompt}, ${text}`;
+    });
+  };
 
   const createSummary = async () => {
     if (!videos || videos.length === 0 || !userQuery) {
@@ -33,11 +50,15 @@ const TranscriptSummary = ({ videos, userQuery, onSummaryComplete, selectedModel
       console.log(`📋 [SUMMARY] Количество видео: ${videos.length}`);
       console.log(`📝 [SUMMARY] Видео с transcriptами: ${videosWithTranscripts.length}`);
       console.log(`🔍 [SUMMARY] Запрос: "${userQuery}"`);
+      console.log(`📝 [SUMMARY] Дополнительный промпт: "${summaryPrompt}"`);
+
+      // Формируем финальный запрос с учетом дополнительного промпта
+      const finalQuery = summaryPrompt ? `${userQuery}. ${summaryPrompt}` : userQuery;
 
       // Отправляем полные transcriptы для качественного резюме
       const requestBody = {
         videos: videosWithTranscripts,
-        userQuery,
+        userQuery: finalQuery,
         model: selectedModel
       };
 
@@ -331,6 +352,43 @@ ${summaryData.summary}`;
           <span>Всего видео: {videos ? videos.length : 0}</span>
           <span>С transcriptами: {videosWithTranscripts.length}</span>
         </div>
+        
+        {/* Текстовое поле для настройки вывода */}
+        <div className="summary-prompt-section">
+          <input
+            type="text"
+            className="summary-prompt-input"
+            placeholder="describe what you want to see in summary"
+            value={summaryPrompt}
+            onChange={(e) => setSummaryPrompt(e.target.value)}
+          />
+          
+          {/* Кнопки для автоподставки */}
+          <div className="prompt-buttons">
+            <button 
+              className="prompt-button"
+              onClick={() => setPromptText('add information about main insights based on the videos')}
+              title="Добавить информацию об основных инсайтах"
+            >
+              insights
+            </button>
+            <button 
+              className="prompt-button"
+              onClick={() => setPromptText('focus on information about business strategy step by step based on the videos')}
+              title="Сфокусироваться на бизнес-стратегии пошагово"
+            >
+              business strategy
+            </button>
+            <button 
+              className="prompt-button"
+              onClick={() => setPromptText('add information about main points of this videos')}
+              title="Добавить информацию об основных моментах"
+            >
+              main points
+            </button>
+          </div>
+        </div>
+        
         <button 
           className="summary-button"
           onClick={createSummary}

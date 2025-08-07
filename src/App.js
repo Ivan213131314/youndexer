@@ -4,14 +4,14 @@ import { filterVideosWithGPT, getFilteredVideos } from './videoFilter';
 import TranscriptSummary from './TranscriptSummary';
 import LLMChoose from './components/LLMChoose';
 import History from './history/History';
+import AboutUs from './AboutUs';
+import Navigation from './components/Navigation';
 
 import VideoItem from './components/VideoItem';
 import { collection, addDoc } from 'firebase/firestore';
 import { db } from './firebase';
 import { saveSearchToHistory } from './history/historyService';
 import { AuthProvider, useAuth } from './auth/AuthContext';
-import AuthButtons from './auth/AuthButtons';
-import UserProfile from './auth/UserProfile';
 import { parseChannel, validateChannelUrl } from './channel-parsing/channelService';
 import './App.css';
 
@@ -24,7 +24,7 @@ function AppContent() {
   const [summaryData, setSummaryData] = useState(null);
   const [isResizing, setIsResizing] = useState(false);
   const [leftColumnWidth, setLeftColumnWidth] = useState(50); // процент от общей ширины
-  const [currentPage, setCurrentPage] = useState('main'); // 'main' или 'history'
+  const [currentPage, setCurrentPage] = useState('main'); // 'main', 'history' или 'about'
   const [selectedModel, setSelectedModel] = useState('openai/gpt-4o'); // выбранная LLM модель
   const [searchMode, setSearchMode] = useState('request'); // 'request' или 'parsing'
   
@@ -320,15 +320,7 @@ function AppContent() {
     setIsResizing(false);
   };
 
-  const handleHistoryClick = () => {
-    setCurrentPage('history');
-  };
-
-
-
-  const handleBackToMain = () => {
-    setCurrentPage('main');
-  };
+  // Функции навигации теперь обрабатываются через компонент Navigation
 
   // Функции для парсинга видео или каналов
   const handleVideoOrChannelParse = async () => {
@@ -580,25 +572,18 @@ function AppContent() {
 
   return (
     <div className="App">
+      {/* Навигация доступна на всех страницах */}
+      <Navigation 
+        currentPage={currentPage} 
+        onPageChange={setCurrentPage}
+      />
+      
       {currentPage === 'history' ? (
-        <History onBackToMain={handleBackToMain} />
+        <History />
+      ) : currentPage === 'about' ? (
+        <AboutUs />
       ) : (
         <>
-          {/* Верхнее меню */}
-          <div className="top-menu">
-            <button 
-              className={`menu-button ${currentPage === 'history' ? 'active' : ''}`}
-              onClick={handleHistoryClick}
-            >
-              History
-            </button>
-
-            <button className="menu-button">About us</button>
-            <div className="auth-section">
-              <UserProfile />
-              <AuthButtons />
-            </div>
-          </div>
 
           <div className="header">
             <h1 className="main-heading">YouTube Semantic Searcher</h1>
