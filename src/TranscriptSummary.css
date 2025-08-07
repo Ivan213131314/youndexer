@@ -288,6 +288,14 @@
   background: linear-gradient(135deg, #495057 0%, #343a40 100%);
 }
 
+.copy-button {
+  background: linear-gradient(135deg, #28a745 0%, #20c997 100%);
+}
+
+.copy-button:hover:not(:disabled) {
+  background: linear-gradient(135deg, #20c997 0%, #17a2b8 100%);
+}
+
 .download-icon {
   font-size: 16px;
 }

@@ -275,6 +275,45 @@ ${historyItem.summaryData.summary}`;
     }
   };
 
+  const copySummaryToClipboard = async (historyItem) => {
+    if (!historyItem || !historyItem.summaryData) return;
+    
+    const content = `Резюме по запросу: "${historyItem.query}"
+
+Всего результатов: ${historyItem.summaryData.totalResults}
+Transcript найдено: ${historyItem.summaryData.transcriptCount}
+Дата поиска: ${formatHistoryDate(historyItem.timestamp)}
+
+${historyItem.summaryData.summary}`;
+    
+    try {
+      await navigator.clipboard.writeText(content);
+      
+      // Показываем уведомление об успешном копировании
+      const button = document.querySelector('.copy-button');
+      if (button) {
+        const originalText = button.innerHTML;
+        button.innerHTML = '<span class="download-icon">✓</span>Скопировано';
+        button.style.backgroundColor = '#28a745';
+        
+        setTimeout(() => {
+          button.innerHTML = originalText;
+          button.style.backgroundColor = '';
+        }, 2000);
+      }
+      
+    } catch (error) {
+      console.error('Ошибка при копировании в буфер обмена:', error);
+      // Fallback для старых браузеров
+      const textArea = document.createElement('textarea');
+      textArea.value = content;
+      document.body.appendChild(textArea);
+      textArea.select();
+      document.execCommand('copy');
+      document.body.removeChild(textArea);
+    }
+  };
+
   if (loading) {
     return (
       <div className="history-container">
@@ -308,7 +347,6 @@ ${historyItem.summaryData.summary}`;
       {/* Верхнее меню */}
       <div className="top-menu">
         <button className="menu-button active">History</button>
-        <button className="menu-button">Channel parsing</button>
         <button className="menu-button">About us</button>
       </div>
 
@@ -349,6 +387,14 @@ ${historyItem.summaryData.summary}`;
                    {/* Кнопки скачивания для истории */}
                    {hasSummary(historyItem) && (
                      <div className="download-buttons">
+                       <button 
+                         className="download-button copy-button"
+                         onClick={() => copySummaryToClipboard(historyItem)}
+                         title="Копировать в буфер обмена"
+                       >
+                         <span className="download-icon">📋</span>
+                         Копировать
+                       </button>
                        <button 
                          className="download-button pdf-button"
                          onClick={() => downloadSummaryAsPDF(historyItem)}

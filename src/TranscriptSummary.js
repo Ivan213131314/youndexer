@@ -281,6 +281,44 @@ ${summaryData.summary}`;
     }
   };
 
+  const copyToClipboard = async () => {
+    if (!summaryData) return;
+    
+    const content = `Резюме по запросу: "${userQuery}"
+
+Всего результатов: ${summaryData.totalResults}
+Transcript найдено: ${summaryData.transcriptCount}
+
+${summaryData.summary}`;
+    
+    try {
+      await navigator.clipboard.writeText(content);
+      
+      // Показываем уведомление об успешном копировании
+      const button = document.querySelector('.copy-button');
+      if (button) {
+        const originalText = button.innerHTML;
+        button.innerHTML = '<span class="download-icon">✓</span>Скопировано';
+        button.style.background = 'linear-gradient(135deg, #28a745 0%, #20c997 100%)';
+        
+        setTimeout(() => {
+          button.innerHTML = originalText;
+          button.style.background = '';
+        }, 2000);
+      }
+      
+    } catch (error) {
+      console.error('Ошибка при копировании в буфер обмена:', error);
+      // Fallback для старых браузеров
+      const textArea = document.createElement('textarea');
+      textArea.value = content;
+      document.body.appendChild(textArea);
+      textArea.select();
+      document.execCommand('copy');
+      document.body.removeChild(textArea);
+    }
+  };
+
   // Проверяем есть ли видео с transcriptами
   const videosWithTranscripts = videos ? videos.filter(video => video.transcript) : [];
   const hasTranscripts = videosWithTranscripts.length > 0;
@@ -306,6 +344,14 @@ ${summaryData.summary}`;
       {hasSummary && (
         <div className="download-section">
           <div className="download-buttons">
+            <button 
+              className="download-button copy-button"
+              onClick={copyToClipboard}
+              title="Копировать в буфер обмена"
+            >
+              <span className="download-icon">📋</span>
+              Копировать
+            </button>
             <button 
               className="download-button pdf-button"
               onClick={downloadAsPDF}

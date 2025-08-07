@@ -4,7 +4,6 @@ import { filterVideosWithGPT, getFilteredVideos } from './videoFilter';
 import TranscriptSummary from './TranscriptSummary';
 import LLMChoose from './components/LLMChoose';
 import History from './history/History';
-import ChannelParsing from './channel-parsing/ChannelParsing';
 
 import VideoItem from './components/VideoItem';
 import { collection, addDoc } from 'firebase/firestore';
@@ -25,7 +24,7 @@ function AppContent() {
   const [summaryData, setSummaryData] = useState(null);
   const [isResizing, setIsResizing] = useState(false);
   const [leftColumnWidth, setLeftColumnWidth] = useState(50); // процент от общей ширины
-  const [currentPage, setCurrentPage] = useState('main'); // 'main', 'history', или 'channel-parsing'
+  const [currentPage, setCurrentPage] = useState('main'); // 'main' или 'history'
   const [selectedModel, setSelectedModel] = useState('openai/gpt-4o'); // выбранная LLM модель
   const [searchMode, setSearchMode] = useState('request'); // 'request' или 'parsing'
   
@@ -325,10 +324,6 @@ function AppContent() {
     setCurrentPage('history');
   };
 
-  const handleChannelParsingClick = () => {
-    setCurrentPage('channel-parsing');
-  };
-
 
 
   const handleBackToMain = () => {
@@ -587,8 +582,6 @@ function AppContent() {
     <div className="App">
       {currentPage === 'history' ? (
         <History onBackToMain={handleBackToMain} />
-      ) : currentPage === 'channel-parsing' ? (
-        <ChannelParsing onBackToMain={handleBackToMain} />
       ) : (
         <>
           {/* Верхнее меню */}
@@ -598,12 +591,6 @@ function AppContent() {
               onClick={handleHistoryClick}
             >
               History
-            </button>
-            <button 
-              className={`menu-button ${currentPage === 'channel-parsing' ? 'active' : ''}`}
-              onClick={handleChannelParsingClick}
-            >
-              Channel parsing
             </button>
 
             <button className="menu-button">About us</button>
