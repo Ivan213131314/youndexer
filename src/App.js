@@ -19,6 +19,7 @@ import './App.css';
 const videoSearchCountPerRequest = 10;
 
 function AppContent() {
+  const { user } = useAuth(); // Добавляем авторизацию
   const [query, setQuery] = useState('');
   const [isLoading, setIsLoading] = useState(false);
   const [searchResults, setSearchResults] = useState(null);
@@ -283,7 +284,7 @@ function AppContent() {
           summaryData: summaryResult
         };
         
-        const historyId = await saveSearchToHistory(searchData);
+        const historyId = await saveSearchToHistory(searchData, user?.uid);
         if (historyId) {
           console.log('✅ [APP] Search saved to history with ID:', historyId);
         } else {
@@ -554,7 +555,7 @@ function AppContent() {
         summaryData: summaryResult
       };
       
-      const historyId = await saveSearchToHistory(searchData);
+      const historyId = await saveSearchToHistory(searchData, user?.uid);
       if (historyId) {
         console.log('✅ [APP] Parsing results saved to history with ID:', historyId);
       } else {

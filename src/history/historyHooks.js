@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react';
 import { getSearchHistory, getHistoryItem, deleteHistoryItem, deleteAllHistory } from './historyService';
+import { useAuth } from '../auth/AuthContext';
 
 // Класс для кэширования элементов истории
 class HistoryCache {
@@ -83,12 +84,14 @@ export const useSearchHistory = (limitCount = 20) => {
   const [history, setHistory] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
+  const { user } = useAuth();
 
   useEffect(() => {
     const fetchHistory = async () => {
       try {
         setLoading(true);
-        const historyData = await getSearchHistory(limitCount);
+        const userId = user?.uid || null;
+        const historyData = await getSearchHistory(limitCount, userId);
         setHistory(historyData);
         setError(null);
       } catch (err) {
@@ -102,12 +105,13 @@ export const useSearchHistory = (limitCount = 20) => {
     };
 
     fetchHistory();
-  }, [limitCount]);
+  }, [limitCount, user?.uid]);
 
   const refreshHistory = async () => {
     try {
       setLoading(true);
-      const historyData = await getSearchHistory(limitCount);
+      const userId = user?.uid || null;
+      const historyData = await getSearchHistory(limitCount, userId);
       setHistory(historyData);
       setError(null);
       
@@ -128,14 +132,17 @@ export const useSearchHistory = (limitCount = 20) => {
 export const useDeleteHistoryItem = () => {
   const [deleting, setDeleting] = useState(false);
   const [error, setError] = useState(null);
+  const { user } = useAuth();
 
   const deleteItem = async (historyId) => {
     try {
       setDeleting(true);
       setError(null);
       
+      const userId = user?.uid || null;
+      
       // Удаляем из Firebase
-      await deleteHistoryItem(historyId);
+      await deleteHistoryItem(historyId, userId);
       
       // Удаляем из кэша
       historyCache.cache.delete(historyId);
@@ -158,14 +165,17 @@ export const useDeleteHistoryItem = () => {
 export const useDeleteAllHistory = () => {
   const [deletingAll, setDeletingAll] = useState(false);
   const [error, setError] = useState(null);
+  const { user } = useAuth();
 
   const deleteAll = async () => {
     try {
       setDeletingAll(true);
       setError(null);
       
+      const userId = user?.uid || null;
+      
       // Удаляем из Firebase
-      const deletedCount = await deleteAllHistory();
+      const deletedCount = await deleteAllHistory(userId);
       
       // Очищаем весь кэш
       historyCache.clear();
