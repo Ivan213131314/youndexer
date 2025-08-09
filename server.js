@@ -583,6 +583,7 @@ ${allTranscripts}`;
   }
 });
 
+
 // Start server
 app.listen(PORT, () => {
   console.log(`🚀 [SERVER] YouTube search server running on http://localhost:${PORT}`);

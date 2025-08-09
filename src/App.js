@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import { fetchVideosByPhrase, searchVideosWithPhrases, addTranscriptsToVideos } from './ytSearchModule';
 import { filterVideosWithGPT, getFilteredVideos } from './videoFilter';
 import TranscriptSummary from './TranscriptSummary';
@@ -8,6 +8,7 @@ import AboutUs from './AboutUs';
 import Navigation from './components/Navigation';
 
 import VideoItem from './components/VideoItem';
+import DefaultQuery from './components/DefaultQuery';
 import { collection, addDoc } from 'firebase/firestore';
 import { db } from './firebase';
 import { saveSearchToHistory } from './history/historyService';
@@ -36,6 +37,7 @@ function AppContent() {
   const [selectedVideoCount, setSelectedVideoCount] = useState(10);
   const [channelError, setChannelError] = useState(null);
   const [channelSummaryData, setChannelSummaryData] = useState(null);
+  const [isLoadingDefault, setIsLoadingDefault] = useState(false);
 
 
 
@@ -136,6 +138,25 @@ function AppContent() {
       throw error;
     }
   };
+
+  // Функция для загрузки дефолтного запроса
+  const handleLoadDefaultQuery = useCallback(async (defaultQueryData) => {
+    try {
+      setIsLoadingDefault(true);
+      console.log('🔄 [APP] Loading default query data:', defaultQueryData);
+
+      // Устанавливаем запрос и результаты из истории
+      setQuery(defaultQueryData.query);
+      setSearchResults(defaultQueryData.searchResults || []);
+      setSummaryData(defaultQueryData.summaryData || null);
+
+      console.log('✅ [APP] Default query loaded successfully');
+    } catch (error) {
+      console.error('❌ [APP] Error loading default query:', error);
+    } finally {
+      setIsLoadingDefault(false);
+    }
+  }, []);
 
   const handleSearch = async () => {
     if (!query.trim()) {
@@ -552,6 +573,7 @@ function AppContent() {
 
   return (
     <div className="App">
+      <DefaultQuery onLoadDefaultQuery={handleLoadDefaultQuery} />
       {/* Навигация доступна на всех страницах */}
       <Navigation 
         currentPage={currentPage} 
