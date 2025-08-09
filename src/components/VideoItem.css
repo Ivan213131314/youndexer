@@ -50,6 +50,19 @@
   display: block;
 }
 
+/* Стили для fallback video thumbnail */
+.video-thumbnail.thumbnail-fallback {
+  width: 120px;
+  height: 68px;
+  border-radius: 6px;
+}
+
+.video-thumbnail.thumbnail-loading {
+  width: 120px;
+  height: 68px;
+  border-radius: 6px;
+}
+
 .video-link-overlay {
   position: absolute;
   top: 0;
@@ -145,6 +158,14 @@
     width: 100%;
     height: auto;
     max-width: 200px;
+  }
+  
+  .video-thumbnail.thumbnail-fallback,
+  .video-thumbnail.thumbnail-loading {
+    width: 100%;
+    height: auto;
+    max-width: 200px;
+    min-height: 100px;
   }
   
   .video-header h4 {

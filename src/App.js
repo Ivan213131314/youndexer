@@ -9,9 +9,10 @@ import Navigation from './components/Navigation';
 
 import VideoItem from './components/VideoItem';
 import DefaultQuery from './components/DefaultQuery';
+import ThumbnailImage from './components/ThumbnailImage';
 import { collection, addDoc } from 'firebase/firestore';
 import { db } from './firebase';
-import { saveSearchToHistory } from './history/historyService';
+import { saveSearchToHistory, updateHistoryItem } from './history/historyService';
 import { AuthProvider, useAuth } from './auth/AuthContext';
 import { parseChannel, validateChannelUrl } from './channel-parsing/channelService';
 import './App.css';
@@ -39,6 +40,7 @@ function AppContent() {
   const [channelError, setChannelError] = useState(null);
   const [channelSummaryData, setChannelSummaryData] = useState(null);
   const [isLoadingDefault, setIsLoadingDefault] = useState(false);
+  const [currentParsingHistoryId, setCurrentParsingHistoryId] = useState(null);
 
 
 
@@ -335,6 +337,7 @@ function AppContent() {
     setIsLoading(true);
     setParsingResults(null);
     setChannelError(null);
+    setCurrentParsingHistoryId(null); // Сбрасываем ID предыдущего парсинга
     
     try {
       // Проверяем, является ли запрос YouTube URL видео
@@ -379,6 +382,9 @@ function AppContent() {
           description: null
         });
         
+        // Сохраняем результаты парсинга видео в историю
+        await saveParsingToHistory([videoWithTranscript], true);
+        
         return;
       }
       
@@ -422,6 +428,7 @@ function AppContent() {
     setChannelVideosResults(null);
     setChannelSummaryData(null);
     setChannelError(null);
+    setCurrentParsingHistoryId(null); // Сбрасываем ID предыдущего парсинга
     
     try {
       // Получаем видео канала через Supadata
@@ -523,6 +530,9 @@ function AppContent() {
       
       console.log(`✅ [CHANNEL] Channel videos with transcripts received successfully:`, videosWithTranscripts);
       
+      // Сохраняем результаты парсинга канала в историю
+      await saveParsingToHistory(videosWithTranscripts, false);
+      
     } catch (error) {
       console.error('❌ [CHANNEL] Error getting channel videos:', error);
       setChannelError('Ошибка при получении видео канала. Попробуйте еще раз.');
@@ -532,11 +542,74 @@ function AppContent() {
     }
   };
 
+  // Функция для сохранения результатов парсинга в историю (без summary)
+  const saveParsingToHistory = async (videos, isVideo = false) => {
+    try {
+      let queryTitle;
+      if (isVideo && videos.length === 1) {
+        // Это отдельное видео
+        const videoTitle = videos[0]?.title || 'Unknown Video';
+        queryTitle = `Video: ${videoTitle}`;
+      } else {
+        // Это канал
+        const channelName = parsingResults?.channelName || 'Unknown Channel';
+        queryTitle = `Channel: ${channelName}`;
+      }
+      
+      const searchData = {
+        query: queryTitle,
+        searchResults: videos || [],
+        summaryData: null // Пока без summary
+      };
+      
+      const historyId = await saveSearchToHistory(searchData, user?.uid);
+      if (historyId) {
+        console.log('✅ [APP] Parsing results saved to history with ID:', historyId);
+        setCurrentParsingHistoryId(historyId);
+        return historyId;
+      } else {
+        console.log('⚠️ [APP] Failed to save parsing results to history');
+        return null;
+      }
+    } catch (error) {
+      console.error('❌ [APP] Error saving parsing results to history:', error);
+      return null;
+    }
+  };
+
   const handleChannelSummaryComplete = async (summaryResult) => {
     console.log(`📋 [CHANNEL] Summary completed:`, summaryResult);
     setChannelSummaryData(summaryResult);
     
-    // Сохраняем результаты парсинга в историю
+    // Обновляем существующую запись истории с summary данными
+    try {
+      if (currentParsingHistoryId) {
+        // Обновляем существующую запись
+        const updateSuccess = await updateHistoryItem(
+          currentParsingHistoryId,
+          { summaryData: summaryResult },
+          user?.uid
+        );
+        
+        if (updateSuccess) {
+          console.log('✅ [APP] History item updated with summary, ID:', currentParsingHistoryId);
+        } else {
+          console.log('⚠️ [APP] Failed to update history item with summary, creating new one...');
+          // Fallback - создаем новую запись если обновление не удалось
+          await createNewHistoryEntry(summaryResult);
+        }
+      } else {
+        // Если нет текущего ID, создаем новую запись (fallback)
+        console.log('ℹ️ [APP] No current history ID, creating new entry...');
+        await createNewHistoryEntry(summaryResult);
+      }
+    } catch (error) {
+      console.error('❌ [APP] Error updating history with summary:', error);
+    }
+  };
+
+  // Fallback функция для создания новой записи истории
+  const createNewHistoryEntry = async (summaryResult) => {
     try {
       let queryTitle;
       if (channelVideosResults && channelVideosResults.totalCount === 1) {
@@ -557,12 +630,11 @@ function AppContent() {
       
       const historyId = await saveSearchToHistory(searchData, user?.uid);
       if (historyId) {
-        console.log('✅ [APP] Parsing results saved to history with ID:', historyId);
-      } else {
-        console.log('⚠️ [APP] Failed to save parsing results to history, but continuing...');
+        console.log('✅ [APP] New history entry created with summary, ID:', historyId);
+        setCurrentParsingHistoryId(historyId);
       }
     } catch (error) {
-      console.error('❌ [APP] Error saving parsing results to history:', error);
+      console.error('❌ [APP] Error creating new history entry:', error);
     }
   };
 
@@ -782,6 +854,8 @@ function AppContent() {
               <div className="channel-results">
                                     {parsingResults ? (
                       <div className="results-section">
+                        {/* Показываем channel-info только для каналов, не для отдельных видео */}
+                        {!(channelVideosResults && channelVideosResults.totalCount === 1) && (
                         <div className="channel-info">
                           {/* Кнопки управления */}
                           <div className="channel-actions-top">
@@ -823,12 +897,13 @@ function AppContent() {
                             {/* Channel Thumbnail */}
                             {parsingResults.channelThumbnail && (
                               <div className="channel-thumbnail-preview-container">
-                                <img 
+                                <ThumbnailImage
                                   src={parsingResults.channelThumbnail} 
                                   alt={`${parsingResults.channelName} thumbnail`}
                                   className="channel-thumbnail-preview"
-                                  onLoad={() => console.log('✅ [CHANNEL] Thumbnail loaded successfully')}
-                                  onError={(e) => console.error('❌ [CHANNEL] Failed to load thumbnail:', e.target.src)}
+                                  fallbackIcon="📺"
+                                  maxRetries={3}
+                                  retryDelay={1500}
                                 />
                               </div>
                             )}
@@ -877,6 +952,7 @@ function AppContent() {
                           </div>
                         </div>
                     </div>
+                        )}
 
                                             {/* Результаты получения видео в двух колонках */}
                         {channelVideosResults && (
@@ -884,7 +960,24 @@ function AppContent() {
                             {/* Левая колонка - Общий вывод */}
                             <div className="left-column">
                               <div className="summary-section">
-                                <h2>📋 Общий вывод {channelVideosResults.totalCount === 1 ? 'по видео' : 'по каналу'}</h2>
+                                <div className="summary-header">
+                                  <h2>📋 Общий вывод {channelVideosResults.totalCount === 1 ? 'по видео' : 'по каналу'}</h2>
+                                  {channelVideosResults.videos && channelVideosResults.videos.length > 0 && (
+                                    <button 
+                                      className="summary-button"
+                                      onClick={() => {
+                                        // Находим кнопку в TranscriptSummary и кликаем по ней
+                                        const summaryButton = document.querySelector('.videos-results-section .transcript-summary .summary-button');
+                                        if (summaryButton) {
+                                          summaryButton.click();
+                                        }
+                                      }}
+                                      disabled={isLoadingVideos}
+                                    >
+                                      {isLoadingVideos ? 'Создаем резюме...' : 'Создать резюме'}
+                                    </button>
+                                  )}
+                                </div>
                             
                             {/* Показываем компонент для создания резюме */}
                             {channelVideosResults.videos && channelVideosResults.videos.length > 0 && (

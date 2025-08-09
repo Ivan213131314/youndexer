@@ -1,4 +1,4 @@
-import { collection, addDoc, getDocs, query, orderBy, limit, doc, getDoc, deleteDoc, writeBatch, where } from 'firebase/firestore';
+import { collection, addDoc, getDocs, query, orderBy, limit, doc, getDoc, deleteDoc, writeBatch, where, updateDoc } from 'firebase/firestore';
 import { db } from '../firebase';
 
 // Сохранение результатов поиска в историю
@@ -99,6 +99,62 @@ export const getSearchHistory = async (limitCount = 20, userId = null) => {
   } catch (error) {
     console.error('❌ [HISTORY] Error getting search history:', error);
     throw error;
+  }
+};
+
+// Обновление существующей записи в истории
+export const updateHistoryItem = async (historyId, updateData, userId = null) => {
+  try {
+    // Проверяем что db инициализирован
+    if (!db) {
+      console.error('❌ [HISTORY] Firebase db not initialized');
+      return false;
+    }
+
+    // Для неавторизованных пользователей не обновляем историю
+    if (!userId) {
+      console.log('ℹ️ [HISTORY] No userId provided, skipping update');
+      return false;
+    }
+
+    if (!historyId) {
+      console.error('❌ [HISTORY] No historyId provided for update');
+      return false;
+    }
+
+    // Подготавливаем данные для обновления
+    const historyUpdateData = {
+      ...updateData,
+      updatedAt: new Date()
+    };
+
+    // Если есть summaryData, ограничиваем размер
+    if (updateData.summaryData) {
+      historyUpdateData.summaryData = {
+        summary: updateData.summaryData.summary,
+        totalResults: updateData.summaryData.totalResults || 0,
+        transcriptCount: updateData.summaryData.transcriptCount || 0
+      };
+    }
+
+    console.log('📝 [HISTORY] Attempting to update history item:', historyId, {
+      hasSummary: !!historyUpdateData.summaryData,
+      userId: userId
+    });
+
+    const docRef = doc(db, 'searchHistory', historyId);
+    await updateDoc(docRef, historyUpdateData);
+    
+    console.log('✅ [HISTORY] History item updated successfully:', historyId);
+    return true;
+  } catch (error) {
+    console.error('❌ [HISTORY] Error updating history item:', error);
+    console.error('🔍 [HISTORY] Error details:', {
+      name: error.name,
+      message: error.message,
+      code: error.code
+    });
+    return false;
   }
 };
 

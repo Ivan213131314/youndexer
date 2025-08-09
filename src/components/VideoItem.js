@@ -1,5 +1,6 @@
 import React from 'react';
 import './VideoItem.css';
+import ThumbnailImage from './ThumbnailImage';
 
 const VideoItem = ({ video, index }) => {
   const handleVideoClick = () => {
@@ -14,11 +15,14 @@ const VideoItem = ({ video, index }) => {
         <h4>{video.title}</h4>
         {video.thumbnail && (
           <div className="video-thumbnail-container">
-            <img 
+            <ThumbnailImage
               src={video.thumbnail} 
               alt={video.title}
               className="video-thumbnail"
               onClick={handleVideoClick}
+              fallbackIcon="🎬"
+              maxRetries={2}
+              retryDelay={1000}
             />
             {video.url && (
               <div className="video-link-overlay">

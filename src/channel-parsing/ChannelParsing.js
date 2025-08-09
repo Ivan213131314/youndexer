@@ -3,6 +3,7 @@ import { parseChannel, validateChannelUrl } from './channelService';
 import { addTranscriptsToVideos } from '../ytSearchModule';
 import TranscriptSummary from '../TranscriptSummary';
 import VideoItem from '../components/VideoItem';
+import ThumbnailImage from '../components/ThumbnailImage';
 import './ChannelParsing.css';
 
 function ChannelParsing({ onBackToMain }) {
@@ -368,10 +369,13 @@ function ChannelParsing({ onBackToMain }) {
                     <div key={index} className="video-item">
                       <div className="video-header">
                         <h4>{video.title}</h4>
-                        <img 
+                        <ThumbnailImage
                           src={video.thumbnail} 
                           alt={video.title}
                           className="video-thumbnail"
+                          fallbackIcon="🎬"
+                          maxRetries={2}
+                          retryDelay={1000}
                         />
                       </div>
                       <div className="video-details">
