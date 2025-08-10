@@ -514,17 +514,16 @@ app.post('/api/summarize-videos', async (req, res) => {
       });
     }
     
-    const prompt = `Based on the following YouTube video transcripts, generate a clear and structured summary that directly answers the user's request:"${userQuery}"
+    const prompt = `Based on the following YouTube video transcripts, generate a clear and structured summary that directly answers the user's request:"${userQuery}. Make summary only with user's request language. Summary language has to be the same as user request."
 
 Instructions for generating the summary:
-1. Start by answering the user’s query as directly as possible.
+1. Start by answering the user's query as directly as possible.
 2. Use only information from the transcripts. Do not invent or assume anything not found in the transcripts.
-3. Identify and include the most important points from each transcript that relate to the user’s query.
+3. Identify and include the most important points from each transcript that relate to the user's query.
 4. If multiple transcripts discuss similar ideas or themes, highlight those recurring points.
 5. If applicable, provide practical conclusions, lessons, or recommendations based on the transcripts.
-6. Do not refer to the videos themselves (e.g., titles, URLs, creators, or platforms). Focus only on the content.
-7. Write in simple, natural English. Avoid overly formal or academic tone.
-8. Use formating the output with bullet points, emojis, or markdown. Use plain text and paragraphs only.
+6. refer to the videos themselves (e.g., titles, URLs, creators, or platforms).
+8. Use emojis, markers for visual design.
 Transciptions:
 ${allTranscripts}`;
 
@@ -552,7 +551,310 @@ ${allTranscripts}`;
 
     if (!response.ok) {
       const errorData = await response.json();
-      throw new Error(`OpenRouter API error: ${errorData.error?.message || response.statusText}`);
+      const errorMessage = errorData.error?.message || response.statusText;
+      
+      console.log(`❌ [API] OpenRouter API error: ${errorMessage}`);
+      console.log(`🔍 [API] Checking if this is a context length error...`);
+      
+      // Проверяем, является ли ошибка связанной с превышением контекста
+      if (errorMessage.includes('maximum context length') || 
+          errorMessage.includes('context_length_exceeded') || 
+          errorMessage.includes('tokens. However, you requested about') ||
+          errorMessage.includes('Please reduce the length')) {
+        console.log(`⚠️ [API] ✅ CONFIRMED: Context length exceeded. Finding longest video and creating individual summary...`);
+        
+        // Находим самое длинное видео по количеству символов в транскрипте
+        let longestVideo = null;
+        let maxLength = 0;
+        let longestIndex = -1;
+        
+        videosWithTranscripts.forEach((video, index) => {
+          const transcriptLength = video.transcript ? video.transcript.length : 0;
+          if (transcriptLength > maxLength) {
+            maxLength = transcriptLength;
+            longestVideo = video;
+            longestIndex = index;
+          }
+        });
+        
+        if (!longestVideo) {
+          throw new Error(`No video with transcript found for individual processing`);
+        }
+        
+        console.log(`📝 [API] Longest video: "${longestVideo.title}" with ${maxLength} characters`);
+        
+        // Создаем индивидуальное резюме для самого длинного видео
+        const individualSummaryPrompt = `Create a very concise summary of this YouTube video transcript. Focus ONLY on the main points and key insights. Keep it under 200 words and be very brief.
+
+IMPORTANT LANGUAGE INSTRUCTION: ${languageConfig.instruction}
+
+Video: ${longestVideo.title}
+Author: ${longestVideo.author}
+Transcript: ${longestVideo.transcript}`;
+
+        const individualResponse = await fetch('https://openrouter.ai/api/v1/chat/completions', {
+          method: 'POST',
+          headers: {
+            'Authorization': `Bearer ${openRouterApiKey}`,
+            'HTTP-Referer': 'http://localhost:3001',
+            'X-Title': 'YouTube Searcher',
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({
+            model: model,
+            messages: [
+              {
+                role: "user",
+                content: individualSummaryPrompt
+              }
+            ],
+            max_tokens: 400,
+            temperature: 0.5
+          })
+        });
+
+        if (!individualResponse.ok) {
+          throw new Error(`Failed to create individual summary for longest video`);
+        }
+
+        const individualCompletion = await individualResponse.json();
+        const individualSummary = individualCompletion.choices[0].message.content;
+        
+        console.log(`✅ [API] Individual summary created for "${longestVideo.title}"`);
+        console.log(`📄 [API] Summary length: ${individualSummary.length} characters`);
+        console.log(`📝 [API] Summary content preview: "${individualSummary.substring(0, 200)}..."`);
+        
+        // Заменяем транскрипт самого длинного видео на его резюме
+        const updatedVideosWithTranscripts = [...videosWithTranscripts];
+        updatedVideosWithTranscripts[longestIndex] = {
+          ...longestVideo,
+          transcript: individualSummary,
+          isTranscriptSummarized: true // Добавляем флаг что это summary а не оригинальный transcript
+        };
+        
+        console.log(`🔄 [API] Updated video data for "${longestVideo.title}":`);
+        console.log(`   - Original transcript length: ${maxLength} characters`);
+        console.log(`   - New summary length: ${individualSummary.length} characters`);
+        console.log(`   - isTranscriptSummarized: ${updatedVideosWithTranscripts[longestIndex].isTranscriptSummarized}`);
+        
+        // Создаем новый текст для анализа с обновленными транскриптами
+        const updatedAllTranscripts = updatedVideosWithTranscripts.map(video => 
+          `Video: ${video.title}\nAuthor: ${video.author}\nTranscript: ${video.transcript}\n\n`
+        ).join('---\n');
+        
+        console.log(`📊 [API] Updated transcripts length: ${updatedAllTranscripts.length} characters`);
+        console.log(`📊 [API] Reduced from ${allTranscripts.length} to ${updatedAllTranscripts.length} characters`);
+        
+        const updatedPrompt = `Based on the following YouTube video transcripts, generate a clear and structured summary that directly answers the user's request:"${userQuery}. Make summary with user's request language"
+
+Instructions for generating the summary:
+1. Start by answering the user's query as directly as possible.
+2. Use only information from the transcripts. Do not invent or assume anything not found in the transcripts.
+3. Identify and include the most important points from each transcript that relate to the user's query.
+4. If multiple transcripts discuss similar ideas or themes, highlight those recurring points.
+5. If applicable, provide practical conclusions, lessons, or recommendations based on the transcripts.
+6. Do not refer to the videos themselves (e.g., titles, URLs, creators, or platforms). Focus only on the content.
+7. Write in simple, natural English. Avoid overly formal or academic tone.
+8. Use formating the output with bullet points, emojis, or markdown. Use plain text and paragraphs only.
+Transciptions:
+${updatedAllTranscripts}`;
+
+        // Рекурсивная функция для обработки длинного контента
+        const processLongContent = async (videosToProcess, attempt = 1, maxAttempts = 5) => {
+          console.log(`🔄 [API] Processing attempt ${attempt}/${maxAttempts} with ${videosToProcess.length} videos`);
+          
+          const currentAllTranscripts = videosToProcess.map(video => 
+            `Video: ${video.title}\nAuthor: ${video.author}\nTranscript: ${video.transcript}\n\n`
+          ).join('---\n');
+          
+          const currentPrompt = `Based on the following YouTube video transcripts, generate a clear and structured summary that directly answers the user's request: "${userQuery}"
+
+IMPORTANT LANGUAGE INSTRUCTION: ${languageConfig.instruction}
+
+Instructions for generating the summary:
+1. Start by answering the user's query as directly as possible.
+2. Use only information from the transcripts. Do not invent or assume anything not found in the transcripts.
+3. Identify and include the most important points from each transcript that relate to the user's query.
+4. If multiple transcripts discuss similar ideas or themes, highlight those recurring points.
+5. If applicable, provide practical conclusions, lessons, or recommendations based on the transcripts.
+6. Do not refer to the videos themselves (e.g., titles, URLs, creators, or platforms). Focus only on the content.
+7. Write in simple, natural tone that matches the language of the user's request.
+8. Use formatting with bullet points, emojis, or markdown. Use plain text and paragraphs only.
+9. Remember: Write the ENTIRE summary in ${languageConfig.languageName}.
+
+Transcripts:
+${currentAllTranscripts}`;
+
+          try {
+            const attemptResponse = await fetch('https://openrouter.ai/api/v1/chat/completions', {
+              method: 'POST',
+              headers: {
+                'Authorization': `Bearer ${openRouterApiKey}`,
+                'HTTP-Referer': 'http://localhost:3001',
+                'X-Title': 'YouTube Searcher',
+                'Content-Type': 'application/json',
+              },
+              body: JSON.stringify({
+                model: model,
+                messages: [
+                  {
+                    role: "user",
+                    content: currentPrompt
+                  }
+                ],
+                max_tokens: 2000,
+                temperature: 0.7
+              })
+            });
+
+            if (!attemptResponse.ok) {
+              const attemptErrorData = await attemptResponse.json();
+              const attemptErrorMessage = attemptErrorData.error?.message || attemptResponse.statusText;
+              
+              // Проверяем, является ли ошибка связанной с превышением контекста
+              if ((attemptErrorMessage.includes('maximum context length') || 
+                   attemptErrorMessage.includes('context_length_exceeded') || 
+                   attemptErrorMessage.includes('tokens. However, you requested about') ||
+                   attemptErrorMessage.includes('Please reduce the length')) && 
+                  attempt < maxAttempts) {
+                
+                console.log(`⚠️ [API] Context still too large on attempt ${attempt}. Finding next longest video...`);
+                
+                // Находим следующее самое длинное видео (исключая уже обработанные)
+                let nextLongestVideo = null;
+                let nextMaxLength = 0;
+                let nextLongestIndex = -1;
+                
+                videosToProcess.forEach((video, index) => {
+                  const transcriptLength = video.transcript ? video.transcript.length : 0;
+                  if (transcriptLength > nextMaxLength && !video.isTranscriptSummarized) {
+                    nextMaxLength = transcriptLength;
+                    nextLongestVideo = video;
+                    nextLongestIndex = index;
+                  }
+                });
+                
+                if (!nextLongestVideo) {
+                  throw new Error(`No more videos to process - all have been summarized but context is still too large`);
+                }
+                
+                console.log(`📝 [API] Next longest video: "${nextLongestVideo.title}" with ${nextMaxLength} characters`);
+                
+                // Создаем summary для следующего длинного видео
+                const nextSummaryPrompt = `Create a very concise summary of this YouTube video transcript. Focus ONLY on the main points and key insights. Keep it under 200 words and be very brief.
+
+IMPORTANT LANGUAGE INSTRUCTION: ${languageConfig.instruction}
+
+Video: ${nextLongestVideo.title}
+Author: ${nextLongestVideo.author}
+Transcript: ${nextLongestVideo.transcript}`;
+
+                const nextSummaryResponse = await fetch('https://openrouter.ai/api/v1/chat/completions', {
+                  method: 'POST',
+                  headers: {
+                    'Authorization': `Bearer ${openRouterApiKey}`,
+                    'HTTP-Referer': 'http://localhost:3001',
+                    'X-Title': 'YouTube Searcher',
+                    'Content-Type': 'application/json',
+                  },
+                  body: JSON.stringify({
+                    model: model,
+                    messages: [
+                      {
+                        role: "user",
+                        content: nextSummaryPrompt
+                      }
+                    ],
+                    max_tokens: 400,
+                    temperature: 0.5
+                  })
+                });
+
+                if (!nextSummaryResponse.ok) {
+                  throw new Error(`Failed to create summary for next longest video`);
+                }
+
+                const nextSummaryCompletion = await nextSummaryResponse.json();
+                const nextSummary = nextSummaryCompletion.choices[0].message.content;
+                
+                console.log(`✅ [API] Next summary created for "${nextLongestVideo.title}"`);
+                console.log(`📄 [API] Next summary length: ${nextSummary.length} characters`);
+                
+                // Обновляем следующее видео
+                const nextUpdatedVideos = [...videosToProcess];
+                nextUpdatedVideos[nextLongestIndex] = {
+                  ...nextLongestVideo,
+                  transcript: nextSummary,
+                  isTranscriptSummarized: true
+                };
+                
+                console.log(`🔄 [API] Updated next video data for "${nextLongestVideo.title}"`);
+                
+                // Рекурсивно пробуем снова
+                return await processLongContent(nextUpdatedVideos, attempt + 1, maxAttempts);
+              } else {
+                throw new Error(`OpenRouter API error on attempt ${attempt}: ${attemptErrorMessage}`);
+              }
+            }
+
+            // Успешный ответ
+            const attemptCompletion = await attemptResponse.json();
+            return {
+              completion: attemptCompletion,
+              processedVideos: videosToProcess
+            };
+            
+          } catch (error) {
+            if (attempt >= maxAttempts) {
+              throw new Error(`Maximum attempts (${maxAttempts}) reached. Last error: ${error.message}`);
+            }
+            throw error;
+          }
+        };
+
+        // Запускаем рекурсивную обработку
+        const processResult = await processLongContent(updatedVideosWithTranscripts);
+        const retryCompletion = processResult.completion;
+        const finalProcessedVideos = processResult.processedVideos;
+        const retrySummary = retryCompletion.choices[0].message.content;
+        
+        const result = {
+          summary: retrySummary,
+          totalResults: videos.length,
+          transcriptCount: videosWithTranscripts.length,
+          hasLongContentProcessing: true,
+          longContentMessage: "too long content, making summary for the most long video and trying again",
+          processedLongestVideo: {
+            title: longestVideo.title,
+            author: longestVideo.author,
+            videoId: longestVideo.videoId,
+            originalTranscriptLength: maxLength,
+            summaryLength: individualSummary.length
+          },
+          updatedVideos: finalProcessedVideos, // Отправляем финальные обновленные данные видео
+          videosProcessed: finalProcessedVideos.map(v => ({
+            title: v.title,
+            author: v.author,
+            videoId: v.videoId,
+            isTranscriptSummarized: v.isTranscriptSummarized || false
+          }))
+        };
+        
+        console.log(`✅ [API] Summary created successfully after processing longest video`);
+        console.log(`📊 [API] Sending ${result.updatedVideos.length} updated videos to frontend`);
+        console.log(`📊 [API] Final videos summary:`, result.updatedVideos.map(v => ({
+          title: v.title,
+          videoId: v.videoId,
+          transcriptLength: v.transcript ? v.transcript.length : 0,
+          isTranscriptSummarized: v.isTranscriptSummarized
+        })));
+        console.log(`📊 [API] Results:`, result);
+        
+        return res.json(result);
+      } else {
+        console.log(`❌ [API] This is NOT a context length error. Error type: other`);
+        throw new Error(`OpenRouter API error: ${errorMessage}`);
+      }
     }
 
     const completion = await response.json();

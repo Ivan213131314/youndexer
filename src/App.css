@@ -505,6 +505,24 @@ body {
   align-items: center;
 }
 
+.stat-item.long-content-warning {
+  background: #e3f2fd;
+  padding: 0.5rem;
+  border-radius: 4px;
+  border-left: 4px solid #2196f3;
+}
+
+.stat-item.long-content-warning .stat-label {
+  color: #1565c0;
+  font-weight: 600;
+}
+
+.stat-item.long-content-warning .stat-value {
+  color: #1565c0;
+  font-weight: 500;
+  font-style: italic;
+}
+
 .stat-label {
   font-weight: 500;
   color: #5f6368;

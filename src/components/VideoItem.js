@@ -53,8 +53,16 @@ const VideoItem = ({ video, index }) => {
 
       {video.transcript && (
         <details className="transcript-details">
-          <summary>► Показать transcript</summary>
+          <summary>
+            ► Показать {video.isTranscriptSummarized ? 'summary' : 'transcript'}
+            {video.isTranscriptSummarized && <span className="summary-badge">✨ Summary</span>}
+          </summary>
           <div className="transcript-content">
+            {video.isTranscriptSummarized && (
+              <div className="summary-notice">
+                📝 Это краткое резюме видео, созданное из-за слишком длинного контента
+              </div>
+            )}
             {typeof video.transcript === 'string' ? video.transcript : 'Transcript недоступен'}
           </div>
         </details>

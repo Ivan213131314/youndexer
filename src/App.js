@@ -17,7 +17,7 @@ import { AuthProvider, useAuth } from './auth/AuthContext';
 import { parseChannel, validateChannelUrl } from './channel-parsing/channelService';
 import './App.css';
 
-const videoSearchCountPerRequest = 10;
+const videoSearchCountPerRequest = 20;
 
 function AppContent() {
   const { user } = useAuth(); // Добавляем авторизацию
