@@ -7,11 +7,14 @@ import './TranscriptSummary.css';
 
 
 
-const TranscriptSummary = ({ videos, userQuery, onSummaryComplete, selectedModel, summaryData }) => {
+const TranscriptSummary = ({ videos, userQuery, onSummaryComplete, selectedModel, summaryData, detailedSummary = false }) => {
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState(null);
   const [isDownloading, setIsDownloading] = useState(false);
   const [summaryPrompt, setSummaryPrompt] = useState('');
+
+  // Отладка: логируем получение пропа detailedSummary
+  console.log(`🔍 [TRANSCRIPT_SUMMARY] Компонент получил detailedSummary = ${detailedSummary}`);
 
 
 
@@ -67,17 +70,36 @@ const TranscriptSummary = ({ videos, userQuery, onSummaryComplete, selectedModel
       console.log('🚀 [SUMMARY] Создаем резюме...');
       console.log(`📋 [SUMMARY] Количество видео: ${videos.length}`);
       console.log(`📝 [SUMMARY] Видео с transcriptами: ${videosWithTranscripts.length}`);
-      console.log(`🔍 [SUMMARY] Запрос: "${userQuery}"`);
+      console.log(`🔍 [SUMMARY] Исходный запрос: "${userQuery}"`);
       console.log(`📝 [SUMMARY] Дополнительный промпт: "${summaryPrompt}"`);
+      console.log(`🎯 [SUMMARY] Режим детального резюме: ${detailedSummary ? 'ВКЛЮЧЕН' : 'ВЫКЛЮЧЕН'}`);
 
-      // Формируем финальный запрос с учетом дополнительного промпта
-      const finalQuery = summaryPrompt ? `${userQuery}. ${summaryPrompt}` : userQuery;
+      // Формируем финальный запрос с учетом дополнительного промпта и детального режима
+      let finalQuery = userQuery;
+      
+      // Добавляем текст для детального резюме если включен соответствующий режим
+      if (detailedSummary) {
+        const detailedText = ". Создай очень детальное и подробное резюме с глубоким анализом, развернутыми пояснениями, конкретными примерами и расширенными выводами. Включи максимум полезной информации из транскриптов.";
+        finalQuery += detailedText;
+        console.log(`✨ [SUMMARY] Добавлен текст для детального резюме: "${detailedText}"`);
+      }
+      
+      // Добавляем пользовательский промпт если есть
+      if (summaryPrompt) {
+        finalQuery += `. ${summaryPrompt}`;
+        console.log(`🔧 [SUMMARY] Добавлен пользовательский промпт: "${summaryPrompt}"`);
+      }
+
+      console.log(`📤 [SUMMARY] ФИНАЛЬНЫЙ ЗАПРОС К LLM: "${finalQuery}"`);
+      console.log(`📊 [SUMMARY] Длина финального запроса: ${finalQuery.length} символов`);
+      console.log('='.repeat(100));
 
       // Отправляем полные transcriptы для качественного резюме
       const requestBody = {
         videos: videosWithTranscripts,
         userQuery: finalQuery,
-        model: selectedModel
+        model: selectedModel,
+        detailedSummary: detailedSummary
       };
 
       console.log('📤 [SUMMARY] Отправляем запрос к серверу:');

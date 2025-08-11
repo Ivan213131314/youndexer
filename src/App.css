@@ -288,12 +288,7 @@ body {
   line-height: 1.6;
 }
 
-/* LLM Selector Section */
-.llm-selector-section {
-  margin: 2rem auto;
-  max-width: 800px;
-  width: 100%;
-}
+
 
 .search-input {
   flex: 1;

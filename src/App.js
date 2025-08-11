@@ -779,7 +779,10 @@ function AppContent() {
                         <input
                           type="checkbox"
                           checked={detailedSummary}
-                          onChange={(e) => setDetailedSummary(e.target.checked)}
+                          onChange={(e) => {
+                            console.log(`🔄 [APP] Detailed Summary переключен: ${e.target.checked ? 'ВКЛЮЧЕН' : 'ВЫКЛЮЧЕН'}`);
+                            setDetailedSummary(e.target.checked);
+                          }}
                           disabled={isLoading}
                         />
                         <span className="toggle-slider"></span>
@@ -797,13 +800,7 @@ function AppContent() {
             </div>
           </div>
 
-          {/* LLM Model Selector */}
-          <div className="llm-selector-section">
-            <LLMChoose 
-              selectedModel={selectedModel}
-              onModelChange={setSelectedModel}
-            />
-          </div>
+
 
                      {/* Сообщение об ошибке */}
            {channelError && (
@@ -848,13 +845,17 @@ function AppContent() {
                   
                   {/* Показываем компонент для создания резюме */}
                   {searchResults && searchResults.length > 0 && (
-                    <TranscriptSummary 
-                      videos={searchResults}
-                      userQuery={query}
-                      onSummaryComplete={handleSummaryComplete}
-                      selectedModel={selectedModel}
-                      summaryData={summaryData}
-                    />
+                    <>
+                      {console.log(`📋 [APP] Передаем в TranscriptSummary (поиск): detailedSummary = ${detailedSummary}`)}
+                      <TranscriptSummary 
+                        videos={searchResults}
+                        userQuery={query}
+                        onSummaryComplete={handleSummaryComplete}
+                        selectedModel={selectedModel}
+                        summaryData={summaryData}
+                        detailedSummary={detailedSummary}
+                      />
+                    </>
                   )}
 
                   {/* Отображение готового резюме */}
@@ -1049,13 +1050,17 @@ function AppContent() {
                             
                             {/* Показываем компонент для создания резюме */}
                             {channelVideosResults.videos && channelVideosResults.videos.length > 0 && (
-                              <TranscriptSummary 
-                                videos={channelVideosResults.videos}
-                                userQuery={`Канал: ${parsingResults.channelName}`}
-                                onSummaryComplete={handleChannelSummaryComplete}
-                                selectedModel={selectedModel}
-                                summaryData={channelSummaryData}
-                              />
+                              <>
+                                {console.log(`📺 [APP] Передаем в TranscriptSummary (канал): detailedSummary = ${detailedSummary}`)}
+                                <TranscriptSummary 
+                                  videos={channelVideosResults.videos}
+                                  userQuery={`Канал: ${parsingResults.channelName}`}
+                                  onSummaryComplete={handleChannelSummaryComplete}
+                                  selectedModel={selectedModel}
+                                  summaryData={channelSummaryData}
+                                  detailedSummary={detailedSummary}
+                                />
+                              </>
                             )}
 
                             {/* Отображение готового резюме */}

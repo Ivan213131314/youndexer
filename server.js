@@ -472,7 +472,7 @@ app.post('/api/summarize-transcripts', async (req, res) => {
 // Новый endpoint для создания резюме из видео напрямую
 app.post('/api/summarize-videos', async (req, res) => {
   try {
-    const { videos, userQuery, model = 'openai/gpt-4o' } = req.body;
+    const { videos, userQuery, model = 'openai/gpt-4o', detailedSummary = false } = req.body;
     
     if (!videos || !Array.isArray(videos) || !userQuery) {
       return res.status(400).json({ 
@@ -481,6 +481,7 @@ app.post('/api/summarize-videos', async (req, res) => {
     }
     
     console.log(`🔍 [API] Creating summary for ${videos.length} videos, query: "${userQuery}", model: "${model}"`);
+    console.log(`🎯 [API] Detailed Summary mode: ${detailedSummary ? 'ENABLED' : 'DISABLED'}`);
     
 
     
@@ -516,16 +517,62 @@ app.post('/api/summarize-videos', async (req, res) => {
       });
     }
     
-    const prompt = `Based on the following YouTube video transcripts, generate a clear and structured summary that directly answers the user's request:"${userQuery}. Make summary with user's request language"
+    // Формируем промпт в зависимости от режима детального резюме
+    let basePrompt = `Based on the following YouTube video transcripts, generate a clear and structured summary that directly answers the user's request:"${userQuery}. Make summary with user's request language"
 
 You are an expert at creating attractive, well-structured summaries based on YouTube video transcripts.
 
 Task:
-Using the provided video transcripts, generate a clear, visually appealing, and structured summary that directly answers the user’s query.
+Using the provided video transcripts, generate a clear, visually appealing, and structured summary that directly answers the user's query.
 Rules:
-Language — Always write the summary in the same language as the user’s query - ${userQuery}. If the query is in Russian, write in Russian. If it’s in English, write in English, etc.
-Structure & Formatting — Do not use markdown headings. Instead, use numbered and bulleted lists for structure. Add line breaks between sections for readability.Content:
-Start with a short, direct answer to the user’s query.
+Language — Always write the summary in the same language as the user's query - ${userQuery}. If the query is in Russian, write in Russian. If it's in English, write in English, etc.`;
+
+    if (detailedSummary) {
+      // Детальный режим - более подробные инструкции
+      basePrompt += `
+Structure & Formatting — Create a comprehensive, detailed summary with extensive analysis. Use numbered and bulleted lists for structure. Add line breaks between sections for readability.
+Content:
+Start with a detailed, comprehensive answer to the user's query with extensive context.
+Include ALL relevant information found in the transcripts. Be thorough and comprehensive.
+Provide deep analysis and detailed explanations for each key point.
+Highlight and merge ALL recurring points from multiple transcripts with detailed context.
+Include specific examples, quotes, and detailed explanations from the transcripts.
+Provide extensive practical conclusions, lessons, and step-by-step recommendations with detailed reasoning.
+Add detailed background information and context where relevant.
+Include nuanced insights and detailed interpretations of the content.
+Quotes & References:
+Include extensive quotes with timestamps when present, e.g., (00:45).
+Provide detailed context for each reference.
+If video links are provided, list them with detailed descriptions at the bottom.
+Style:
+Write in a comprehensive, detailed, and thorough tone while remaining engaging.
+Provide extensive explanations and detailed reasoning for each point.
+Use emojis extensively to improve visual appeal: 📌, 🔍, 💡, ✅, ❗, 📈, 📊, 📝, 🚀, 🎯, 📋, 💭, 🔬, 📚.
+Example Detailed Layout:
+1️⃣ 📌 Comprehensive Answer:
+Detailed, thorough response to the query with extensive context and background information.
+2️⃣ 🔍 Detailed Key Points:
+• Point 1 — comprehensive description with detailed context, examples, and implications (00:45)
+• Point 2 — another essential detail with thorough explanation and analysis
+• Point 3 — additional insight with extensive background and detailed reasoning
+• Point 4 — further detailed analysis with comprehensive context
+3️⃣ 💡 Detailed Analysis & Insights:
+• Deep insight 1 — detailed explanation with comprehensive reasoning
+• Deep insight 2 — thorough analysis with extensive context
+4️⃣ 🎯 Comprehensive Recommendations:
+• Detailed recommendation 1 — extensive reasoning and step-by-step guidance
+• Detailed recommendation 2 — thorough explanation with comprehensive context
+• Optional detailed tip — when it's useful with extensive reasoning
+5️⃣ 📋 Additional Context & Background:
+• Comprehensive background information
+• Detailed contextual analysis
+• Extensive supporting information`;
+    } else {
+      // Обычный режим - стандартные инструкции
+      basePrompt += `
+Structure & Formatting — Do not use markdown headings. Instead, use numbered and bulleted lists for structure. Add line breaks between sections for readability.
+Content:
+Start with a short, direct answer to the user's query.
 Only include information found in the transcripts. Do not add or invent any details.
 Highlight and merge key recurring points from multiple transcripts.
 If applicable, provide practical conclusions, lessons, or step-by-step recommendations.
@@ -546,13 +593,19 @@ In short — [direct answer to the query].
 3️⃣ 💡 Recommendations:
 • Do this first — reason why
 • Follow with this step — reason why
-• Optional tip — when it’s useful
+• Optional tip — when it's useful
 Sources:
 ¹ Link to Video 1
-² Link to Video 2
+² Link to Video 2`;
+    }
+
+    const prompt = `${basePrompt}
 Now follow these rules to create the summary for the transcripts below.
 Transciptions:
 ${allTranscripts}`;
+
+    console.log(`📝 [API] Using ${detailedSummary ? 'DETAILED' : 'STANDARD'} prompt template`);
+    console.log(`📊 [API] Total prompt length: ${prompt.length} characters`);
 
     // Отправляем запрос к OpenRouter API
     const response = await fetch('https://openrouter.ai/api/v1/chat/completions', {
