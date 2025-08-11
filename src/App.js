@@ -21,25 +21,25 @@ const videoSearchCountPerRequest = 20;
 
 function AppContent() {
   const { user } = useAuth(); // Добавляем авторизацию
+  const [currentPage, setCurrentPage] = useState('main');
+  const [selectedHistoryId, setSelectedHistoryId] = useState(null);
   const [query, setQuery] = useState('');
+  const [searchResults, setSearchResults] = useState([]);
   const [isLoading, setIsLoading] = useState(false);
-  const [searchResults, setSearchResults] = useState(null);
+  const [error, setError] = useState(null);
   const [summaryData, setSummaryData] = useState(null);
-  const [isResizing, setIsResizing] = useState(false);
-  const [leftColumnWidth, setLeftColumnWidth] = useState(50); // процент от общей ширины
-  const [currentPage, setCurrentPage] = useState('main'); // 'main', 'history' или 'about'
-  const [selectedModel, setSelectedModel] = useState('openai/gpt-4o'); // выбранная LLM модель
-  const [searchMode, setSearchMode] = useState('request'); // 'request' или 'parsing'
-  
-  // Состояния для парсинга каналов
+  const [searchMode, setSearchMode] = useState('request');
   const [channelUrl, setChannelUrl] = useState('');
-  const [parsingResults, setParsingResults] = useState(null);
-  const [channelVideosResults, setChannelVideosResults] = useState(null);
+  const [channelError, setChannelError] = useState(null);
+  const [selectedModel, setSelectedModel] = useState('horizon-beta-openrouter');
+  const [leftColumnWidth, setLeftColumnWidth] = useState(70);
+  const [isResizing, setIsResizing] = useState(false);
   const [isLoadingVideos, setIsLoadingVideos] = useState(false);
   const [selectedVideoCount, setSelectedVideoCount] = useState(10);
-  const [channelError, setChannelError] = useState(null);
   const [channelSummaryData, setChannelSummaryData] = useState(null);
   const [isLoadingDefault, setIsLoadingDefault] = useState(false);
+  const [parsingResults, setParsingResults] = useState(null);
+  const [channelVideosResults, setChannelVideosResults] = useState(null);
   const [currentParsingHistoryId, setCurrentParsingHistoryId] = useState(null);
 
 
@@ -179,8 +179,18 @@ function AppContent() {
       
       // Проверяем, что получили результаты
       if (!allVideos || allVideos.length === 0) {
-        console.log(`❌ [APP] No videos found for query`);
-        return;
+        console.log(`❌ [APP] No videos found for query, retrying...`);
+        
+        // Повторяем запрос еще раз
+        const retryVideos = await searchVideosWithPhrases([query], videoSearchCountPerRequest);
+        
+        if (!retryVideos || retryVideos.length === 0) {
+          console.log(`❌ [APP] Still no videos found after retry`);
+          return;
+        }
+        
+        console.log(`✅ [APP] Found ${retryVideos.length} videos on retry`);
+        allVideos = retryVideos;
       }
         
         console.log(`\n🎉 [APP] Search Results:`);
@@ -651,10 +661,16 @@ function AppContent() {
       <Navigation 
         currentPage={currentPage} 
         onPageChange={setCurrentPage}
+        selectedHistoryId={selectedHistoryId}
+        onResetHistory={() => setSelectedHistoryId(null)}
       />
       
       {currentPage === 'history' ? (
-        <History />
+        <History 
+          onBackToMain={() => setCurrentPage('main')}
+          selectedHistoryId={selectedHistoryId}
+          setSelectedHistoryId={setSelectedHistoryId}
+        />
       ) : currentPage === 'about' ? (
         <AboutUs />
       ) : (

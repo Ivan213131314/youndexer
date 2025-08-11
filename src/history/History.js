@@ -10,9 +10,8 @@ import './History.css';
 
 
 
-const History = ({ onBackToMain }) => {
+const History = ({ onBackToMain, selectedHistoryId, setSelectedHistoryId }) => {
   const { history, loading, error, refreshHistory } = useSearchHistory();
-  const [selectedHistoryId, setSelectedHistoryId] = useState(null);
   const { historyItem, loading: itemLoading } = useHistoryItem(selectedHistoryId);
   const { deleteItem, deleting } = useDeleteHistoryItem();
   const { deleteAll, deletingAll } = useDeleteAllHistory();

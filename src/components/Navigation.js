@@ -4,10 +4,27 @@ import UserProfile from '../auth/UserProfile';
 import AuthButtons from '../auth/AuthButtons';
 import LogoIcon from './LogoIcon';
 
-const Navigation = ({ currentPage, onPageChange }) => {
+const Navigation = ({ currentPage, onPageChange, selectedHistoryId, onResetHistory }) => {
+  const handleLogoClick = () => {
+    // Переходим на главную страницу только если мы не на главной странице
+    if (currentPage !== 'main') {
+      onPageChange('main');
+    }
+  };
+
+  const handleHistoryClick = () => {
+    if (currentPage === 'history' && selectedHistoryId) {
+      // Если мы на странице истории И открыт детальный просмотр - возвращаемся к списку
+      onResetHistory();
+    } else {
+      // Иначе переходим на страницу истории
+      onPageChange('history');
+    }
+  };
+
   return (
     <div className="navigation">
-      <div className="logo">
+      <div className="logo" onClick={handleLogoClick}>
         <LogoIcon size={28} color="#1a73e8" />
         <span className="logo-text">YT Searcher</span>
       </div>
@@ -23,7 +40,7 @@ const Navigation = ({ currentPage, onPageChange }) => {
           
           <button 
             className={`nav-button ${currentPage === 'history' ? 'active' : ''}`}
-            onClick={() => onPageChange('history')}
+            onClick={handleHistoryClick}
           >
             History
           </button>
