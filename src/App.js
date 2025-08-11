@@ -347,6 +347,7 @@ function AppContent() {
     setIsLoading(true);
     setParsingResults(null);
     setChannelError(null);
+    setChannelSummaryData(null); // Очищаем предыдущее резюме
     setCurrentParsingHistoryId(null); // Сбрасываем ID предыдущего парсинга
     
     try {
