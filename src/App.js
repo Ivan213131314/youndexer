@@ -31,7 +31,7 @@ function AppContent() {
   const [searchMode, setSearchMode] = useState('request');
   const [channelUrl, setChannelUrl] = useState('');
   const [channelError, setChannelError] = useState(null);
-  const [selectedModel, setSelectedModel] = useState('horizon-beta-openrouter');
+  const [selectedModel, setSelectedModel] = useState('tngtech/deepseek-r1t2-chimera:free');
   const [leftColumnWidth, setLeftColumnWidth] = useState(70);
   const [isResizing, setIsResizing] = useState(false);
   const [isLoadingVideos, setIsLoadingVideos] = useState(false);
@@ -41,6 +41,17 @@ function AppContent() {
   const [parsingResults, setParsingResults] = useState(null);
   const [channelVideosResults, setChannelVideosResults] = useState(null);
   const [currentParsingHistoryId, setCurrentParsingHistoryId] = useState(null);
+  const [proModel, setProModel] = useState(false);
+  const [detailedSummary, setDetailedSummary] = useState(false);
+
+  // Эффект для автоматического переключения модели при изменении proModel
+  useEffect(() => {
+    if (proModel) {
+      setSelectedModel('google/gemini-2.0-flash-lite-001');
+    } else {
+      setSelectedModel('tngtech/deepseek-r1t2-chimera:free');
+    }
+  }, [proModel]);
 
 
 
@@ -720,27 +731,67 @@ function AppContent() {
                     {isLoading ? (searchMode === 'request' ? 'Searching...' : 'Parsing...') : (searchMode === 'request' ? 'Search' : 'Parse')}
                   </button>
                 </div>
-                <div className="search-mode-toggle">
-                                   <button
-                     className={`toggle-button ${searchMode === 'request' ? 'active' : ''}`}
-                     onClick={() => {
-                       setSearchMode('request');
-                       setChannelError(null);
-                     }}
-                     disabled={isLoading}
-                   >
-                     Write your request
-                   </button>
-                   <button
-                     className={`toggle-button ${searchMode === 'parsing' ? 'active' : ''}`}
-                     onClick={() => {
-                       setSearchMode('parsing');
-                       setChannelError(null);
-                     }}
-                     disabled={isLoading}
-                   >
-                     Summorise video or channel
-                   </button>
+                <div className="toggles-container">
+                  <div className="search-mode-toggle">
+                    <button
+                      className={`toggle-button ${searchMode === 'request' ? 'active' : ''}`}
+                      onClick={() => {
+                        setSearchMode('request');
+                        setChannelError(null);
+                      }}
+                      disabled={isLoading}
+                    >
+                      Write your request
+                    </button>
+                    <button
+                      className={`toggle-button ${searchMode === 'parsing' ? 'active' : ''}`}
+                      onClick={() => {
+                        setSearchMode('parsing');
+                        setChannelError(null);
+                      }}
+                      disabled={isLoading}
+                    >
+                      Summorise video or channel
+                    </button>
+                  </div>
+                  
+                  <div className="additional-toggles">
+                    <div className="toggle-item">
+                      <label className="toggle-switch">
+                        <input
+                          type="checkbox"
+                          checked={proModel}
+                          onChange={(e) => setProModel(e.target.checked)}
+                          disabled={isLoading}
+                        />
+                        <span className="toggle-slider"></span>
+                      </label>
+                      <span className="toggle-label">
+                        Pro Model
+                        <span className="tooltip-trigger" data-tooltip="Использование модели Gemini 2.0 Flash Lite (Google). Эта модель обеспечивает более высокое качество результатов, но потребляет больше токенов и стоит дороже.">
+                          ❓
+                        </span>
+                      </span>
+                    </div>
+                    
+                    <div className="toggle-item">
+                      <label className="toggle-switch">
+                        <input
+                          type="checkbox"
+                          checked={detailedSummary}
+                          onChange={(e) => setDetailedSummary(e.target.checked)}
+                          disabled={isLoading}
+                        />
+                        <span className="toggle-slider"></span>
+                      </label>
+                      <span className="toggle-label">
+                        Detailed Summary
+                        <span className="tooltip-trigger" data-tooltip="Создание более подробного резюме с детальными пояснениями, анализом ключевых моментов и расширенными выводами.">
+                          ❓
+                        </span>
+                      </span>
+                    </div>
+                  </div>
                 </div>
               </div>
             </div>

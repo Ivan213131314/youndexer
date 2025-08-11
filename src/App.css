@@ -72,6 +72,16 @@ body {
   width: 100%;
 }
 
+/* Контейнер для всех переключателей */
+.toggles-container {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 1rem;
+  width: 100%;
+  flex-wrap: wrap;
+}
+
 /* Стили для переключателя режимов поиска */
 .search-mode-toggle {
   display: flex;
@@ -80,7 +90,8 @@ body {
   padding: 4px;
   gap: 4px;
   box-shadow: inset 0 1px 3px rgba(0, 0, 0, 0.1);
-  width: 100%;
+  flex: 1;
+  max-width: 450px;
 }
 
 .toggle-button {
@@ -721,5 +732,177 @@ body {
   .channel-header-left {
     align-items: center;
     text-align: center;
+  }
+}
+
+/* Стили для дополнительных переключателей */
+.additional-toggles {
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+  align-items: flex-start;
+}
+
+.toggle-item {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.toggle-label {
+  display: flex;
+  align-items: center;
+  gap: 0.25rem;
+  font-size: 14px;
+  font-weight: 500;
+  color: #5f6368;
+  white-space: nowrap;
+}
+
+/* Стили для custom toggle switch */
+.toggle-switch {
+  position: relative;
+  display: inline-block;
+  width: 44px;
+  height: 24px;
+}
+
+.toggle-switch input {
+  opacity: 0;
+  width: 0;
+  height: 0;
+}
+
+.toggle-slider {
+  position: absolute;
+  cursor: pointer;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background-color: #ccc;
+  transition: 0.3s ease;
+  border-radius: 24px;
+}
+
+.toggle-slider:before {
+  position: absolute;
+  content: "";
+  height: 18px;
+  width: 18px;
+  left: 3px;
+  bottom: 3px;
+  background-color: white;
+  transition: 0.3s ease;
+  border-radius: 50%;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
+}
+
+.toggle-switch input:checked + .toggle-slider {
+  background-color: #007bff;
+}
+
+.toggle-switch input:checked + .toggle-slider:before {
+  transform: translateX(20px);
+}
+
+.toggle-switch input:disabled + .toggle-slider {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+/* Tooltip стили */
+.tooltip-trigger {
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 16px;
+  height: 16px;
+  background: #f0f0f0;
+  border-radius: 50%;
+  font-size: 10px;
+  cursor: help;
+  transition: all 0.2s ease;
+}
+
+.tooltip-trigger:hover {
+  background: #e0e0e0;
+  transform: scale(1.1);
+  z-index: 999;
+}
+
+.tooltip-trigger:before {
+  content: attr(data-tooltip);
+  position: absolute;
+  bottom: 50%;
+  right: 100%;
+  margin-right: 8px;
+  padding: 8px 12px;
+  background: #333;
+  color: white;
+  border-radius: 6px;
+  font-size: 12px;
+  line-height: 1.4;
+  width: 280px;
+  text-align: left;
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity 0.3s ease;
+  z-index: 99999;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+  transform: translateY(50%);
+  white-space: normal;
+}
+
+.tooltip-trigger:after {
+  content: "";
+  position: absolute;
+  bottom: 50%;
+  right: 100%;
+  transform: translateY(50%);
+  margin-right: 2px;
+  border: 4px solid transparent;
+  border-left-color: #333;
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity 0.3s ease;
+  z-index: 99999;
+}
+
+.tooltip-trigger:hover:before,
+.tooltip-trigger:hover:after {
+  opacity: 1;
+  z-index: 999;
+}
+
+/* Responsive стили для переключателей */
+@media (max-width: 768px) {
+  .toggles-container {
+    flex-direction: column;
+    align-items: stretch;
+    gap: 1rem;
+  }
+  
+  .search-mode-toggle {
+    max-width: none;
+  }
+  
+  .additional-toggles {
+    align-items: center;
+    flex-direction: row;
+    justify-content: center;
+    gap: 1.5rem;
+  }
+  
+  .tooltip-trigger:before {
+    width: 240px;
+    right: 50%;
+    transform: translateX(50%);
+  }
+  
+  .tooltip-trigger:after {
+    right: 50%;
+    transform: translateX(50%);
   }
 }
