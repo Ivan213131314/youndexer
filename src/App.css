@@ -32,6 +32,107 @@ body {
   margin-left: auto;
 }
 
+/* Paywall button */
+.paywall-button {
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  color: white;
+  border: none;
+  padding: 8px 16px;
+  border-radius: 20px;
+  font-size: 14px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  box-shadow: 0 4px 15px rgba(102, 126, 234, 0.3);
+  white-space: nowrap;
+}
+
+.paywall-button:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 6px 20px rgba(102, 126, 234, 0.4);
+  background: linear-gradient(135deg, #5a6fd8 0%, #6a4190 100%);
+}
+
+.paywall-button:active {
+  transform: translateY(0);
+}
+
+.paywall-button:disabled {
+  background: #dadce0;
+  color: #5f6368;
+  cursor: not-allowed;
+  transform: none;
+  box-shadow: none;
+}
+
+/* Requests info */
+.requests-info {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.requests-text {
+  font-size: 0.8rem;
+  color: #5f6368;
+  font-weight: 500;
+  background: #f1f3f4;
+  padding: 0.25rem 0.75rem;
+  border-radius: 12px;
+  white-space: nowrap;
+}
+
+.test-reset-button {
+  background: none;
+  border: none;
+  font-size: 0.8rem;
+  color: #5f6368;
+  cursor: pointer;
+  padding: 0.25rem;
+  border-radius: 4px;
+  margin-left: 0.5rem;
+  transition: all 0.2s ease;
+}
+
+.test-reset-button:hover {
+  background: #e8eaed;
+  color: #202124;
+}
+
+.test-increment-button {
+  background: none;
+  border: none;
+  font-size: 0.8rem;
+  color: #5f6368;
+  cursor: pointer;
+  padding: 0.25rem;
+  border-radius: 4px;
+  margin-left: 0.25rem;
+  transition: all 0.2s ease;
+}
+
+.test-increment-button:hover {
+  background: #e8eaed;
+  color: #202124;
+}
+
+.test-limit-button {
+  background: none;
+  border: none;
+  font-size: 0.8rem;
+  color: #5f6368;
+  cursor: pointer;
+  padding: 0.25rem;
+  border-radius: 4px;
+  margin-left: 0.25rem;
+  transition: all 0.2s ease;
+}
+
+.test-limit-button:hover {
+  background: #e8eaed;
+  color: #202124;
+}
+
 /* Header styles */
 .header {
   text-align: center;

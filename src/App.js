@@ -2,11 +2,14 @@ import React, { useState, useEffect, useCallback } from 'react';
 import { fetchVideosByPhrase, searchVideosWithPhrases, addTranscriptsToVideos } from './ytSearchModule';
 import { filterVideosWithGPT, getFilteredVideos } from './videoFilter';
 import TranscriptSummary from './TranscriptSummary';
-import LLMChoose from './components/LLMChoose';
 import History from './history/History';
 import AboutUs from './AboutUs';
 import Navigation from './components/Navigation';
 import SearchProgress from './components/SearchProgress';
+import Paywall from './components/Paywall';
+import RequestLimitModal from './components/RequestLimitModal';
+import AuthModal from './auth/AuthModal';
+import { canMakeRequest, incrementRequestCount, getRemainingRequests, getUsedRequestsToday, resetRequestCount } from './utils/requestLimiter';
 
 import VideoItem from './components/VideoItem';
 import DefaultQuery from './components/DefaultQuery';
@@ -47,6 +50,42 @@ function AppContent() {
   const [searchProgress, setSearchProgress] = useState(null);
   const [progressDetails, setProgressDetails] = useState('');
   const [summaryProgress, setSummaryProgress] = useState(0);
+  const [showPaywall, setShowPaywall] = useState(false);
+  const [showRequestLimit, setShowRequestLimit] = useState(false);
+  const [showAuthModal, setShowAuthModal] = useState(false);
+  const [authModalMode, setAuthModalMode] = useState('login');
+  const [requestCount, setRequestCount] = useState(getUsedRequestsToday());
+
+  // Обработчики для Paywall
+  const handleSubscribe = async (planId) => {
+    console.log('Подписка на план:', planId);
+    // Здесь будет логика обработки подписки
+    setShowPaywall(false);
+  };
+
+  const handleClosePaywall = () => {
+    setShowPaywall(false);
+  };
+
+  // Обработчики для RequestLimitModal
+  const handleCloseRequestLimit = () => {
+    setShowRequestLimit(false);
+  };
+
+  const handleUpgradeFromLimit = () => {
+    setShowRequestLimit(false);
+    setShowPaywall(true);
+  };
+
+  // Обработчики для AuthModal
+  const handleCloseAuthModal = () => {
+    setShowAuthModal(false);
+  };
+
+  const showLoginModal = () => {
+    setAuthModalMode('login');
+    setShowAuthModal(true);
+  };
 
   // Эффект для автоматического переключения модели при изменении proModel
   useEffect(() => {
@@ -56,6 +95,21 @@ function AppContent() {
       setSelectedModel('tngtech/deepseek-r1t2-chimera:free');
     }
   }, [proModel]);
+
+  // Эффект для обновления счетчика запросов при изменении даты
+  useEffect(() => {
+    const updateRequestCount = () => {
+      setRequestCount(getUsedRequestsToday());
+    };
+
+    // Обновляем счетчик при загрузке компонента
+    updateRequestCount();
+
+    // Проверяем обновление каждый час (на случай смены даты)
+    const interval = setInterval(updateRequestCount, 60 * 60 * 1000);
+
+    return () => clearInterval(interval);
+  }, []);
 
 
 
@@ -179,6 +233,20 @@ function AppContent() {
   const handleSearch = async () => {
     if (!query.trim()) {
       console.log('❌ [APP] Empty query provided');
+      return;
+    }
+
+    // Проверка авторизации
+    if (!user) {
+      console.log('❌ [APP] User not authenticated');
+      showLoginModal();
+      return;
+    }
+
+    // Проверка лимита запросов (только для не-pro пользователей)
+    if (!proModel && !canMakeRequest()) {
+      console.log('❌ [APP] Request limit exceeded');
+      setShowRequestLimit(true);
       return;
     }
     
@@ -345,6 +413,14 @@ function AppContent() {
     } finally {
       console.log(`\n🏁 [APP] Search process completed`);
       setIsLoading(false);
+      
+      // Увеличиваем счетчик запросов только для не-pro пользователей
+      if (!proModel) {
+        incrementRequestCount();
+        setRequestCount(getUsedRequestsToday());
+        console.log(`📊 [APP] Request count incremented. Used today: ${getUsedRequestsToday()}, Remaining: ${getRemainingRequests()}`);
+      }
+      
       // НЕ сбрасываем прогресс здесь - он будет сброшен в handleSummaryComplete после создания резюме
     }
   };
@@ -419,6 +495,20 @@ function AppContent() {
   const handleVideoOrChannelParse = async () => {
     if (!channelUrl.trim()) {
       setChannelError('Пожалуйста, введите ссылку на видео или канал');
+      return;
+    }
+
+    // Проверка авторизации
+    if (!user) {
+      console.log('❌ [PARSING] User not authenticated');
+      showLoginModal();
+      return;
+    }
+
+    // Проверка лимита запросов (только для не-pro пользователей)
+    if (!proModel && !canMakeRequest()) {
+      console.log('❌ [PARSING] Request limit exceeded');
+      setShowRequestLimit(true);
       return;
     }
     
@@ -686,6 +776,13 @@ function AppContent() {
     } finally {
       console.log(`\n🏁 [CHANNEL] Channel videos request completed`);
       setIsLoadingVideos(false);
+      
+      // Увеличиваем счетчик запросов только для не-pro пользователей
+      if (!proModel) {
+        incrementRequestCount();
+        setRequestCount(getUsedRequestsToday());
+        console.log(`📊 [CHANNEL] Request count incremented. Used today: ${getUsedRequestsToday()}, Remaining: ${getRemainingRequests()}`);
+      }
     }
   };
 
@@ -919,6 +1016,53 @@ function AppContent() {
                         </span>
                       </span>
                     </div>
+                    
+                    <div className="requests-info">
+                      <span className="requests-text">
+                        📊 {requestCount}/3 запросов сегодня
+                      </span>
+                      <button 
+                        className="test-reset-button"
+                        onClick={() => {
+                          resetRequestCount();
+                          setRequestCount(0);
+                        }}
+                        title="Сбросить счетчик (для тестирования)"
+                      >
+                        🔄
+                      </button>
+                      <button 
+                        className="test-increment-button"
+                        onClick={() => {
+                          incrementRequestCount();
+                          setRequestCount(getUsedRequestsToday());
+                        }}
+                        title="Увеличить счетчик (для тестирования)"
+                      >
+                        ➕
+                      </button>
+                      <button 
+                        className="test-limit-button"
+                        onClick={() => {
+                          // Симулируем проверку лимита для авторизованного пользователя
+                          if (!canMakeRequest()) {
+                            setShowRequestLimit(true);
+                          } else {
+                            alert('Можно сделать запрос!');
+                          }
+                        }}
+                        title="Проверить лимит (для тестирования)"
+                      >
+                        🔍
+                      </button>
+                    </div>
+                    <button 
+                      className="paywall-button"
+                      onClick={() => setShowPaywall(true)}
+                      disabled={isLoading}
+                    >
+                      💎 Upgrade to Pro
+                    </button>
                   </div>
                 </div>
                 
@@ -1237,6 +1381,33 @@ function AppContent() {
             </div>
           )}
         </>
+      )}
+
+      {/* Paywall Modal */}
+      {showPaywall && (
+        <Paywall 
+          onClose={handleClosePaywall}
+          onSubscribe={handleSubscribe}
+        />
+      )}
+
+      {/* Request Limit Modal */}
+      {showRequestLimit && (
+        <RequestLimitModal 
+          onClose={handleCloseRequestLimit}
+          onUpgrade={handleUpgradeFromLimit}
+          remainingRequests={getRemainingRequests()}
+          usedRequests={requestCount}
+        />
+      )}
+
+      {/* Auth Modal */}
+      {showAuthModal && (
+        <AuthModal 
+          isOpen={showAuthModal}
+          onClose={handleCloseAuthModal}
+          mode={authModalMode}
+        />
       )}
     </div>
   );
