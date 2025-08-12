@@ -11,7 +11,6 @@ const TranscriptSummary = ({ videos, userQuery, onSummaryComplete, selectedModel
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState(null);
   const [isDownloading, setIsDownloading] = useState(false);
-  const [summaryPrompt, setSummaryPrompt] = useState('');
 
   // Отладка: логируем получение пропа detailedSummary
   useEffect(() => {
@@ -20,21 +19,7 @@ const TranscriptSummary = ({ videos, userQuery, onSummaryComplete, selectedModel
 
 
 
-  // Функция для автоматического изменения высоты textarea
-  const adjustTextareaHeight = (element) => {
-    if (element) {
-      element.style.height = 'auto';
-      element.style.height = element.scrollHeight + 'px';
-    }
-  };
 
-  // Устанавливаем правильную высоту при изменении summaryPrompt
-  useEffect(() => {
-    const textarea = document.querySelector('.summary-prompt-input');
-    if (textarea) {
-      adjustTextareaHeight(textarea);
-    }
-  }, [summaryPrompt]);
 
   // Автоматическое создание резюме при получении ВСЕХ транскрипций
   useEffect(() => {
@@ -64,21 +49,7 @@ const TranscriptSummary = ({ videos, userQuery, onSummaryComplete, selectedModel
     }
   }, [videos, summaryData, isLoading, userQuery]);
 
-  // Функции для автоподставки текста
-  const setPromptText = (text) => {
-    setSummaryPrompt(prevPrompt => {
-      // Если текст уже есть в промпте, не добавляем его снова
-      if (prevPrompt.includes(text)) {
-        return prevPrompt;
-      }
-      // Если промпт пустой, просто добавляем текст
-      if (!prevPrompt.trim()) {
-        return text;
-      }
-      // Иначе добавляем текст через запятую и пробел
-      return `${prevPrompt}, ${text}`;
-    });
-  };
+
 
   const createSummary = async () => {
     if (!videos || videos.length === 0 || !userQuery) {
@@ -101,7 +72,7 @@ const TranscriptSummary = ({ videos, userQuery, onSummaryComplete, selectedModel
       console.log(`📋 [SUMMARY] Количество видео: ${videos.length}`);
       console.log(`📝 [SUMMARY] Видео с transcriptами: ${videosWithTranscripts.length}`);
       console.log(`🔍 [SUMMARY] Исходный запрос: "${userQuery}"`);
-      console.log(`📝 [SUMMARY] Дополнительный промпт: "${summaryPrompt}"`);
+
       console.log(`🎯 [SUMMARY] Режим детального резюме: ${detailedSummary ? 'ВКЛЮЧЕН' : 'ВЫКЛЮЧЕН'}`);
 
       // Формируем финальный запрос с учетом дополнительного промпта и детального режима
@@ -114,11 +85,7 @@ const TranscriptSummary = ({ videos, userQuery, onSummaryComplete, selectedModel
         console.log(`✨ [SUMMARY] Добавлен текст для детального резюме: "${detailedText}"`);
       }
       
-      // Добавляем пользовательский промпт если есть
-      if (summaryPrompt) {
-        finalQuery += `. ${summaryPrompt}`;
-        console.log(`🔧 [SUMMARY] Добавлен пользовательский промпт: "${summaryPrompt}"`);
-      }
+
 
       console.log(`📤 [SUMMARY] ФИНАЛЬНЫЙ ЗАПРОС К LLM: "${finalQuery}"`);
       console.log(`📊 [SUMMARY] Длина финального запроса: ${finalQuery.length} символов`);
@@ -433,46 +400,7 @@ ${summaryData.summary}`;
         <span>С transcriptами: {videosWithTranscripts.length}</span>
       </div>
       
-      {/* Текстовое поле для настройки вывода */}
-      <div className="summary-prompt-section">
-          <textarea
-            className="summary-prompt-input"
-            placeholder="describe what you want to see in summary"
-            value={summaryPrompt}
-            onChange={(e) => {
-              setSummaryPrompt(e.target.value);
-              adjustTextareaHeight(e.target);
-            }}
-            onFocus={(e) => {
-              adjustTextareaHeight(e.target);
-            }}
-          />
-          
-          {/* Кнопки для автоподставки */}
-          <div className="prompt-buttons">
-            <button 
-              className="prompt-button"
-              onClick={() => setPromptText('add information about main insights based on the videos')}
-              title="Добавить информацию об основных инсайтах"
-            >
-              insights
-            </button>
-            <button 
-              className="prompt-button"
-              onClick={() => setPromptText('focus on information about business strategy step by step based on the videos')}
-              title="Сфокусироваться на бизнес-стратегии пошагово"
-            >
-              business strategy
-            </button>
-            <button 
-              className="prompt-button"
-              onClick={() => setPromptText('add information about main points of this videos')}
-              title="Добавить информацию об основных моментах"
-            >
-              main points
-            </button>
-          </div>
-        </div>
+
 
       {/* Кнопки скачивания - показываются только если резюме готово */}
       {hasSummary && (
@@ -535,28 +463,7 @@ ${summaryData.summary}`;
         </div>
       )}
 
-      {/* Кнопка для принудительного создания резюме - показываем только если процесс получения транскрипций завершен */}
-      {hasTranscripts && !isLoading && !hasSummary && videosWithTranscripts.length === videos.length && (
-        <div className="manual-summary-section">
-          <button 
-            className="create-summary-button"
-            onClick={createSummary}
-            style={{
-              marginTop: '10px',
-              padding: '10px 20px',
-              backgroundColor: '#28a745',
-              color: 'white',
-              border: 'none',
-              borderRadius: '6px',
-              cursor: 'pointer',
-              fontSize: '16px',
-              fontWeight: 'bold'
-            }}
-          >
-            🚀 Создать резюме ({videosWithTranscripts.length} видео с транскрипциями)
-          </button>
-        </div>
-      )}
+
     </div>
   );
 };

@@ -385,11 +385,9 @@ function AppContent() {
     }
     
     // Сбрасываем прогресс-индикатор после завершения создания резюме
-    setTimeout(() => {
-      setSearchProgress(null);
-      setProgressDetails('');
-      setSummaryProgress(0);
-    }, 1000);
+    setSearchProgress(null);
+    setProgressDetails('');
+    setSummaryProgress(0);
   };
 
   const handleMouseDown = (e) => {
@@ -501,14 +499,12 @@ function AppContent() {
         setTimeout(async () => {
           setSummaryProgress(100);
           setTimeout(async () => {
-            setSearchProgress('ready');
-            setProgressDetails('Готово! Видео обработано');
             parsingCompleted = true;
-            // Оставляем 100% показывать некоторое время
-            setTimeout(() => {
-              setSummaryProgress(0);
-            }, 1000);
             await saveParsingToHistory([videoWithTranscript], true);
+            // Убираем индикатор после сохранения в историю
+            setSearchProgress(null);
+            setProgressDetails('');
+            setSummaryProgress(0);
           }, 500);
         }, 2000);
         
@@ -532,8 +528,19 @@ function AppContent() {
       // Очищаем результаты видео при парсинге канала
       setChannelVideosResults(null);
       setChannelSummaryData(null);
+      
+      // Показываем результат парсинга канала
       setSearchProgress('ready');
       setProgressDetails(`Готово! Канал "${results.channelName}" обработан`);
+      setSummaryProgress(100);
+      
+      // Убираем индикатор через 2 секунды
+      setTimeout(() => {
+        setSearchProgress(null);
+        setProgressDetails('');
+        setSummaryProgress(0);
+      }, 2000);
+      
       parsingCompleted = true;
       console.log(`✅ [PARSING] Channel parsed successfully:`, results);
       
@@ -546,14 +553,7 @@ function AppContent() {
     } finally {
       console.log(`\n🏁 [PARSING] Parsing completed`);
       setIsLoading(false);
-      // Сбрасываем прогресс через небольшую задержку, чтобы пользователь увидел "Готово"
-      if (parsingCompleted) {
-        setTimeout(() => {
-          setSearchProgress(null);
-          setProgressDetails('');
-          setSummaryProgress(0);
-        }, 3000);
-      }
+      // НЕ сбрасываем прогресс здесь - он будет сброшен в setTimeout выше
     }
   };
 

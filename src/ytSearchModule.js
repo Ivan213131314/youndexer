@@ -4,7 +4,6 @@
  */
 
 const SERVER_URL = process.env.REACT_APP_API_URL || 'http://localhost:3001';
-const TRANSCRIPT_SERVER_URL = process.env.REACT_APP_API_URL || 'http://localhost:3001';
 
 /**
  * Fetch videos from YouTube via server API
