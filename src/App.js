@@ -327,27 +327,7 @@ function AppContent() {
                setProgressDetails(`Создание резюме на основе ${videosWithTranscripts.filter(v => v.transcript).length} транскрипций...`);
                setSummaryProgress(75);
                
-               // Анимация прогресса создания резюме
-               const progressInterval = setInterval(() => {
-                 setSummaryProgress(prev => {
-                   if (prev >= 90) {
-                     clearInterval(progressInterval);
-                     return 90;
-                   }
-                   return prev + 10;
-                 });
-               }, 200);
-               
-               // Небольшая задержка чтобы пользователь увидел шаг создания резюме
-               setTimeout(() => {
-                 setSummaryProgress(100);
-                 setTimeout(() => {
-                   setSearchProgress('ready');
-                   setProgressDetails(`Готово! Найдено ${videosWithTranscripts.length} видео`);
-                   searchCompleted = true;
-                   setSummaryProgress(0);
-                 }, 500);
-               }, 2000);
+               // НЕ делаем анимацию здесь - прогресс будет обновляться через callback из TranscriptSummary
              } else {
                console.log(`\n⚠️ [APP] GPT filtering failed or returned no results`);
                searchCompleted = true;
@@ -365,13 +345,7 @@ function AppContent() {
     } finally {
       console.log(`\n🏁 [APP] Search process completed`);
       setIsLoading(false);
-      // Сбрасываем прогресс через небольшую задержку, чтобы пользователь увидел "Готово"
-      if (searchCompleted) {
-        setTimeout(() => {
-          setSearchProgress(null);
-          setProgressDetails('');
-        }, 2000);
-      }
+      // НЕ сбрасываем прогресс здесь - он будет сброшен в handleSummaryComplete после создания резюме
     }
   };
 
@@ -409,6 +383,13 @@ function AppContent() {
       // Режим парсинга видео или каналов
       setChannelSummaryData(summaryResult);
     }
+    
+    // Сбрасываем прогресс-индикатор после завершения создания резюме
+    setTimeout(() => {
+      setSearchProgress(null);
+      setProgressDetails('');
+      setSummaryProgress(0);
+    }, 1000);
   };
 
   const handleMouseDown = (e) => {
@@ -523,7 +504,10 @@ function AppContent() {
             setSearchProgress('ready');
             setProgressDetails('Готово! Видео обработано');
             parsingCompleted = true;
-            setSummaryProgress(0);
+            // Оставляем 100% показывать некоторое время
+            setTimeout(() => {
+              setSummaryProgress(0);
+            }, 1000);
             await saveParsingToHistory([videoWithTranscript], true);
           }, 500);
         }, 2000);
@@ -567,7 +551,8 @@ function AppContent() {
         setTimeout(() => {
           setSearchProgress(null);
           setProgressDetails('');
-        }, 2000);
+          setSummaryProgress(0);
+        }, 3000);
       }
     }
   };
@@ -986,6 +971,7 @@ function AppContent() {
                       selectedModel={selectedModel}
                       summaryData={summaryData}
                       detailedSummary={detailedSummary}
+                      onProgressUpdate={setSummaryProgress}
                     />
                   )}
 
@@ -1174,6 +1160,7 @@ function AppContent() {
                                   selectedModel={selectedModel}
                                   summaryData={channelSummaryData}
                                   detailedSummary={detailedSummary}
+                                  onProgressUpdate={setSummaryProgress}
                                 />
                               </>
                             )}

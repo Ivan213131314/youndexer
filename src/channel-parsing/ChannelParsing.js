@@ -181,32 +181,12 @@ function ChannelParsing({ onBackToMain }) {
           totalCount: videosWithTranscripts.length
         });
         
-                 // Step 4: Show summarizing step (резюме создается автоматически в TranscriptSummary)
-         setSearchProgress('summarizing');
-         setProgressDetails(`Создание резюме на основе ${videosWithTranscripts.filter(v => v.transcript).length} транскрипций...`);
-         setSummaryProgress(0);
-         
-         // Анимация прогресса создания резюме
-         const progressInterval = setInterval(() => {
-           setSummaryProgress(prev => {
-             if (prev >= 90) {
-               clearInterval(progressInterval);
-               return 90;
-             }
-             return prev + 10;
-           });
-         }, 200);
-         
-         // Небольшая задержка чтобы пользователь увидел шаг создания резюме
-         setTimeout(() => {
-           setSummaryProgress(100);
-           setTimeout(() => {
-             setSearchProgress('ready');
-             setProgressDetails(`Готово! Обработано ${videosWithTranscripts.length} видео`);
-             channelCompleted = true;
-             setSummaryProgress(0);
-           }, 500);
-         }, 2000);
+                                   // Step 4: Show summarizing step (резюме создается автоматически в TranscriptSummary)
+          setSearchProgress('summarizing');
+          setProgressDetails(`Создание резюме на основе ${videosWithTranscripts.filter(v => v.transcript).length} транскрипций...`);
+          setSummaryProgress(0);
+          
+          // НЕ делаем анимацию здесь - прогресс будет обновляться через callback из TranscriptSummary
       
       console.log(`✅ [CHANNEL] Channel videos with transcripts received successfully:`, videosWithTranscripts);
       
@@ -219,19 +199,20 @@ function ChannelParsing({ onBackToMain }) {
     } finally {
       console.log(`\n🏁 [CHANNEL] Channel videos request completed`);
       setIsLoadingVideos(false);
-      // Сбрасываем прогресс через небольшую задержку, чтобы пользователь увидел "Готово"
-      if (channelCompleted) {
-        setTimeout(() => {
-          setSearchProgress(null);
-          setProgressDetails('');
-        }, 2000);
-      }
+      // НЕ сбрасываем прогресс здесь - он будет сброшен в handleSummaryComplete после создания резюме
     }
   };
 
   const handleSummaryComplete = async (summaryResult) => {
     console.log(`📋 [CHANNEL] Summary completed:`, summaryResult);
     setSummaryData(summaryResult);
+    
+    // Сбрасываем прогресс-индикатор после завершения создания резюме
+    setTimeout(() => {
+      setSearchProgress(null);
+      setProgressDetails('');
+      setSummaryProgress(0);
+    }, 1000);
   };
 
   const handleKeyPress = (e) => {
@@ -365,14 +346,15 @@ function ChannelParsing({ onBackToMain }) {
                   <div className="summary-section">
                     <h2>📋 Общий вывод</h2>
                     
-                    {/* Показываем компонент для создания резюме */}
-                    {channelVideosResults.videos && channelVideosResults.videos.length > 0 && (
-                      <TranscriptSummary 
-                        videos={channelVideosResults.videos}
-                        userQuery={`Канал: ${parsingResults.channelName}`}
-                        onSummaryComplete={handleSummaryComplete}
-                      />
-                    )}
+                                         {/* Показываем компонент для создания резюме */}
+                     {channelVideosResults.videos && channelVideosResults.videos.length > 0 && (
+                       <TranscriptSummary 
+                         videos={channelVideosResults.videos}
+                         userQuery={`Канал: ${parsingResults.channelName}`}
+                         onSummaryComplete={handleSummaryComplete}
+                         onProgressUpdate={setSummaryProgress}
+                       />
+                     )}
 
                     {/* Отображение готового резюме */}
                     {summaryData && (

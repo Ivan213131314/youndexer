@@ -7,7 +7,7 @@ import './TranscriptSummary.css';
 
 
 
-const TranscriptSummary = ({ videos, userQuery, onSummaryComplete, selectedModel, summaryData, detailedSummary = false }) => {
+const TranscriptSummary = ({ videos, userQuery, onSummaryComplete, selectedModel, summaryData, detailedSummary = false, onProgressUpdate }) => {
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState(null);
   const [isDownloading, setIsDownloading] = useState(false);
@@ -36,22 +36,29 @@ const TranscriptSummary = ({ videos, userQuery, onSummaryComplete, selectedModel
     }
   }, [summaryPrompt]);
 
-  // Автоматическое создание резюме при получении транскрипций
+  // Автоматическое создание резюме при получении ВСЕХ транскрипций
   useEffect(() => {
     const videosWithTranscripts = videos ? videos.filter(video => video.transcript) : [];
+    const totalVideos = videos ? videos.length : 0;
     
-    // Создаем резюме автоматически если:
+    // Создаем резюме автоматически только если:
     // 1. Есть видео с транскрипциями
-    // 2. Еще нет готового резюме
-    // 3. Не идет загрузка
-    // 4. Есть userQuery
-    if (videosWithTranscripts.length > 0 && !summaryData && !isLoading && userQuery) {
-      console.log('🤖 [AUTO_SUMMARY] Автоматически создаем резюме для видео с транскрипциями');
+    // 2. ВСЕ видео имеют транскрипции (или процесс завершен)
+    // 3. Еще нет готового резюме
+    // 4. Не идет загрузка
+    // 5. Есть userQuery
+    // 6. Количество видео с транскрипциями равно общему количеству видео
+    if (videosWithTranscripts.length > 0 && 
+        videosWithTranscripts.length === totalVideos && 
+        !summaryData && 
+        !isLoading && 
+        userQuery) {
+      console.log(`🤖 [AUTO_SUMMARY] Автоматически создаем резюме для ВСЕХ видео с транскрипциями (${videosWithTranscripts.length}/${totalVideos})`);
       
       // Небольшая задержка чтобы убедиться что все транскрипции загружены
       const timer = setTimeout(() => {
         createSummary();
-      }, 1500);
+      }, 2000);
       
       return () => clearTimeout(timer);
     }
@@ -117,6 +124,11 @@ const TranscriptSummary = ({ videos, userQuery, onSummaryComplete, selectedModel
       console.log(`📊 [SUMMARY] Длина финального запроса: ${finalQuery.length} символов`);
       console.log('='.repeat(100));
 
+      // Обновляем прогресс до 90% перед отправкой запроса к LLM
+      if (onProgressUpdate) {
+        onProgressUpdate(90);
+      }
+
       // Отправляем полные transcriptы для качественного резюме
       const requestBody = {
         videos: videosWithTranscripts,
@@ -161,6 +173,11 @@ const TranscriptSummary = ({ videos, userQuery, onSummaryComplete, selectedModel
       console.log('='.repeat(80));
       console.log('📊 [SUMMARY] Результаты:', result);
       
+      // Обновляем прогресс до 100% после успешного создания резюме
+      if (onProgressUpdate) {
+        onProgressUpdate(100);
+      }
+
       if (onSummaryComplete) {
         onSummaryComplete(result);
       }
@@ -508,23 +525,6 @@ ${summaryData.summary}`;
         <div className="summary-warning">
           <span className="warning-icon">⚠️</span>
           <span className="warning-text">Нет видео с transcriptами для создания резюме</span>
-          <button 
-            className="retry-button"
-            onClick={createSummary}
-            disabled={isLoading}
-            style={{
-              marginTop: '10px',
-              padding: '8px 16px',
-              backgroundColor: '#007bff',
-              color: 'white',
-              border: 'none',
-              borderRadius: '4px',
-              cursor: 'pointer',
-              fontSize: '14px'
-            }}
-          >
-            {isLoading ? 'Создаем резюме...' : 'Попробовать создать резюме'}
-          </button>
         </div>
       )}
 
@@ -535,8 +535,8 @@ ${summaryData.summary}`;
         </div>
       )}
 
-      {/* Кнопка для принудительного создания резюме */}
-      {hasTranscripts && !isLoading && !hasSummary && (
+      {/* Кнопка для принудительного создания резюме - показываем только если процесс получения транскрипций завершен */}
+      {hasTranscripts && !isLoading && !hasSummary && videosWithTranscripts.length === videos.length && (
         <div className="manual-summary-section">
           <button 
             className="create-summary-button"
