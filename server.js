@@ -483,6 +483,11 @@ app.post('/api/summarize-videos', async (req, res) => {
     console.log(`🔍 [API] Creating summary for ${videos.length} videos, query: "${userQuery}", model: "${model}"`);
     console.log(`🎯 [API] Detailed Summary mode: ${detailedSummary ? 'ENABLED' : 'DISABLED'}`);
     
+    console.log('🎯 [API] ФИНАЛЬНЫЙ ЗАПРОС К LLM:');
+    console.log('='.repeat(80));
+    console.log(userQuery);
+    console.log('='.repeat(80));
+    
 
     
     // Фильтруем видео с transcriptами

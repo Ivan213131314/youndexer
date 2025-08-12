@@ -166,7 +166,7 @@ export const searchVideosWithPhrases = async (phrases, videosPerPhrase = 10) => 
  * @param {Array} videos - Array of video objects with videoId
  * @returns {Promise<Array>} Videos with transcripts added
  */
-export const addTranscriptsToVideos = async (videos, onProgressCallback = null) => {
+export const addTranscriptsToVideos = async (videos, onProgressCallback = null, onStepProgress = null) => {
   console.log(`\n📝 [YT-SEARCH] Adding transcripts to ${videos.length} videos using individual Supadata requests...`);
   
   try {
@@ -188,7 +188,16 @@ export const addTranscriptsToVideos = async (videos, onProgressCallback = null) 
     
     for (let i = 0; i < videoIds.length; i++) {
       const videoId = videoIds[i];
+      const videoTitle = videos.find(v => v.videoId === videoId)?.title || videoId;
       console.log(`📝 [SUPADATA] Обрабатываем видео ${i + 1}/${videoIds.length}: ${videoId}`);
+      
+      // Обновляем прогресс шага
+      if (onStepProgress) {
+        onStepProgress({
+          step: 'transcribing',
+          details: `Получение транскрипции для видео "${videoTitle}" (${i + 1}/${videoIds.length})`
+        });
+      }
       
       try {
         // Get transcript for a single video

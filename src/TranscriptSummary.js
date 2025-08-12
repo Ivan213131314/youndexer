@@ -14,7 +14,9 @@ const TranscriptSummary = ({ videos, userQuery, onSummaryComplete, selectedModel
   const [summaryPrompt, setSummaryPrompt] = useState('');
 
   // Отладка: логируем получение пропа detailedSummary
-  console.log(`🔍 [TRANSCRIPT_SUMMARY] Компонент получил detailedSummary = ${detailedSummary}`);
+  useEffect(() => {
+    console.log(`🔍 [TRANSCRIPT_SUMMARY] Компонент получил detailedSummary = ${detailedSummary}`);
+  }, [detailedSummary]);
 
 
 
@@ -33,6 +35,27 @@ const TranscriptSummary = ({ videos, userQuery, onSummaryComplete, selectedModel
       adjustTextareaHeight(textarea);
     }
   }, [summaryPrompt]);
+
+  // Автоматическое создание резюме при получении транскрипций
+  useEffect(() => {
+    const videosWithTranscripts = videos ? videos.filter(video => video.transcript) : [];
+    
+    // Создаем резюме автоматически если:
+    // 1. Есть видео с транскрипциями
+    // 2. Еще нет готового резюме
+    // 3. Не идет загрузка
+    // 4. Есть userQuery
+    if (videosWithTranscripts.length > 0 && !summaryData && !isLoading && userQuery) {
+      console.log('🤖 [AUTO_SUMMARY] Автоматически создаем резюме для видео с транскрипциями');
+      
+      // Небольшая задержка чтобы убедиться что все транскрипции загружены
+      const timer = setTimeout(() => {
+        createSummary();
+      }, 1500);
+      
+      return () => clearTimeout(timer);
+    }
+  }, [videos, summaryData, isLoading, userQuery]);
 
   // Функции для автоподставки текста
   const setPromptText = (text) => {
@@ -109,10 +132,10 @@ const TranscriptSummary = ({ videos, userQuery, onSummaryComplete, selectedModel
       console.log('Headers:', {
         'Content-Type': 'application/json'
       });
-      console.log('Body:', JSON.stringify({
-        ...requestBody,
-        videos: requestBody.videos.map(v => ({ ...v, transcript: v.transcript ? `${v.transcript.substring(0, 100)}...` : null }))
-      }, null, 2));
+      
+      console.log('🎯 [SUMMARY] ФИНАЛЬНЫЙ ЗАПРОС К LLM:');
+      console.log('='.repeat(80));
+      console.log(finalQuery);
       console.log('='.repeat(80));
 
       const response = await fetch(`${process.env.REACT_APP_API_URL || 'http://localhost:3001'}/api/summarize-videos`, {
@@ -433,16 +456,6 @@ ${summaryData.summary}`;
             </button>
           </div>
         </div>
-        
-        {/* Скрытая кнопка для программного вызова */}
-        <button 
-          className="summary-button"
-          onClick={createSummary}
-          disabled={isLoading || !hasTranscripts || !userQuery}
-          style={{ display: 'none' }}
-        >
-          {isLoading ? 'Создаем резюме...' : 'Создать резюме'}
-        </button>
 
       {/* Кнопки скачивания - показываются только если резюме готово */}
       {hasSummary && (
@@ -495,6 +508,23 @@ ${summaryData.summary}`;
         <div className="summary-warning">
           <span className="warning-icon">⚠️</span>
           <span className="warning-text">Нет видео с transcriptами для создания резюме</span>
+          <button 
+            className="retry-button"
+            onClick={createSummary}
+            disabled={isLoading}
+            style={{
+              marginTop: '10px',
+              padding: '8px 16px',
+              backgroundColor: '#007bff',
+              color: 'white',
+              border: 'none',
+              borderRadius: '4px',
+              cursor: 'pointer',
+              fontSize: '14px'
+            }}
+          >
+            {isLoading ? 'Создаем резюме...' : 'Попробовать создать резюме'}
+          </button>
         </div>
       )}
 
@@ -502,6 +532,29 @@ ${summaryData.summary}`;
         <div className="summary-loading">
           <div className="loading-spinner"></div>
           <span>Создаем резюме на основе всех транскриптов...</span>
+        </div>
+      )}
+
+      {/* Кнопка для принудительного создания резюме */}
+      {hasTranscripts && !isLoading && !hasSummary && (
+        <div className="manual-summary-section">
+          <button 
+            className="create-summary-button"
+            onClick={createSummary}
+            style={{
+              marginTop: '10px',
+              padding: '10px 20px',
+              backgroundColor: '#28a745',
+              color: 'white',
+              border: 'none',
+              borderRadius: '6px',
+              cursor: 'pointer',
+              fontSize: '16px',
+              fontWeight: 'bold'
+            }}
+          >
+            🚀 Создать резюме ({videosWithTranscripts.length} видео с транскрипциями)
+          </button>
         </div>
       )}
     </div>

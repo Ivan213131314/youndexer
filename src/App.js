@@ -6,6 +6,7 @@ import LLMChoose from './components/LLMChoose';
 import History from './history/History';
 import AboutUs from './AboutUs';
 import Navigation from './components/Navigation';
+import SearchProgress from './components/SearchProgress';
 
 import VideoItem from './components/VideoItem';
 import DefaultQuery from './components/DefaultQuery';
@@ -43,6 +44,9 @@ function AppContent() {
   const [currentParsingHistoryId, setCurrentParsingHistoryId] = useState(null);
   const [proModel, setProModel] = useState(false);
   const [detailedSummary, setDetailedSummary] = useState(false);
+  const [searchProgress, setSearchProgress] = useState(null);
+  const [progressDetails, setProgressDetails] = useState('');
+  const [summaryProgress, setSummaryProgress] = useState(0);
 
   // Эффект для автоматического переключения модели при изменении proModel
   useEffect(() => {
@@ -182,11 +186,28 @@ function AppContent() {
     setIsLoading(true);
     setSearchResults(null);
     setSummaryData(null);
+    setSearchProgress('searching');
+    setProgressDetails('Поиск релевантных видео...');
+    setSummaryProgress(0);
+    
+    // Анимация прогресса для поиска
+    const searchProgressInterval = setInterval(() => {
+      setSummaryProgress(prev => {
+        if (prev >= 25) {
+          clearInterval(searchProgressInterval);
+          return 25;
+        }
+        return prev + 5;
+      });
+    }, 100);
+    
+    let searchCompleted = false;
     
     try {
       // Обычный поиск по запросу
       console.log(`\n🔍 [APP] Regular search for query: "${query}"`);
-      const allVideos = await searchVideosWithPhrases([query], videoSearchCountPerRequest);
+      setProgressDetails(`Найдено ${videoSearchCountPerRequest} видео, проверяем релевантность...`);
+      let allVideos = await searchVideosWithPhrases([query], videoSearchCountPerRequest);
       
       // Проверяем, что получили результаты
       if (!allVideos || allVideos.length === 0) {
@@ -231,6 +252,20 @@ function AppContent() {
 
              // Step 2: Filter videos with GPT (всегда используем GPT модель)
              console.log(`\n🤖 [APP] Starting GPT filtering...`);
+             setSearchProgress('filtering');
+             setProgressDetails(`Фильтрация ${allVideos.length} видео с помощью GPT...`);
+             setSummaryProgress(25);
+             
+             // Анимация прогресса для фильтрации
+             const filterProgressInterval = setInterval(() => {
+               setSummaryProgress(prev => {
+                 if (prev >= 50) {
+                   clearInterval(filterProgressInterval);
+                   return 50;
+                 }
+                 return prev + 5;
+               });
+             }, 150);
              const relevantIds = await filterVideosWithGPT(allVideos, query, 'openai/gpt-4o');
              
              if (relevantIds.length > 0) {
@@ -242,6 +277,20 @@ function AppContent() {
                
                // Step 3: Get transcripts for filtered videos
                console.log(`\n📝 [APP] Getting transcripts for ${filteredVideos.length} filtered videos...`);
+               setSearchProgress('transcribing');
+               setProgressDetails(`Подготовка к получению транскрипций для ${filteredVideos.length} видео...`);
+               setSummaryProgress(50);
+               
+               // Анимация прогресса для транскрипций
+               const transcribeProgressInterval = setInterval(() => {
+                 setSummaryProgress(prev => {
+                   if (prev >= 75) {
+                     clearInterval(transcribeProgressInterval);
+                     return 75;
+                   }
+                   return prev + 3;
+                 });
+               }, 200);
                
                // Сначала отображаем видео без transcriptов
                setSearchResults(filteredVideos.map(video => ({
@@ -260,6 +309,9 @@ function AppContent() {
                const videosWithTranscripts = await addTranscriptsToVideos(filteredVideos, (updatedVideos) => {
                  // Callback для обновления состояния при получении каждого transcript
                  setSearchResults(updatedVideos);
+               }, (stepProgress) => {
+                 // Callback для обновления прогресса шага
+                 setProgressDetails(stepProgress.details);
                });
                
                console.log(`\n📊 [APP] Final Results with Transcripts:`);
@@ -269,8 +321,36 @@ function AppContent() {
                
                // Финальное обновление состояния
                setSearchResults(videosWithTranscripts);
+               
+               // Step 4: Show summarizing step (резюме создается автоматически в TranscriptSummary)
+               setSearchProgress('summarizing');
+               setProgressDetails(`Создание резюме на основе ${videosWithTranscripts.filter(v => v.transcript).length} транскрипций...`);
+               setSummaryProgress(75);
+               
+               // Анимация прогресса создания резюме
+               const progressInterval = setInterval(() => {
+                 setSummaryProgress(prev => {
+                   if (prev >= 90) {
+                     clearInterval(progressInterval);
+                     return 90;
+                   }
+                   return prev + 10;
+                 });
+               }, 200);
+               
+               // Небольшая задержка чтобы пользователь увидел шаг создания резюме
+               setTimeout(() => {
+                 setSummaryProgress(100);
+                 setTimeout(() => {
+                   setSearchProgress('ready');
+                   setProgressDetails(`Готово! Найдено ${videosWithTranscripts.length} видео`);
+                   searchCompleted = true;
+                   setSummaryProgress(0);
+                 }, 500);
+               }, 2000);
              } else {
                console.log(`\n⚠️ [APP] GPT filtering failed or returned no results`);
+               searchCompleted = true;
              }
       
     } catch (error) {
@@ -280,9 +360,18 @@ function AppContent() {
         message: error.message,
         stack: error.stack
       });
+      setSearchProgress(null);
+      setProgressDetails('');
     } finally {
       console.log(`\n🏁 [APP] Search process completed`);
       setIsLoading(false);
+      // Сбрасываем прогресс через небольшую задержку, чтобы пользователь увидел "Готово"
+      if (searchCompleted) {
+        setTimeout(() => {
+          setSearchProgress(null);
+          setProgressDetails('');
+        }, 2000);
+      }
     }
   };
 
@@ -360,6 +449,10 @@ function AppContent() {
     setChannelError(null);
     setChannelSummaryData(null); // Очищаем предыдущее резюме
     setCurrentParsingHistoryId(null); // Сбрасываем ID предыдущего парсинга
+    setSearchProgress('searching');
+    setProgressDetails('Анализ ссылки...');
+    
+    let parsingCompleted = false;
     
     try {
       // Проверяем, является ли запрос YouTube URL видео
@@ -370,11 +463,14 @@ function AppContent() {
         console.log(`\n🎯 [PARSING] YouTube video URL detected, video ID: ${videoId}`);
         
         // Получаем информацию о видео
+        setProgressDetails('Получение информации о видео...');
         const videoInfo = await fetchVideoInfo(videoId);
         console.log('✅ [PARSING] Video info obtained:', videoInfo);
         
         // Получаем транскрипцию
         console.log('📝 [PARSING] Getting transcript...');
+        setSearchProgress('transcribing');
+        setProgressDetails('Получение транскрипции видео...');
         let transcript = null;
         
         try {
@@ -405,7 +501,32 @@ function AppContent() {
         });
         
         // Сохраняем результаты парсинга видео в историю
-        await saveParsingToHistory([videoWithTranscript], true);
+        setSearchProgress('summarizing');
+        setProgressDetails('Создание резюме на основе транскрипции...');
+        setSummaryProgress(0);
+        
+        // Анимация прогресса создания резюме
+        const progressInterval = setInterval(() => {
+          setSummaryProgress(prev => {
+            if (prev >= 90) {
+              clearInterval(progressInterval);
+              return 90;
+            }
+            return prev + 10;
+          });
+        }, 200);
+        
+        // Небольшая задержка чтобы пользователь увидел шаг создания резюме
+        setTimeout(async () => {
+          setSummaryProgress(100);
+          setTimeout(async () => {
+            setSearchProgress('ready');
+            setProgressDetails('Готово! Видео обработано');
+            parsingCompleted = true;
+            setSummaryProgress(0);
+            await saveParsingToHistory([videoWithTranscript], true);
+          }, 500);
+        }, 2000);
         
         return;
       }
@@ -413,24 +534,41 @@ function AppContent() {
       // Проверяем, является ли это ссылкой на канал
       if (!validateChannelUrl(channelUrl)) {
         setChannelError('Неверный формат ссылки на YouTube видео или канал');
+        setSearchProgress(null);
+        setProgressDetails('');
         return;
       }
       
       // Это канал - используем существующую логику парсинга каналов
       console.log(`\n📺 [PARSING] Channel URL detected, starting channel parsing`);
+      setSearchProgress('filtering');
+      setProgressDetails('Парсинг канала...');
       const results = await parseChannel(channelUrl);
       setParsingResults(results);
       // Очищаем результаты видео при парсинге канала
       setChannelVideosResults(null);
       setChannelSummaryData(null);
+      setSearchProgress('ready');
+      setProgressDetails(`Готово! Канал "${results.channelName}" обработан`);
+      parsingCompleted = true;
       console.log(`✅ [PARSING] Channel parsed successfully:`, results);
       
     } catch (error) {
       console.error('❌ [PARSING] Error in parsing:', error);
       setChannelError('Ошибка при обработке ссылки. Попробуйте еще раз.');
+      setSearchProgress(null);
+      setProgressDetails('');
+      parsingCompleted = true;
     } finally {
       console.log(`\n🏁 [PARSING] Parsing completed`);
       setIsLoading(false);
+      // Сбрасываем прогресс через небольшую задержку, чтобы пользователь увидел "Готово"
+      if (parsingCompleted) {
+        setTimeout(() => {
+          setSearchProgress(null);
+          setProgressDetails('');
+        }, 2000);
+      }
     }
   };
 
@@ -442,6 +580,8 @@ function AppContent() {
 
     if (!validateChannelUrl(channelUrl)) {
       setChannelError('Неверный формат ссылки на YouTube канал');
+      setSearchProgress(null);
+      setProgressDetails('');
       return;
     }
     
@@ -741,7 +881,7 @@ function AppContent() {
                       }}
                       disabled={isLoading}
                     >
-                      Write your request
+                      Search
                     </button>
                     <button
                       className={`toggle-button ${searchMode === 'parsing' ? 'active' : ''}`}
@@ -751,7 +891,7 @@ function AppContent() {
                       }}
                       disabled={isLoading}
                     >
-                      Summorise video or channel
+                      Link to video or channel
                     </button>
                   </div>
                   
@@ -796,6 +936,15 @@ function AppContent() {
                     </div>
                   </div>
                 </div>
+                
+                {/* Индикатор прогресса поиска */}
+                {searchProgress && (
+                  <SearchProgress 
+                    currentStep={searchProgress}
+                    stepDetails={progressDetails}
+                    progressPercentage={summaryProgress}
+                  />
+                )}
               </div>
             </div>
           </div>
@@ -826,36 +975,18 @@ function AppContent() {
                 <div className="summary-section">
                   <div className="summary-header">
                     <h2>📋 Общий вывод</h2>
-                    {searchResults && searchResults.length > 0 && (
-                      <button 
-                        className="summary-button"
-                        onClick={() => {
-                          // Находим кнопку в TranscriptSummary и кликаем по ней
-                          const summaryButton = document.querySelector('.transcript-summary .summary-button');
-                          if (summaryButton) {
-                            summaryButton.click();
-                          }
-                        }}
-                        disabled={isLoading}
-                      >
-                        {isLoading ? 'Создаем резюме...' : 'Создать резюме'}
-                      </button>
-                    )}
                   </div>
                   
                   {/* Показываем компонент для создания резюме */}
                   {searchResults && searchResults.length > 0 && (
-                    <>
-                      {console.log(`📋 [APP] Передаем в TranscriptSummary (поиск): detailedSummary = ${detailedSummary}`)}
-                      <TranscriptSummary 
-                        videos={searchResults}
-                        userQuery={query}
-                        onSummaryComplete={handleSummaryComplete}
-                        selectedModel={selectedModel}
-                        summaryData={summaryData}
-                        detailedSummary={detailedSummary}
-                      />
-                    </>
+                    <TranscriptSummary 
+                      videos={searchResults}
+                      userQuery={query}
+                      onSummaryComplete={handleSummaryComplete}
+                      selectedModel={selectedModel}
+                      summaryData={summaryData}
+                      detailedSummary={detailedSummary}
+                    />
                   )}
 
                   {/* Отображение готового резюме */}
@@ -886,7 +1017,7 @@ function AppContent() {
                   {/* Плейсхолдер когда нет данных */}
                   {!summaryData && !searchResults && (
                     <div className="placeholder">
-                      <p>Выполните поиск, чтобы увидеть общий вывод по всем транскриптам</p>
+                      <p>Резюме будет создано автоматически после получения результатов поиска</p>
                     </div>
                   )}
                 </div>
@@ -1031,27 +1162,11 @@ function AppContent() {
                               <div className="summary-section">
                                 <div className="summary-header">
                                   <h2>📋 Общий вывод {channelVideosResults.totalCount === 1 ? 'по видео' : 'по каналу'}</h2>
-                                  {channelVideosResults.videos && channelVideosResults.videos.length > 0 && (
-                                    <button 
-                                      className="summary-button"
-                                      onClick={() => {
-                                        // Находим кнопку в TranscriptSummary и кликаем по ней
-                                        const summaryButton = document.querySelector('.videos-results-section .transcript-summary .summary-button');
-                                        if (summaryButton) {
-                                          summaryButton.click();
-                                        }
-                                      }}
-                                      disabled={isLoadingVideos}
-                                    >
-                                      {isLoadingVideos ? 'Создаем резюме...' : 'Создать резюме'}
-                                    </button>
-                                  )}
                                 </div>
                             
                             {/* Показываем компонент для создания резюме */}
                             {channelVideosResults.videos && channelVideosResults.videos.length > 0 && (
                               <>
-                                {console.log(`📺 [APP] Передаем в TranscriptSummary (канал): detailedSummary = ${detailedSummary}`)}
                                 <TranscriptSummary 
                                   videos={channelVideosResults.videos}
                                   userQuery={`Канал: ${parsingResults.channelName}`}
@@ -1095,7 +1210,7 @@ function AppContent() {
                             {/* Плейсхолдер когда нет данных */}
                             {!channelSummaryData && (
                               <div className="placeholder">
-                                <p>Нажмите "Получить видео" чтобы увидеть общий вывод по всем транскриптам</p>
+                                <p>Резюме будет создано автоматически после загрузки транскрипций</p>
                               </div>
                             )}
                           </div>

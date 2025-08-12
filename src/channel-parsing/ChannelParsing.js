@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { parseChannel, validateChannelUrl } from './channelService';
 import { addTranscriptsToVideos } from '../ytSearchModule';
+import SearchProgress from '../components/SearchProgress';
 import TranscriptSummary from '../TranscriptSummary';
 import VideoItem from '../components/VideoItem';
 import ThumbnailImage from '../components/ThumbnailImage';
@@ -15,6 +16,9 @@ function ChannelParsing({ onBackToMain }) {
   const [channelVideosResults, setChannelVideosResults] = useState(null);
   const [isLoadingVideos, setIsLoadingVideos] = useState(false);
   const [summaryData, setSummaryData] = useState(null);
+  const [searchProgress, setSearchProgress] = useState(null);
+  const [progressDetails, setProgressDetails] = useState('');
+  const [summaryProgress, setSummaryProgress] = useState(0);
 
   const handleChannelParse = async () => {
     if (!channelUrl.trim()) {
@@ -24,6 +28,8 @@ function ChannelParsing({ onBackToMain }) {
 
     if (!validateChannelUrl(channelUrl)) {
       setError('Неверный формат ссылки на YouTube канал');
+      setSearchProgress(null);
+      setProgressDetails('');
       return;
     }
     
@@ -54,6 +60,8 @@ function ChannelParsing({ onBackToMain }) {
 
     if (!validateChannelUrl(channelUrl)) {
       setError('Неверный формат ссылки на YouTube канал');
+      setSearchProgress(null);
+      setProgressDetails('');
       return;
     }
     
@@ -62,6 +70,10 @@ function ChannelParsing({ onBackToMain }) {
     setChannelVideosResults(null);
     setSummaryData(null);
     setError(null);
+    setSearchProgress('searching');
+    setProgressDetails('Получение списка видео канала...');
+    
+    let channelCompleted = false;
     
     try {
       // Получаем видео канала через Supadata
@@ -78,11 +90,14 @@ function ChannelParsing({ onBackToMain }) {
       
       console.log(`✅ [CHANNEL] Channel videos received:`, channelVideos);
       
-             // Преобразуем в формат как на главном экране
-       const videoIds = channelVideos.videoIds || [];
-       
-                       // Получаем полную информацию о видео через Supadata инкрементально
-         console.log(`📝 [CHANNEL] Getting full video info for ${videoIds.length} videos...`);
+      // Преобразуем в формат как на главном экране
+      const videoIds = channelVideos.videoIds || [];
+      
+      setSearchProgress('filtering');
+      setProgressDetails(`Получение информации о ${videoIds.length} видео...`);
+      
+      // Получаем полную информацию о видео через Supadata инкрементально
+      console.log(`📝 [CHANNEL] Getting full video info for ${videoIds.length} videos...`);
          
          const videosWithInfo = [];
          
@@ -147,28 +162,70 @@ function ChannelParsing({ onBackToMain }) {
        
         // Теперь получаем transcriptы инкрементально
         console.log(`📝 [CHANNEL] Getting transcripts for ${videosWithInfo.length} videos...`);
+        setSearchProgress('transcribing');
+        setProgressDetails(`Подготовка к получению транскрипций для ${videosWithInfo.length} видео...`);
         const videosWithTranscripts = await addTranscriptsToVideos(videosWithInfo, (updatedVideos) => {
           // Callback для обновления состояния при получении каждого transcript
           setChannelVideosResults(prev => ({
             videos: updatedVideos,
             totalCount: updatedVideos.length
           }));
+        }, (stepProgress) => {
+          // Callback для обновления прогресса шага
+          setProgressDetails(stepProgress.details);
         });
        
-       // Финальное обновление состояния
-       setChannelVideosResults({
-         videos: videosWithTranscripts,
-         totalCount: videosWithTranscripts.length
-       });
+               // Финальное обновление состояния
+        setChannelVideosResults({
+          videos: videosWithTranscripts,
+          totalCount: videosWithTranscripts.length
+        });
+        
+                 // Step 4: Show summarizing step (резюме создается автоматически в TranscriptSummary)
+         setSearchProgress('summarizing');
+         setProgressDetails(`Создание резюме на основе ${videosWithTranscripts.filter(v => v.transcript).length} транскрипций...`);
+         setSummaryProgress(0);
+         
+         // Анимация прогресса создания резюме
+         const progressInterval = setInterval(() => {
+           setSummaryProgress(prev => {
+             if (prev >= 90) {
+               clearInterval(progressInterval);
+               return 90;
+             }
+             return prev + 10;
+           });
+         }, 200);
+         
+         // Небольшая задержка чтобы пользователь увидел шаг создания резюме
+         setTimeout(() => {
+           setSummaryProgress(100);
+           setTimeout(() => {
+             setSearchProgress('ready');
+             setProgressDetails(`Готово! Обработано ${videosWithTranscripts.length} видео`);
+             channelCompleted = true;
+             setSummaryProgress(0);
+           }, 500);
+         }, 2000);
       
       console.log(`✅ [CHANNEL] Channel videos with transcripts received successfully:`, videosWithTranscripts);
       
     } catch (error) {
       console.error('❌ [CHANNEL] Error getting channel videos:', error);
       setError('Ошибка при получении видео канала. Попробуйте еще раз.');
+      setSearchProgress(null);
+      setProgressDetails('');
+      channelCompleted = true;
     } finally {
       console.log(`\n🏁 [CHANNEL] Channel videos request completed`);
       setIsLoadingVideos(false);
+      // Сбрасываем прогресс через небольшую задержку, чтобы пользователь увидел "Готово"
+      if (channelCompleted) {
+        setTimeout(() => {
+          setSearchProgress(null);
+          setProgressDetails('');
+        }, 2000);
+      }
     }
   };
 
@@ -225,6 +282,15 @@ function ChannelParsing({ onBackToMain }) {
         <div className="error-message">
           <p>{error}</p>
         </div>
+      )}
+
+      {/* Индикатор прогресса поиска */}
+      {searchProgress && (
+        <SearchProgress 
+          currentStep={searchProgress}
+          stepDetails={progressDetails}
+          progressPercentage={summaryProgress}
+        />
       )}
 
       {/* Основной контент */}
