@@ -4,7 +4,7 @@ import UserProfile from '../auth/UserProfile';
 import AuthButtons from '../auth/AuthButtons';
 import LogoIcon from './LogoIcon';
 
-const Navigation = ({ currentPage, onPageChange, selectedHistoryId, onResetHistory }) => {
+const Navigation = ({ currentPage, onPageChange, selectedHistoryId, onResetHistory, onShowPaywall, isLoading }) => {
   const handleLogoClick = () => {
     // Переходим на главную страницу только если мы не на главной странице
     if (currentPage !== 'main') {
@@ -31,6 +31,13 @@ const Navigation = ({ currentPage, onPageChange, selectedHistoryId, onResetHisto
       
       <div className="nav-right">
         <div className="nav-menu">
+          <button 
+            className="paywall-button"
+            onClick={onShowPaywall}
+          >
+            💎 Upgrade to Pro
+          </button>
+          
           <button 
             className={`nav-button ${currentPage === 'main' ? 'active' : ''}`}
             onClick={() => onPageChange('main')}

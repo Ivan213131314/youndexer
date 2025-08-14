@@ -37,6 +37,7 @@ function AppContent() {
   const [channelError, setChannelError] = useState(null);
   const [selectedModel, setSelectedModel] = useState('tngtech/deepseek-r1t2-chimera:free');
   const [leftColumnWidth, setLeftColumnWidth] = useState(70);
+  const [parsingLeftColumnWidth, setParsingLeftColumnWidth] = useState(70); // 70% для левой колонки, 30% для правой
   const [isResizing, setIsResizing] = useState(false);
   const [isLoadingVideos, setIsLoadingVideos] = useState(false);
   const [selectedVideoCount, setSelectedVideoCount] = useState(10);
@@ -250,6 +251,13 @@ function AppContent() {
       return;
     }
     
+    // Увеличиваем счетчик запросов сразу при нажатии кнопки (только для не-pro пользователей)
+    if (!proModel) {
+      incrementRequestCount();
+      setRequestCount(getUsedRequestsToday());
+      console.log(`📊 [APP] Request count incremented immediately. Used today: ${getUsedRequestsToday()}, Remaining: ${getRemainingRequests()}`);
+    }
+    
     console.log(`\n🚀 [APP] Starting search process for query: "${query}"`);
     setIsLoading(true);
     setSearchResults(null);
@@ -286,6 +294,9 @@ function AppContent() {
         
         if (!retryVideos || retryVideos.length === 0) {
           console.log(`❌ [APP] Still no videos found after retry`);
+          setSearchProgress(null);
+          setProgressDetails('');
+          setSummaryProgress(0);
           return;
         }
         
@@ -398,6 +409,9 @@ function AppContent() {
                // НЕ делаем анимацию здесь - прогресс будет обновляться через callback из TranscriptSummary
              } else {
                console.log(`\n⚠️ [APP] GPT filtering failed or returned no results`);
+               setSearchProgress(null);
+               setProgressDetails('');
+               setSummaryProgress(0);
                searchCompleted = true;
              }
       
@@ -414,14 +428,15 @@ function AppContent() {
       console.log(`\n🏁 [APP] Search process completed`);
       setIsLoading(false);
       
-      // Увеличиваем счетчик запросов только для не-pro пользователей
-      if (!proModel) {
-        incrementRequestCount();
-        setRequestCount(getUsedRequestsToday());
-        console.log(`📊 [APP] Request count incremented. Used today: ${getUsedRequestsToday()}, Remaining: ${getRemainingRequests()}`);
-      }
+      // Счетчик уже был увеличен в начале функции
       
-      // НЕ сбрасываем прогресс здесь - он будет сброшен в handleSummaryComplete после создания резюме
+      // Сбрасываем прогресс если он еще не был сброшен (например, при ошибках или отсутствии результатов)
+      if (searchProgress !== null) {
+        setSearchProgress(null);
+        setProgressDetails('');
+        setSummaryProgress(0);
+        console.log('🔄 [APP] Progress reset in finally block');
+      }
     }
   };
 
@@ -471,6 +486,11 @@ function AppContent() {
     e.preventDefault();
   };
 
+  const handleParsingMouseDown = (e) => {
+    setIsResizing(true);
+    e.preventDefault();
+  };
+
   const handleMouseMove = (e) => {
     if (!isResizing) return;
     
@@ -482,7 +502,13 @@ function AppContent() {
     
     // Ограничиваем ширину от 30% до 70% для предотвращения "плывущих" элементов
     const clampedPercentage = Math.max(30, Math.min(70, percentage));
-    setLeftColumnWidth(clampedPercentage);
+    
+    // Определяем в каком режиме мы находимся и обновляем соответствующее состояние
+    if (searchMode === 'request') {
+      setLeftColumnWidth(clampedPercentage);
+    } else {
+      setParsingLeftColumnWidth(clampedPercentage);
+    }
   };
 
   const handleMouseUp = () => {
@@ -510,6 +536,13 @@ function AppContent() {
       console.log('❌ [PARSING] Request limit exceeded');
       setShowRequestLimit(true);
       return;
+    }
+    
+    // Увеличиваем счетчик запросов сразу при нажатии кнопки (только для не-pro пользователей)
+    if (!proModel) {
+      incrementRequestCount();
+      setRequestCount(getUsedRequestsToday());
+      console.log(`📊 [PARSING] Request count incremented immediately. Used today: ${getUsedRequestsToday()}, Remaining: ${getRemainingRequests()}`);
     }
     
     console.log(`\n🚀 [PARSING] Starting parsing for URL: "${channelUrl}"`);
@@ -659,6 +692,27 @@ function AppContent() {
       setProgressDetails('');
       return;
     }
+
+    // Проверка авторизации
+    if (!user) {
+      console.log('❌ [CHANNEL] User not authenticated');
+      showLoginModal();
+      return;
+    }
+
+    // Проверка лимита запросов (только для не-pro пользователей)
+    if (!proModel && !canMakeRequest()) {
+      console.log('❌ [CHANNEL] Request limit exceeded');
+      setShowRequestLimit(true);
+      return;
+    }
+    
+    // Увеличиваем счетчик запросов сразу при нажатии кнопки (только для не-pro пользователей)
+    if (!proModel) {
+      incrementRequestCount();
+      setRequestCount(getUsedRequestsToday());
+      console.log(`📊 [CHANNEL] Request count incremented immediately. Used today: ${getUsedRequestsToday()}, Remaining: ${getRemainingRequests()}`);
+    }
     
     console.log(`\n🚀 [CHANNEL] Getting videos for channel: "${channelUrl}" with limit: ${selectedVideoCount}`);
     setIsLoadingVideos(true);
@@ -777,12 +831,7 @@ function AppContent() {
       console.log(`\n🏁 [CHANNEL] Channel videos request completed`);
       setIsLoadingVideos(false);
       
-      // Увеличиваем счетчик запросов только для не-pro пользователей
-      if (!proModel) {
-        incrementRequestCount();
-        setRequestCount(getUsedRequestsToday());
-        console.log(`📊 [CHANNEL] Request count incremented. Used today: ${getUsedRequestsToday()}, Remaining: ${getRemainingRequests()}`);
-      }
+      // Счетчик уже был увеличен в начале функции
     }
   };
 
@@ -897,6 +946,8 @@ function AppContent() {
         onPageChange={setCurrentPage}
         selectedHistoryId={selectedHistoryId}
         onResetHistory={() => setSelectedHistoryId(null)}
+        onShowPaywall={() => setShowPaywall(true)}
+        isLoading={isLoading}
       />
       
       {currentPage === 'history' ? (
@@ -1056,13 +1107,6 @@ function AppContent() {
                         🔍
                       </button>
                     </div>
-                    <button 
-                      className="paywall-button"
-                      onClick={() => setShowPaywall(true)}
-                      disabled={isLoading}
-                    >
-                      💎 Upgrade to Pro
-                    </button>
                   </div>
                 </div>
                 
@@ -1286,9 +1330,17 @@ function AppContent() {
 
                                             {/* Результаты получения видео в двух колонках */}
                         {channelVideosResults && (
-                          <div className="videos-results-section">
+                          <div 
+                            className="videos-results-section"
+                            onMouseMove={handleMouseMove}
+                            onMouseUp={handleMouseUp}
+                            onMouseLeave={handleMouseUp}
+                          >
                             {/* Левая колонка - Общий вывод */}
-                            <div className="left-column">
+                            <div 
+                              className="left-column"
+                              style={{ width: `${parsingLeftColumnWidth}%` }}
+                            >
                               <div className="summary-section">
                                 <div className="summary-header">
                                   <h2>📋 Общий вывод {channelVideosResults.totalCount === 1 ? 'по видео' : 'по каналу'}</h2>
@@ -1346,6 +1398,12 @@ function AppContent() {
                             )}
                           </div>
                         </div>
+
+                        {/* Разделитель колонок */}
+                        <div 
+                          className="column-resizer"
+                          onMouseDown={handleParsingMouseDown}
+                        ></div>
 
                         {/* Правая колонка - Найденные видео */}
                         <div className="right-column">
