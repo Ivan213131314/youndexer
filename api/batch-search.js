@@ -1,4 +1,4 @@
-import yts from 'yt-search';
+const yts = require('yt-search');
 
 export default async function handler(req, res) {
   // Enable CORS
