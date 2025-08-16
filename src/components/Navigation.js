@@ -61,7 +61,7 @@ const Navigation = ({ currentPage, onPageChange, selectedHistoryId, onResetHisto
         </div>
         
         <div className="auth-section">
-          <UserProfile />
+          <UserProfile onUpgradeClick={onShowPaywall} />
           <AuthButtons />
         </div>
       </div>

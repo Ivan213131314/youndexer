@@ -10,10 +10,13 @@ import Paywall from './components/Paywall';
 import RequestLimitModal from './components/RequestLimitModal';
 import AuthModal from './auth/AuthModal';
 import { canMakeRequest, incrementRequestCount, getRemainingRequests, getUsedRequestsToday, resetRequestCount } from './utils/requestLimiter';
+import { consumeToken, canUseToken } from './utils/tokenService';
 
 import VideoItem from './components/VideoItem';
 import DefaultQuery from './components/DefaultQuery';
 import ThumbnailImage from './components/ThumbnailImage';
+
+import TokenLimitModal from './components/TokenLimitModal';
 import { collection, addDoc } from 'firebase/firestore';
 import { db } from './firebase';
 import { saveSearchToHistory, updateHistoryItem } from './history/historyService';
@@ -24,7 +27,7 @@ import './App.css';
 const videoSearchCountPerRequest = 20;
 
 function AppContent() {
-  const { user } = useAuth(); // Добавляем авторизацию
+  const { user, userTokens, setUserTokens } = useAuth(); // Добавляем авторизацию и токены
   const [currentPage, setCurrentPage] = useState('main');
   const [selectedHistoryId, setSelectedHistoryId] = useState(null);
   const [query, setQuery] = useState('');
@@ -55,6 +58,7 @@ function AppContent() {
   const [showRequestLimit, setShowRequestLimit] = useState(false);
   const [showAuthModal, setShowAuthModal] = useState(false);
   const [authModalMode, setAuthModalMode] = useState('login');
+  const [showTokenLimit, setShowTokenLimit] = useState(false);
   const [requestCount, setRequestCount] = useState(getUsedRequestsToday());
 
   // Обработчики для Paywall
@@ -75,6 +79,16 @@ function AppContent() {
 
   const handleUpgradeFromLimit = () => {
     setShowRequestLimit(false);
+    setShowPaywall(true);
+  };
+
+  // Обработчики для TokenLimitModal
+  const handleCloseTokenLimit = () => {
+    setShowTokenLimit(false);
+  };
+
+  const handleUpgradeFromTokenLimit = () => {
+    setShowTokenLimit(false);
     setShowPaywall(true);
   };
 
@@ -167,7 +181,10 @@ function AppContent() {
   // Функция для получения транскрипции
   const fetchTranscript = async (videoId) => {
     try {
-      const response = await fetch(`${process.env.REACT_APP_API_URL || 'http://localhost:3001'}/api/transcript`, {
+      const apiUrl = process.env.NODE_ENV === 'production' 
+        ? '/api/transcript'
+        : `${process.env.REACT_APP_API_URL || 'http://localhost:3001'}/api/transcript`;
+      const response = await fetch(apiUrl, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -244,18 +261,29 @@ function AppContent() {
       return;
     }
 
-    // Проверка лимита запросов (только для не-pro пользователей)
-    if (!proModel && !canMakeRequest()) {
-      console.log('❌ [APP] Request limit exceeded');
-      setShowRequestLimit(true);
+    // Проверка токенов
+    const canUseTokens = await canUseToken(user.uid);
+    if (!canUseTokens) {
+      console.log('❌ [APP] No tokens available');
+      setShowTokenLimit(true);
       return;
     }
-    
-    // Увеличиваем счетчик запросов сразу при нажатии кнопки (только для не-pro пользователей)
-    if (!proModel) {
-      incrementRequestCount();
-      setRequestCount(getUsedRequestsToday());
-      console.log(`📊 [APP] Request count incremented immediately. Used today: ${getUsedRequestsToday()}, Remaining: ${getRemainingRequests()}`);
+
+    // Используем токен
+    const tokenUsed = await consumeToken(user.uid);
+    if (!tokenUsed) {
+      console.log('❌ [APP] Failed to use token');
+      setShowTokenLimit(true);
+      return;
+    }
+
+    // Обновляем токены в контексте
+    if (userTokens) {
+      setUserTokens({
+        ...userTokens,
+        tokens: userTokens.subscription === 'lifetime' ? userTokens.tokens : userTokens.tokens - 1,
+        totalTokensUsed: userTokens.totalTokensUsed + 1
+      });
     }
     
     console.log(`\n🚀 [APP] Starting search process for query: "${query}"`);
@@ -531,18 +559,29 @@ function AppContent() {
       return;
     }
 
-    // Проверка лимита запросов (только для не-pro пользователей)
-    if (!proModel && !canMakeRequest()) {
-      console.log('❌ [PARSING] Request limit exceeded');
-      setShowRequestLimit(true);
+    // Проверка токенов
+    const canUseTokens = await canUseToken(user.uid);
+    if (!canUseTokens) {
+      console.log('❌ [PARSING] No tokens available');
+      setShowTokenLimit(true);
       return;
     }
-    
-    // Увеличиваем счетчик запросов сразу при нажатии кнопки (только для не-pro пользователей)
-    if (!proModel) {
-      incrementRequestCount();
-      setRequestCount(getUsedRequestsToday());
-      console.log(`📊 [PARSING] Request count incremented immediately. Used today: ${getUsedRequestsToday()}, Remaining: ${getRemainingRequests()}`);
+
+    // Используем токен
+    const tokenUsed = await consumeToken(user.uid);
+    if (!tokenUsed) {
+      console.log('❌ [PARSING] Failed to use token');
+      setShowTokenLimit(true);
+      return;
+    }
+
+    // Обновляем токены в контексте
+    if (userTokens) {
+      setUserTokens({
+        ...userTokens,
+        tokens: userTokens.subscription === 'lifetime' ? userTokens.tokens : userTokens.tokens - 1,
+        totalTokensUsed: userTokens.totalTokensUsed + 1
+      });
     }
     
     console.log(`\n🚀 [PARSING] Starting parsing for URL: "${channelUrl}"`);
@@ -1465,6 +1504,16 @@ function AppContent() {
           isOpen={showAuthModal}
           onClose={handleCloseAuthModal}
           mode={authModalMode}
+        />
+      )}
+
+      {/* Token Limit Modal */}
+      {showTokenLimit && userTokens && (
+        <TokenLimitModal 
+          onClose={handleCloseTokenLimit}
+          onUpgrade={handleUpgradeFromTokenLimit}
+          currentTokens={userTokens.tokens}
+          subscriptionType={userTokens.subscription}
         />
       )}
     </div>

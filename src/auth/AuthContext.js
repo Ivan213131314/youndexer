@@ -1,6 +1,7 @@
 import React, { createContext, useContext, useEffect, useState } from 'react';
 import { auth } from '../firebase';
 import { onAuthStateChanged, signOut } from 'firebase/auth';
+import { getUserTokens } from '../utils/tokenService';
 
 const AuthContext = createContext();
 
@@ -15,10 +16,25 @@ export const useAuth = () => {
 export const AuthProvider = ({ children }) => {
   const [user, setUser] = useState(null);
   const [loading, setLoading] = useState(true);
+  const [userTokens, setUserTokens] = useState(null);
 
   useEffect(() => {
-    const unsubscribe = onAuthStateChanged(auth, (user) => {
+    const unsubscribe = onAuthStateChanged(auth, async (user) => {
       setUser(user);
+      
+      if (user) {
+        // Получаем токены пользователя при входе
+        try {
+          const tokenData = await getUserTokens(user.uid);
+          setUserTokens(tokenData);
+        } catch (error) {
+          console.error('Ошибка при получении токенов:', error);
+          setUserTokens(null);
+        }
+      } else {
+        setUserTokens(null);
+      }
+      
       setLoading(false);
     });
 
@@ -37,7 +53,9 @@ export const AuthProvider = ({ children }) => {
     user,
     loading,
     logout,
-    isAuthenticated: !!user
+    isAuthenticated: !!user,
+    userTokens,
+    setUserTokens
   };
 
   return (

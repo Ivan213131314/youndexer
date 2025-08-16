@@ -19,6 +19,12 @@ REACT_APP_OPENAI_API_KEY=your-openai-api-key-here
 
 # API Server URL (для продакшена измените на ваш домен)
 REACT_APP_API_URL=http://localhost:3001
+
+# OpenRouter API Key (для создания резюме)
+REACT_APP_OPEN_ROUTER_API_KEY=your-openrouter-api-key-here
+
+# Frontend URL (для продакшена)
+FRONTEND_URL=http://localhost:3000
 `;
     
     fs.writeFileSync(envPath, envContent);

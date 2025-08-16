@@ -4,7 +4,8 @@ console.log('🔍 Проверка конфигурации проекта...\n'
 const requiredEnvVars = [
   'OPENAI_API_KEY',
   'REACT_APP_OPENAI_API_KEY',
-  'REACT_APP_API_URL'
+  'REACT_APP_API_URL',
+  'REACT_APP_OPEN_ROUTER_API_KEY'
 ];
 
 console.log('📋 Проверка переменных окружения:');

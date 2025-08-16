@@ -176,6 +176,96 @@
   .dropdown-item svg {
     color: #6b7280;
   }
+
+  /* Токены в dropdown */
+  .dropdown-tokens {
+    padding: 0.75rem 1rem;
+  }
+
+  .tokens-header {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    margin-bottom: 0.5rem;
+  }
+
+  .tokens-icon {
+    font-size: 1rem;
+  }
+
+  .tokens-label {
+    font-size: 0.75rem;
+    font-weight: 600;
+    color: #6b7280;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+  }
+
+  .tokens-info {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: 0.5rem;
+  }
+
+  .tokens-unlimited,
+  .tokens-limited {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+  }
+
+  .tokens-count {
+    font-size: 1.25rem;
+    font-weight: 700;
+    color: #1f2937;
+  }
+
+  .tokens-subscription {
+    font-size: 0.75rem;
+    font-weight: 600;
+    padding: 0.125rem 0.5rem;
+    border-radius: 0.75rem;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+  }
+
+  .tokens-subscription:empty {
+    display: none;
+  }
+
+  /* Стили для разных типов подписок */
+  .tokens-limited .tokens-subscription {
+    background: linear-gradient(135deg, #f1f3f4, #dadce0);
+    color: #5f6368;
+  }
+
+  .tokens-unlimited .tokens-subscription {
+    background: linear-gradient(135deg, #48dbfb, #0abde3);
+    color: white;
+  }
+
+  .upgrade-tokens-button {
+    width: 100%;
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    color: white;
+    border: none;
+    padding: 0.5rem;
+    border-radius: 0.5rem;
+    font-size: 0.75rem;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.2s ease;
+  }
+
+  .upgrade-tokens-button:hover {
+    transform: translateY(-1px);
+    box-shadow: 0 4px 12px rgba(102, 126, 234, 0.3);
+  }
+
+  .upgrade-tokens-button:active {
+    transform: translateY(0);
+  }
   
   /* Responsive design */
   @media (max-width: 768px) {

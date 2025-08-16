@@ -9,6 +9,7 @@ console.log('[CHECK] REACT_APP_OPENAI_API_KEY:', process.env.REACT_APP_OPENAI_AP
 
 const express = require('express');
 const cors = require('cors');
+const path = require('path');
 const yts = require('yt-search');
 const { getTranscriptSummary } = require('./transcript-summarizer.cjs');
 
@@ -33,7 +34,12 @@ let createTranscriptBatch, checkBatchStatus;
 // CORS middleware - настройка для продакшена
 const corsOptions = {
   origin: process.env.NODE_ENV === 'production' 
-    ? [process.env.FRONTEND_URL || 'https://yourdomain.com'] 
+    ? [
+        process.env.FRONTEND_URL || 'https://careerbloom-fp61e.web.app',
+        'https://careerbloom-fp61e.web.app',
+        'https://careerbloom-fp61e.firebaseapp.com',
+        'https://careerbloom-fp61e.firebaseapp.com'
+      ] 
     : ['http://localhost:3000', 'http://localhost:3001'],
   credentials: true,
   optionsSuccessStatus: 200
@@ -42,6 +48,11 @@ const corsOptions = {
 app.use(cors(corsOptions));
 app.use(express.json({ limit: '100mb' }));
 app.use(express.urlencoded({ limit: '100mb', extended: true }));
+
+// Serve static files from the React app build directory
+if (process.env.NODE_ENV === 'production') {
+  app.use(express.static(path.join(__dirname, 'build')));
+}
 
 /**
  * Search videos using yt-search library with retry logic
@@ -617,7 +628,9 @@ ${allTranscripts}`;
       method: 'POST',
       headers: {
         'Authorization': `Bearer ${openRouterApiKey}`,
-        'HTTP-Referer': 'http://localhost:3001',
+        'HTTP-Referer': process.env.NODE_ENV === 'production' 
+          ? (process.env.FRONTEND_URL || 'https://yourdomain.com')
+          : 'http://localhost:3001',
         'X-Title': 'YouTube Searcher',
         'Content-Type': 'application/json',
       },
@@ -673,7 +686,9 @@ Transcript: ${longestVideo.transcript}`;
           method: 'POST',
           headers: {
             'Authorization': `Bearer ${openRouterApiKey}`,
-            'HTTP-Referer': 'http://localhost:3001',
+            'HTTP-Referer': process.env.NODE_ENV === 'production' 
+              ? (process.env.FRONTEND_URL || 'https://yourdomain.com')
+              : 'http://localhost:3001',
             'X-Title': 'YouTube Searcher',
             'Content-Type': 'application/json',
           },
@@ -764,7 +779,9 @@ ${currentAllTranscripts}`;
               method: 'POST',
               headers: {
                 'Authorization': `Bearer ${openRouterApiKey}`,
-                'HTTP-Referer': 'http://localhost:3001',
+                'HTTP-Referer': process.env.NODE_ENV === 'production' 
+                  ? (process.env.FRONTEND_URL || 'https://yourdomain.com')
+                  : 'http://localhost:3001',
                 'X-Title': 'YouTube Searcher',
                 'Content-Type': 'application/json',
               },
@@ -825,7 +842,9 @@ Transcript: ${nextLongestVideo.transcript}`;
                   method: 'POST',
                   headers: {
                     'Authorization': `Bearer ${openRouterApiKey}`,
-                    'HTTP-Referer': 'http://localhost:3001',
+                    'HTTP-Referer': process.env.NODE_ENV === 'production' 
+                      ? (process.env.FRONTEND_URL || 'https://yourdomain.com')
+                      : 'http://localhost:3001',
                     'X-Title': 'YouTube Searcher',
                     'Content-Type': 'application/json',
                   },
@@ -940,20 +959,31 @@ Transcript: ${nextLongestVideo.transcript}`;
   }
 });
 
+// Handle React routing, return all requests to React app
+if (process.env.NODE_ENV === 'production') {
+  app.get('*', (req, res) => {
+    res.sendFile(path.join(__dirname, 'build', 'index.html'));
+  });
+}
 
-// Start server
-app.listen(PORT, () => {
-  console.log(`🚀 [SERVER] YouTube search server running on http://localhost:${PORT}`);
-  console.log(`📡 [SERVER] Available endpoints:`);
-  console.log(`   GET  /api/search?q=<query>&limit=<number>`);
-  console.log(`   POST /api/batch-search (with phrases array in body)`);
-  console.log(`   POST /api/transcript (single video transcript)`);
-  console.log(`   POST /api/transcripts (batch transcripts)`);
-  console.log(`   POST /api/summarize-transcripts (summarize transcripts)`);
-  console.log(`   POST /api/summarize-videos (summarize videos directly)`);
-  if (SUPADATA_API_KEY === "YOUR_API_KEY_HERE") {
-    console.log(`⚠️  [SUPADATA] Не забудьте установить API ключ в переменной SUPADATA_API_KEY!`);
-  } else {
-    console.log(`🔑 [SUPADATA] API Key: ${SUPADATA_API_KEY.substring(0, 10)}...`);
-  }
-});
+// Start server for local development
+if (process.env.NODE_ENV !== 'production') {
+  app.listen(PORT, () => {
+    console.log(`🚀 [SERVER] YouTube search server running on http://localhost:${PORT}`);
+    console.log(`📡 [SERVER] Available endpoints:`);
+    console.log(`   GET  /api/search?q=<query>&limit=<number>`);
+    console.log(`   POST /api/batch-search (with phrases array in body)`);
+    console.log(`   POST /api/transcript (single video transcript)`);
+    console.log(`   POST /api/transcripts (batch transcripts)`);
+    console.log(`   POST /api/summarize-transcripts (summarize transcripts)`);
+    console.log(`   POST /api/summarize-videos (summarize videos directly)`);
+    if (SUPADATA_API_KEY === "YOUR_API_KEY_HERE") {
+      console.log(`⚠️  [SUPADATA] Не забудьте установить API ключ в переменной SUPADATA_API_KEY!`);
+    } else {
+      console.log(`🔑 [SUPADATA] API Key: ${SUPADATA_API_KEY.substring(0, 10)}...`);
+    }
+  });
+}
+
+// Export Express app for Firebase Functions
+module.exports = app;

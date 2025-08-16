@@ -3,7 +3,7 @@
  * Communicates with server that uses yt-search library
  */
 
-const SERVER_URL = process.env.REACT_APP_API_URL || 'http://localhost:3001';
+const SERVER_URL = process.env.REACT_APP_API_URL || (process.env.NODE_ENV === 'production' ? '' : 'http://localhost:3001');
 
 /**
  * Fetch videos from YouTube via server API
@@ -33,9 +33,13 @@ export const fetchVideosByPhrase = async (phrase, limit = 10) => {
          // Make the API request to server
      const startTime = Date.now();
      
-     console.log(`🌐 [YT-SEARCH] Making request to: ${SERVER_URL}/api/search?q=${encodeURIComponent(trimmedPhrase)}&limit=${limit}`);
+     const apiUrl = process.env.NODE_ENV === 'production' 
+       ? `/api/search?q=${encodeURIComponent(trimmedPhrase)}&limit=${limit}`
+       : `${SERVER_URL}/api/search?q=${encodeURIComponent(trimmedPhrase)}&limit=${limit}`;
      
-     const response = await fetch(`${SERVER_URL}/api/search?q=${encodeURIComponent(trimmedPhrase)}&limit=${limit}`, {
+     console.log(`🌐 [YT-SEARCH] Making request to: ${apiUrl}`);
+     
+     const response = await fetch(apiUrl, {
        method: 'GET',
        headers: {
          'Accept': 'application/json',

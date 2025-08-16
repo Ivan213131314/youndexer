@@ -1,7 +1,10 @@
 import React, { useState } from 'react';
 import './Paywall.css';
+import { purchaseSubscription } from '../utils/tokenService';
+import { useAuth } from '../auth/AuthContext';
 
 function Paywall({ onClose, onSubscribe }) {
+  const { user, setUserTokens } = useAuth();
   const [selectedPlan, setSelectedPlan] = useState(null);
   const [isProcessing, setIsProcessing] = useState(false);
 
@@ -12,13 +15,12 @@ function Paywall({ onClose, onSubscribe }) {
       price: 10,
       originalPrice: null,
       period: 'месяц',
-      features: [
-        'Pro модель',
-        'История поисков',
-        '100 запросов в месяц',
-        '3 дня бесплатного пробного периода',
-        'Неограниченные запросы (вместо 3 в день)'
-      ],
+             features: [
+         'Pro модель',
+         'История поисков',
+         '100 токенов в месяц',
+         '3 дня бесплатного пробного периода'
+       ],
       popular: false,
       discount: null
     },
@@ -28,13 +30,12 @@ function Paywall({ onClose, onSubscribe }) {
       price: 18,
       originalPrice: null,
       period: 'месяц',
-      features: [
-        'Pro модель',
-        'История поисков',
-        '300 запросов в месяц',
-        '3 дня бесплатного пробного периода',
-        'Неограниченные запросы (вместо 3 в день)'
-      ],
+             features: [
+         'Pro модель',
+         'История поисков',
+         '300 токенов в месяц',
+         '3 дня бесплатного пробного периода'
+       ],
       popular: true,
       discount: null
     },
@@ -47,7 +48,7 @@ function Paywall({ onClose, onSubscribe }) {
       features: [
         'Pro модель',
         'История поисков',
-        'Неограниченные запросы',
+        'Неограниченные токены',
         'Пожизненный доступ',
         'Все будущие обновления'
       ],
@@ -57,15 +58,34 @@ function Paywall({ onClose, onSubscribe }) {
   ];
 
   const handleSubscribe = async (planId) => {
+    if (!user) {
+      console.error('Пользователь не авторизован');
+      return;
+    }
+
     setIsProcessing(true);
     try {
-      // Здесь будет логика подписки
-      console.log('Подписка на план:', planId);
-      if (onSubscribe) {
-        await onSubscribe(planId);
+      // Покупаем подписку
+      const success = await purchaseSubscription(user.uid, planId);
+      
+      if (success) {
+        console.log('Подписка успешно куплена:', planId);
+        
+        // Обновляем токены в контексте
+        const { getUserTokens } = await import('../utils/tokenService');
+        const updatedTokens = await getUserTokens(user.uid);
+        setUserTokens(updatedTokens);
+        
+        if (onSubscribe) {
+          await onSubscribe(planId);
+        }
+      } else {
+        console.error('Ошибка при покупке подписки');
+        alert('Ошибка при покупке подписки. Попробуйте еще раз.');
       }
     } catch (error) {
       console.error('Ошибка подписки:', error);
+      alert('Ошибка при покупке подписки. Попробуйте еще раз.');
     } finally {
       setIsProcessing(false);
     }
@@ -135,7 +155,7 @@ function Paywall({ onClose, onSubscribe }) {
             💳 Все планы включают 3-дневный бесплатный пробный период
           </p>
           <p className="limit-info">
-            📊 Бесплатные пользователи: 3 запроса в день
+            🪙 Бесплатные пользователи: 3 токена в день
           </p>
           <p className="security-info">
             🔒 Безопасная оплата • Отмена в любое время

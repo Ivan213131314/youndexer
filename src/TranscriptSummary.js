@@ -106,7 +106,10 @@ const TranscriptSummary = ({ videos, userQuery, onSummaryComplete, selectedModel
 
       console.log('📤 [SUMMARY] Отправляем запрос к серверу:');
       console.log('='.repeat(80));
-      console.log('URL:', `${process.env.REACT_APP_API_URL || 'http://localhost:3001'}/api/summarize-videos`);
+      const apiUrl = process.env.NODE_ENV === 'production' 
+        ? '/api/summarize-videos'
+        : `${process.env.REACT_APP_API_URL || 'http://localhost:3001'}/api/summarize-videos`;
+      console.log('URL:', apiUrl);
       console.log('Method: POST');
       console.log('Headers:', {
         'Content-Type': 'application/json'
@@ -117,7 +120,7 @@ const TranscriptSummary = ({ videos, userQuery, onSummaryComplete, selectedModel
       console.log(finalQuery);
       console.log('='.repeat(80));
 
-      const response = await fetch(`${process.env.REACT_APP_API_URL || 'http://localhost:3001'}/api/summarize-videos`, {
+      const response = await fetch(apiUrl, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',

@@ -1,0 +1,183 @@
+.token-display {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  padding: 12px;
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  border-radius: 12px;
+  color: white;
+  box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1);
+  min-width: 200px;
+}
+
+.token-info {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.token-icon {
+  font-size: 24px;
+  filter: drop-shadow(0 2px 4px rgba(0, 0, 0, 0.2));
+}
+
+.token-details {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  flex: 1;
+}
+
+.token-unlimited,
+.token-limited {
+  display: flex;
+  align-items: baseline;
+  gap: 6px;
+}
+
+.token-count {
+  font-size: 24px;
+  font-weight: bold;
+  line-height: 1;
+}
+
+.token-label {
+  font-size: 14px;
+  opacity: 0.9;
+}
+
+.token-subscription {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-top: 4px;
+}
+
+.subscription-badge {
+  padding: 2px 8px;
+  border-radius: 12px;
+  font-size: 11px;
+  font-weight: bold;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+.subscription-badge.free {
+  background: rgba(255, 255, 255, 0.2);
+  color: white;
+}
+
+.subscription-badge.pro {
+  background: linear-gradient(135deg, #ff6b6b, #ee5a24);
+  color: white;
+}
+
+.subscription-badge.premium {
+  background: linear-gradient(135deg, #feca57, #ff9ff3);
+  color: #2c3e50;
+}
+
+.subscription-badge.lifetime {
+  background: linear-gradient(135deg, #48dbfb, #0abde3);
+  color: white;
+}
+
+.subscription-info {
+  font-size: 12px;
+  opacity: 0.8;
+}
+
+.token-warning,
+.token-error {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 8px 12px;
+  border-radius: 8px;
+  font-size: 13px;
+  font-weight: 500;
+}
+
+.token-warning {
+  background: rgba(255, 193, 7, 0.2);
+  border: 1px solid rgba(255, 193, 7, 0.3);
+}
+
+.token-error {
+  background: rgba(220, 53, 69, 0.2);
+  border: 1px solid rgba(220, 53, 69, 0.3);
+}
+
+.warning-icon,
+.error-icon {
+  font-size: 16px;
+}
+
+.warning-text,
+.error-text {
+  flex: 1;
+}
+
+.upgrade-button {
+  background: linear-gradient(135deg, #ff6b6b, #ee5a24);
+  color: white;
+  border: none;
+  padding: 6px 12px;
+  border-radius: 6px;
+  font-size: 12px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  white-space: nowrap;
+}
+
+.upgrade-button:hover {
+  transform: translateY(-1px);
+  box-shadow: 0 4px 12px rgba(255, 107, 107, 0.4);
+}
+
+.upgrade-button:active {
+  transform: translateY(0);
+}
+
+.token-loading {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 14px;
+  opacity: 0.8;
+}
+
+.token-spinner {
+  width: 16px;
+  height: 16px;
+  border: 2px solid rgba(255, 255, 255, 0.3);
+  border-top: 2px solid white;
+  border-radius: 50%;
+  animation: spin 1s linear infinite;
+}
+
+@keyframes spin {
+  0% { transform: rotate(0deg); }
+  100% { transform: rotate(360deg); }
+}
+
+/* Адаптивность */
+@media (max-width: 768px) {
+  .token-display {
+    min-width: 180px;
+    padding: 10px;
+  }
+  
+  .token-count {
+    font-size: 20px;
+  }
+  
+  .token-label {
+    font-size: 13px;
+  }
+  
+  .subscription-info {
+    font-size: 11px;
+  }
+}

@@ -1,29 +1,31 @@
-# Production Environment Variables
-# Скопируйте этот файл в .env.production и настройте под ваш сервер
+# Production Environment Variables Example
+# Скопируйте этот файл в .env.production и замените значения
 
 # OpenAI API Key
-OPENAI_API_KEY=sk-your-actual-openai-api-key
-
-# Supadata API Key
-SUPADATA_API_KEY=sd_cf39c3a6069af680097faf6f996b8c16
+OPENAI_API_KEY=your-openai-api-key-here
 
 # React App OpenAI Key (для фронтенда)
-REACT_APP_OPENAI_API_KEY=sk-your-actual-openai-api-key
+REACT_APP_OPENAI_API_KEY=your-openai-api-key-here
 
-# API Server URL (замените на ваш домен)
-REACT_APP_API_URL=https://api.yourdomain.com
+# OpenRouter API Key
+REACT_APP_OPEN_ROUTER_API_KEY=your-openrouter-api-key-here
 
-# Frontend URL для CORS (замените на ваш домен)
-FRONTEND_URL=https://yourdomain.com
+# API Server URL (Firebase Functions)
+REACT_APP_API_URL=https://us-central1-careerbloom-fp61e.cloudfunctions.net/server
 
-# Дополнительные настройки для продакшена
+# Frontend URL (Firebase Hosting)
+FRONTEND_URL=https://careerbloom-fp61e.web.app
+
+# Node Environment
 NODE_ENV=production
+
+# Server Port (обычно устанавливается хостингом)
 PORT=3001
 
-# Firebase Configuration
-REACT_APP_FIREBASE_API_KEY=your-firebase-api-key
-REACT_APP_FIREBASE_AUTH_DOMAIN=your-project.firebaseapp.com
-REACT_APP_FIREBASE_PROJECT_ID=your-project-id
-REACT_APP_FIREBASE_STORAGE_BUCKET=your-project.appspot.com
-REACT_APP_FIREBASE_MESSAGING_SENDER_ID=123456789
-REACT_APP_FIREBASE_APP_ID=1:123456789:web:abcdef123456 
+# Firebase Configuration (опционально, если нужны отдельные настройки)
+REACT_APP_FIREBASE_API_KEY=AIzaSyBmtrqV1swD-qmXdCPeN-yB6FKlVdzI75E
+REACT_APP_FIREBASE_AUTH_DOMAIN=careerbloom-fp61e.firebaseapp.com
+REACT_APP_FIREBASE_PROJECT_ID=careerbloom-fp61e
+REACT_APP_FIREBASE_STORAGE_BUCKET=careerbloom-fp61e.firebasestorage.app
+REACT_APP_FIREBASE_MESSAGING_SENDER_ID=520563108847
+REACT_APP_FIREBASE_APP_ID=1:520563108847:web:c84fa9e9ff58cf1aa0641a 

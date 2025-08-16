@@ -62,7 +62,9 @@ ${JSON.stringify(videoData, null, 2)}`;
       method: 'POST',
       headers: {
         'Authorization': `Bearer ${openRouter.apiKey}`,
-        'HTTP-Referer': 'http://localhost:3000',
+        'HTTP-Referer': process.env.NODE_ENV === 'production' 
+          ? (process.env.REACT_APP_API_URL || 'https://careerbloom-fp61e.web.app')
+          : 'http://localhost:3000',
         'X-Title': 'YouTube Searcher',
         'Content-Type': 'application/json',
       },

@@ -1,10 +1,12 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { useAuth } from './AuthContext';
+import { subscribeToTokenChanges } from '../utils/tokenService';
 import './UserProfile.css';
 
-const UserProfile = () => {
+const UserProfile = ({ onUpgradeClick }) => {
   const { user, logout } = useAuth();
   const [isDropdownOpen, setIsDropdownOpen] = useState(false);
+  const [tokenData, setTokenData] = useState(null);
   const dropdownRef = useRef(null);
 
   const handleLogout = async () => {
@@ -19,6 +21,17 @@ const UserProfile = () => {
   const toggleDropdown = () => {
     setIsDropdownOpen(!isDropdownOpen);
   };
+
+  // Подписка на изменения токенов
+  useEffect(() => {
+    if (!user) return;
+
+    const unsubscribe = subscribeToTokenChanges(user.uid, (data) => {
+      setTokenData(data);
+    });
+
+    return () => unsubscribe();
+  }, [user]);
 
   // Закрытие dropdown при клике вне его
   useEffect(() => {
@@ -85,6 +98,39 @@ const UserProfile = () => {
               </div>
             </div>
           </div>
+          
+          <div className="dropdown-divider"></div>
+          
+          {/* Токены */}
+          {tokenData && (
+            <div className="dropdown-tokens">
+              <div className="tokens-header">
+                <span className="tokens-icon">🪙</span>
+                <span className="tokens-label">Токены</span>
+              </div>
+              <div className="tokens-info">
+                {tokenData.subscription === 'lifetime' ? (
+                  <div className="tokens-unlimited">
+                    <span className="tokens-count">∞</span>
+                    <span className="tokens-subscription">Lifetime</span>
+                  </div>
+                ) : (
+                  <div className="tokens-limited">
+                    <span className="tokens-count">{tokenData.tokens}</span>
+                    <span className="tokens-subscription">
+                      {tokenData.subscription === 'free' ? 'Free' : 
+                       tokenData.subscription === 'pro' ? 'Pro' : 'Premium'}
+                    </span>
+                  </div>
+                )}
+              </div>
+              {(tokenData.subscription === 'free' && tokenData.tokens <= 1) && (
+                <button className="upgrade-tokens-button" onClick={onUpgradeClick}>
+                  Обновить
+                </button>
+              )}
+            </div>
+          )}
           
           <div className="dropdown-divider"></div>
           

@@ -1,7 +1,6 @@
 {
   "hosting": {
     "public": "build",
-    "site": "youndex",
     "ignore": [
       "firebase.json",
       "**/.*",
@@ -13,5 +12,9 @@
         "destination": "/index.html"
       }
     ]
+  },
+  "functions": {
+    "source": ".",
+    "runtime": "nodejs18"
   }
 }
