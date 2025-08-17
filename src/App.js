@@ -262,8 +262,7 @@ function AppContent() {
       setIsLoadingDefault(true);
       console.log('🔄 [APP] Loading default query data:', defaultQueryData);
 
-      // Устанавливаем запрос и результаты из истории
-      setQuery(defaultQueryData.query);
+      // Устанавливаем только результаты из истории, НЕ устанавливаем запрос в поисковую строку
       setSearchResults(defaultQueryData.searchResults || []);
       setSummaryData(defaultQueryData.summaryData || null);
 
