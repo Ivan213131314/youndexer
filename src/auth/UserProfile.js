@@ -1,12 +1,14 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { useAuth } from './AuthContext';
 import { subscribeToTokenChanges } from '../utils/tokenService';
+import SubscriptionModal from '../components/SubscriptionModal';
 import './UserProfile.css';
 
 const UserProfile = ({ onUpgradeClick }) => {
   const { user, logout } = useAuth();
   const [isDropdownOpen, setIsDropdownOpen] = useState(false);
   const [tokenData, setTokenData] = useState(null);
+  const [showSubscriptionModal, setShowSubscriptionModal] = useState(false);
   const dropdownRef = useRef(null);
 
   const handleLogout = async () => {
@@ -105,8 +107,25 @@ const UserProfile = ({ onUpgradeClick }) => {
           {tokenData && (
             <div className="dropdown-tokens">
               <div className="tokens-header">
-                <span className="tokens-icon">🪙</span>
-                <span className="tokens-label">Токены</span>
+                <div className="tokens-header-left">
+                  <span className="tokens-icon">🪙</span>
+                  <span className="tokens-label">Токены</span>
+                </div>
+                                 {(tokenData.subscription === 'pro' || tokenData.subscription === 'premium' || tokenData.subscription === 'lifetime') && (
+                   <button 
+                     className="tokens-settings-button"
+                     onClick={() => {
+                       setShowSubscriptionModal(true);
+                       setIsDropdownOpen(false);
+                     }}
+                     title="Настройки подписки"
+                   >
+                    <svg width="16" height="16" viewBox="0 0 16 16" fill="none">
+                      <path d="M8 4.754a3.246 3.246 0 1 0 0 6.492 3.246 3.246 0 0 0 0-6.492zM5.754 8a2.246 2.246 0 1 1 4.492 0 2.246 2.246 0 0 1-4.492 0z" fill="currentColor"/>
+                      <path d="M9.796 1.343c-.527-1.79-3.065-1.79-3.592 0l-.094.319a.873.873 0 0 1-1.255.52l-.292-.16c-1.64-.892-3.433.902-2.54 2.541l.159.292a.873.873 0 0 1-.52 1.255l-.319.094c-1.79.527-1.79 3.065 0 3.592l.319.094a.873.873 0 0 1 .52 1.255l-.16.292c-.892 1.64.901 3.434 2.541 2.54l.292-.159a.873.873 0 0 1 1.255.52l.094.319c.527 1.79 3.065 1.79 3.592 0l.094-.319a.873.873 0 0 1 1.255-.52l.292.16c1.64.893 3.434-.902 2.54-2.541l-.159-.292a.873.873 0 0 1 .52-1.255l.319-.094c1.79-.527 1.79-3.065 0-3.592l-.319-.094a.873.873 0 0 1-.52-1.255l.16-.292c.893-1.64-.902-3.433-2.541-2.54l-.292.159z" fill="currentColor"/>
+                    </svg>
+                  </button>
+                )}
               </div>
               <div className="tokens-info">
                 {tokenData.subscription === 'lifetime' ? (
@@ -143,6 +162,13 @@ const UserProfile = ({ onUpgradeClick }) => {
           </button>
         </div>
       )}
+
+      {/* Subscription Modal */}
+      <SubscriptionModal 
+        isOpen={showSubscriptionModal}
+        onClose={() => setShowSubscriptionModal(false)}
+        currentSubscription={tokenData?.subscription || 'free'}
+      />
     </div>
   );
 };

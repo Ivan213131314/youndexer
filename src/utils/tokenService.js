@@ -174,6 +174,27 @@ export const purchaseSubscription = async (userId, subscriptionType) => {
   }
 };
 
+// Отменить подписку
+export const cancelSubscription = async (userId) => {
+  if (!userId) return false;
+  
+  try {
+    const now = new Date();
+    
+    await updateDoc(doc(db, 'userTokens', userId), {
+      subscription: 'free',
+      subscriptionExpiresAt: null,
+      tokens: DAILY_TOKENS, // Возвращаем к бесплатному лимиту
+      updatedAt: now.toISOString()
+    });
+    
+    return true;
+  } catch (error) {
+    console.error('Ошибка при отмене подписки:', error);
+    return false;
+  }
+};
+
 // Подписаться на изменения токенов в реальном времени
 export const subscribeToTokenChanges = (userId, callback) => {
   if (!userId) return () => {};

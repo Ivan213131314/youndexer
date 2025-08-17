@@ -1139,45 +1139,7 @@ function AppContent() {
                       </span>
                     </div>
                     
-                    <div className="requests-info">
-                      <span className="requests-text">
-                        📊 {requestCount}/3 запросов сегодня
-                      </span>
-                      <button 
-                        className="test-reset-button"
-                        onClick={() => {
-                          resetRequestCount();
-                          setRequestCount(0);
-                        }}
-                        title="Сбросить счетчик (для тестирования)"
-                      >
-                        🔄
-                      </button>
-                      <button 
-                        className="test-increment-button"
-                        onClick={() => {
-                          incrementRequestCount();
-                          setRequestCount(getUsedRequestsToday());
-                        }}
-                        title="Увеличить счетчик (для тестирования)"
-                      >
-                        ➕
-                      </button>
-                      <button 
-                        className="test-limit-button"
-                        onClick={() => {
-                          // Симулируем проверку лимита для авторизованного пользователя
-                          if (!canMakeRequest()) {
-                            setShowRequestLimit(true);
-                          } else {
-                            alert('Можно сделать запрос!');
-                          }
-                        }}
-                        title="Проверить лимит (для тестирования)"
-                      >
-                        🔍
-                      </button>
-                    </div>
+
                   </div>
                 </div>
                 
