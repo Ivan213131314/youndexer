@@ -105,6 +105,25 @@
   }
 }
 
+@media (max-width: 480px) {
+  .thumbnail-fallback-icon {
+    font-size: 18px;
+  }
+  
+  .thumbnail-fallback-text {
+    font-size: 7px;
+  }
+  
+  .thumbnail-spinner {
+    width: 18px;
+    height: 18px;
+  }
+  
+  .thumbnail-fallback {
+    padding: 6px;
+  }
+}
+
 /* Специальные стили для channel thumbnail */
 .channel-thumbnail-preview.thumbnail-fallback {
   width: 80px;
@@ -123,5 +142,13 @@
   .channel-thumbnail-preview.thumbnail-loading {
     width: 100px;
     height: 100px;
+  }
+}
+
+@media (max-width: 480px) {
+  .channel-thumbnail-preview.thumbnail-fallback,
+  .channel-thumbnail-preview.thumbnail-loading {
+    width: 80px;
+    height: 80px;
   }
 }

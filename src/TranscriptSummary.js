@@ -11,6 +11,7 @@ const TranscriptSummary = ({ videos, userQuery, onSummaryComplete, selectedModel
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState(null);
   const [isDownloading, setIsDownloading] = useState(false);
+  const [dropdownOpen, setDropdownOpen] = useState(false);
 
   // Debug: log the detailedSummary prop
   useEffect(() => {
@@ -408,7 +409,8 @@ ${summaryData.summary}`;
       {/* Download buttons - shown only if summary is ready */}
       {hasSummary && (
         <div className="download-section">
-          <div className="download-buttons">
+          {/* Desktop version - all buttons in a row */}
+          <div className="download-buttons desktop-download">
             <button 
               className="download-button copy-button"
               onClick={copyToClipboard}
@@ -441,6 +443,66 @@ ${summaryData.summary}`;
               <span className="download-icon">📄</span>
               {isDownloading ? 'Creating TXT...' : 'Download TXT'}
             </button>
+          </div>
+          
+          {/* Mobile version - Copy button + dropdown */}
+          <div className="mobile-download">
+            <button 
+              className="download-button copy-button"
+              onClick={copyToClipboard}
+              title="Copy to clipboard"
+            >
+              <span className="download-icon">📋</span>
+              Copy
+            </button>
+            
+            <div className="download-dropdown">
+              <button 
+                className="download-dropdown-toggle"
+                onClick={() => setDropdownOpen(!dropdownOpen)}
+              >
+                <span className="download-icon">📥</span>
+                Download
+                <span className={`dropdown-arrow ${dropdownOpen ? 'open' : ''}`}>▼</span>
+              </button>
+              {dropdownOpen && (
+                <div className="download-dropdown-menu">
+                  <button 
+                    className="download-button pdf-button"
+                    onClick={() => {
+                      downloadAsPDF();
+                      setDropdownOpen(false);
+                    }}
+                    disabled={isDownloading}
+                  >
+                    <span className="download-icon">📄</span>
+                    {isDownloading ? 'Creating PDF...' : 'Download PDF'}
+                  </button>
+                  <button 
+                    className="download-button doc-button"
+                    onClick={() => {
+                      downloadAsDOC();
+                      setDropdownOpen(false);
+                    }}
+                    disabled={isDownloading}
+                  >
+                    <span className="download-icon">📝</span>
+                    {isDownloading ? 'Creating DOC...' : 'Download DOC'}
+                  </button>
+                  <button 
+                    className="download-button txt-button"
+                    onClick={() => {
+                      downloadAsTXT();
+                      setDropdownOpen(false);
+                    }}
+                    disabled={isDownloading}
+                  >
+                    <span className="download-icon">📄</span>
+                    {isDownloading ? 'Creating TXT...' : 'Download TXT'}
+                  </button>
+                </div>
+              )}
+            </div>
           </div>
         </div>
       )}

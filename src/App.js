@@ -1236,17 +1236,6 @@ function AppContent() {
                   {/* Display ready summary */}
                   {summaryData && (
                     <div className="summary-display">
-                      <div className="summary-stats">
-                        <div className="stat-item">
-                          <span className="stat-label">Total results:</span>
-                          <span className="stat-value">{summaryData.totalResults}</span>
-                        </div>
-                        <div className="stat-item">
-                          <span className="stat-label">Transcripts found:</span>
-                          <span className="stat-value">{summaryData.transcriptCount}</span>
-                        </div>
-                      </div>
-
                       <div className="summary-content">
                         <h4>📋 Summary for query: "{query}"</h4>
                         <div className="summary-text">
@@ -1434,21 +1423,6 @@ function AppContent() {
                             {/* Display ready summary */}
                             {channelSummaryData && (
                               <div className="summary-display">
-                                                                 <div className="summary-stats">
-                                   <div className="stat-item">
-                                     <span className="stat-label">Total results:</span>
-                                     <span className="stat-value">{channelSummaryData.totalResults}</span>
-                                   </div>
-                                   <div className="stat-item">
-                                     <span className="stat-label">Transcripts found:</span>
-                                     <span className="stat-value">{channelSummaryData.transcriptCount}</span>
-                                   </div>
-                                   <div className="stat-item">
-                                     <span className="stat-label">Channel:</span>
-                                     <span className="stat-value">{parsingResults.channelName}</span>
-                                   </div>
-                                 </div>
-
                                  <div className="summary-content">
                                    <h4>📋 Channel Summary: "{parsingResults.channelName}"</h4>
                                   <div className="summary-text">

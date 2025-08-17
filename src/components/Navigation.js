@@ -62,7 +62,8 @@ const Navigation = ({ currentPage, onPageChange, selectedHistoryId, onResetHisto
               className="paywall-button"
               onClick={onShowPaywall}
             >
-              💎 Upgrade to Pro
+              <span className="paywall-button-text">💎 Upgrade to Pro</span>
+              <span className="paywall-button-text-mobile">💎 Pro</span>
             </button>
           )}
           

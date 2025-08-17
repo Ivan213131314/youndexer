@@ -297,13 +297,92 @@
   }
   
   /* Responsive design */
-  @media (max-width: 768px) {
-    .user-name {
-      display: none;
-    }
-    
-    .user-dropdown {
-      right: -0.5rem;
-      min-width: 180px;
-    }
+@media (max-width: 768px) {
+  .user-name {
+    display: none;
   }
+  
+  .user-dropdown {
+    right: -0.5rem;
+    min-width: 180px;
+  }
+  
+  .dropdown-header {
+    padding: 0.875rem;
+  }
+  
+  .dropdown-avatar {
+    width: 36px;
+    height: 36px;
+  }
+  
+  .dropdown-user-name {
+    font-size: 0.8rem;
+  }
+  
+  .dropdown-user-email {
+    font-size: 0.7rem;
+  }
+  
+  .dropdown-item {
+    padding: 0.625rem 0.875rem;
+    font-size: 0.8rem;
+  }
+  
+  .tokens-count {
+    font-size: 1.1rem;
+  }
+  
+  .tokens-subscription {
+    font-size: 0.7rem;
+    padding: 0.1rem 0.4rem;
+  }
+}
+
+@media (max-width: 480px) {
+  .user-avatar {
+    width: 28px;
+    height: 28px;
+  }
+  
+  .user-dropdown {
+    right: 0rem;
+    min-width: 160px;
+  }
+  
+  .dropdown-header {
+    padding: 0.75rem;
+  }
+  
+  .dropdown-avatar {
+    width: 32px;
+    height: 32px;
+  }
+  
+  .dropdown-user-name {
+    font-size: 0.75rem;
+  }
+  
+  .dropdown-user-email {
+    font-size: 0.65rem;
+  }
+  
+  .dropdown-item {
+    padding: 0.5rem 0.75rem;
+    font-size: 0.75rem;
+  }
+  
+  .tokens-count {
+    font-size: 1rem;
+  }
+  
+  .tokens-subscription {
+    font-size: 0.65rem;
+    padding: 0.1rem 0.3rem;
+  }
+  
+  .upgrade-tokens-button {
+    padding: 0.4rem;
+    font-size: 0.7rem;
+  }
+}

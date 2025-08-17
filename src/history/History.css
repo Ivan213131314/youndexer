@@ -584,24 +584,106 @@
 }
 
 @media (max-width: 480px) {
+  .history-container {
+    padding: 10px;
+  }
+  
+  .history-header {
+    gap: 10px;
+  }
+  
+  .history-header h1 {
+    font-size: 1.8rem;
+  }
+  
+  .delete-all-button {
+    padding: 6px 12px;
+    font-size: 11px;
+  }
+  
   .history-item-content {
     padding: 15px;
   }
   
   .history-query {
-    font-size: 1.1rem;
+    font-size: 1rem;
   }
   
   .history-meta {
-    font-size: 0.9rem;
+    font-size: 0.85rem;
+  }
+  
+  .history-item-actions {
+    gap: 8px;
+  }
+  
+  .checkmark {
+    font-size: 1.1rem;
+    padding: 8px;
+  }
+  
+  .delete-button {
+    font-size: 1rem;
+    padding: 6px;
+  }
+  
+  .history-item-header h2 {
+    font-size: 1.5rem;
+  }
+  
+  .header-actions {
+    gap: 8px;
   }
   
   .download-buttons {
     flex-wrap: wrap;
+    gap: 6px;
   }
   
   .download-button {
     padding: 5px 10px;
     font-size: 11px;
+  }
+  
+  .download-icon {
+    font-size: 10px;
+  }
+  
+  .back-button {
+    padding: 8px 12px;
+    font-size: 12px;
+    margin-right: 10px;
+  }
+  
+  .left-column,
+  .right-column {
+    padding: 15px;
+  }
+  
+  .summary-section h2,
+  .videos-section h2 {
+    font-size: 1.5rem;
+  }
+  
+  .videos-list .video-item {
+    padding: 15px;
+  }
+  
+  .videos-list .video-item h4 {
+    font-size: 1rem;
+  }
+  
+  .videos-list .video-item p {
+    font-size: 13px;
+  }
+  
+  .videos-list .video-link {
+    padding: 6px 12px;
+    font-size: 12px;
+  }
+  
+  .videos-list .transcript-content {
+    padding: 12px;
+    font-size: 13px;
   }
 }

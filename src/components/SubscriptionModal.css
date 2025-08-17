@@ -320,7 +320,7 @@
 @media (max-width: 768px) {
   .subscription-modal {
     width: 95%;
-    margin: 1rem;
+    margin: auto;
   }
   
   .plans-grid {

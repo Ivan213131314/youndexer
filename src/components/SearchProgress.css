@@ -113,13 +113,25 @@
     font-size: 13px;
   }
   
+  .progress-content {
+    gap: 10px;
+  }
+  
   .loading-spinner {
     width: 14px;
     height: 14px;
   }
   
+  .step-info {
+    gap: 6px;
+  }
+  
   .step-emoji {
     font-size: 14px;
+  }
+  
+  .step-label {
+    font-size: 13px;
   }
   
   .step-details {
@@ -132,11 +144,58 @@
   }
   
   .progress-bar-container {
-    height: 4px;
+    height: 10px;
   }
   
   .progress-percentage {
     font-size: 11px;
     min-width: 30px;
+  }
+}
+
+@media (max-width: 480px) {
+  .search-progress {
+    margin: 6px 0;
+    padding: 8px 10px;
+    font-size: 12px;
+  }
+  
+  .progress-content {
+    gap: 8px;
+  }
+  
+  .loading-spinner {
+    width: 12px;
+    height: 12px;
+  }
+  
+  .step-info {
+    gap: 4px;
+  }
+  
+  .step-emoji {
+    font-size: 12px;
+  }
+  
+  .step-label {
+    font-size: 12px;
+  }
+  
+  .step-details {
+    font-size: 11px;
+  }
+  
+  .summary-progress-bar {
+    margin-top: 8px;
+    gap: 6px;
+  }
+  
+  .progress-bar-container {
+    height: 8px;
+  }
+  
+  .progress-percentage {
+    font-size: 10px;
+    min-width: 25px;
   }
 }

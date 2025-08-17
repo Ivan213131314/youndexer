@@ -251,6 +251,10 @@
     padding: 20px 20px 0 20px;
   }
   
+  .token-limit-header h2 {
+    font-size: 20px;
+  }
+  
   .token-limit-content {
     padding: 0 20px 20px 20px;
   }
@@ -264,5 +268,97 @@
     flex-direction: column;
     text-align: center;
     gap: 12px;
+  }
+  
+  .token-icon {
+    font-size: 28px;
+  }
+  
+  .token-count {
+    font-size: 24px;
+  }
+  
+  .token-message {
+    font-size: 15px;
+  }
+  
+  .token-benefits h3 {
+    font-size: 16px;
+  }
+  
+  .token-benefits li {
+    font-size: 13px;
+  }
+}
+
+@media (max-width: 480px) {
+  .token-limit-modal {
+    width: 98%;
+    margin: 10px;
+  }
+  
+  .token-limit-header {
+    padding: 16px 16px 0 16px;
+  }
+  
+  .token-limit-header h2 {
+    font-size: 18px;
+  }
+  
+  .token-limit-content {
+    padding: 0 16px 16px 16px;
+  }
+  
+  .token-limit-actions {
+    padding: 0 16px 16px 16px;
+  }
+  
+  .token-status {
+    padding: 12px;
+    gap: 8px;
+  }
+  
+  .token-icon {
+    font-size: 24px;
+  }
+  
+  .token-count {
+    font-size: 20px;
+  }
+  
+  .token-label {
+    font-size: 12px;
+  }
+  
+  .token-message {
+    font-size: 14px;
+    margin-bottom: 16px;
+  }
+  
+  .token-benefits {
+    padding: 16px;
+    margin-bottom: 16px;
+  }
+  
+  .token-benefits h3 {
+    font-size: 15px;
+    margin-bottom: 12px;
+  }
+  
+  .token-benefits li {
+    font-size: 12px;
+    padding: 6px 0;
+    gap: 8px;
+  }
+  
+  .upgrade-button,
+  .close-button {
+    padding: 12px 20px;
+    font-size: 14px;
+  }
+  
+  .subscription-badge {
+    padding: 4px 12px;
+    font-size: 12px;
   }
 }

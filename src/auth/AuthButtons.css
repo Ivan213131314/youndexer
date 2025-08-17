@@ -52,3 +52,14 @@
     font-size: 0.8rem;
   }
 }
+
+@media (max-width: 480px) {
+  .auth-buttons {
+    gap: 0.4rem;
+  }
+  
+  .auth-btn {
+    padding: 0.4rem 0.6rem;
+    font-size: 0.75rem;
+  }
+}

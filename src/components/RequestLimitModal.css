@@ -229,4 +229,74 @@
   .close-button {
     width: 100%;
   }
+  
+  .limit-icon {
+    font-size: 2.5rem;
+  }
+  
+  .limit-text {
+    font-size: 1rem;
+  }
+  
+  .upgrade-benefits {
+    padding: 1.25rem;
+  }
+}
+
+@media (max-width: 480px) {
+  .request-limit-modal {
+    margin: 5px;
+  }
+  
+  .request-limit-header {
+    padding: 1rem 0.75rem 0.75rem;
+  }
+  
+  .request-limit-header h2 {
+    font-size: 1.1rem;
+  }
+  
+  .request-limit-content {
+    padding: 1rem;
+  }
+  
+  .limit-icon {
+    font-size: 2rem;
+  }
+  
+  .limit-text {
+    font-size: 0.95rem;
+    margin-bottom: 1rem;
+  }
+  
+  .stat-value {
+    font-size: 1.25rem;
+    padding: 0.4rem 0.8rem;
+  }
+  
+  .upgrade-benefits {
+    padding: 1rem;
+  }
+  
+  .upgrade-benefits h3 {
+    font-size: 1rem;
+  }
+  
+  .benefits-list li {
+    font-size: 0.9rem;
+  }
+  
+  .upgrade-button,
+  .close-button {
+    padding: 0.75rem 1.25rem;
+    font-size: 0.95rem;
+  }
+  
+  .request-limit-footer {
+    padding: 0.75rem 1rem 1rem;
+  }
+  
+  .reset-info {
+    font-size: 0.8rem;
+  }
 }

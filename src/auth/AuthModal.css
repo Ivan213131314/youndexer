@@ -214,13 +214,61 @@
   }
   
   /* Responsive design */
-  @media (max-width: 480px) {
-    .auth-modal {
-      margin: 1rem;
-      padding: 1.5rem;
-    }
-    
-    .auth-modal-title {
-      font-size: 1.5rem;
-    }
+@media (max-width: 768px) {
+  .auth-modal {
+    margin: 1rem;
+    padding: 1.75rem;
+    max-width: 350px;
   }
+  
+  .auth-modal-title {
+    font-size: 1.6rem;
+    margin-bottom: 1.5rem;
+  }
+  
+  .auth-input {
+    padding: 0.75rem 0.875rem;
+    font-size: 16px;
+  }
+  
+  .auth-button {
+    padding: 0.75rem 1rem;
+    font-size: 16px;
+  }
+}
+
+@media (max-width: 480px) {
+  .auth-modal {
+    margin: 0.5rem;
+    padding: 1.25rem;
+    max-width: 320px;
+  }
+  
+  .auth-modal-title {
+    font-size: 1.4rem;
+    margin-bottom: 1.25rem;
+  }
+  
+  .auth-input {
+    padding: 0.7rem 0.8rem;
+    font-size: 16px;
+  }
+  
+  .auth-button {
+    padding: 0.7rem 1rem;
+    font-size: 16px;
+  }
+  
+  .auth-form {
+    gap: 0.875rem;
+  }
+  
+  .auth-divider {
+    margin: 1.25rem 0;
+  }
+  
+  .auth-switch {
+    margin-top: 1.25rem;
+    font-size: 0.8rem;
+  }
+}
