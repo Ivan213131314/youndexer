@@ -35,7 +35,7 @@ const TokenDisplay = ({ onUpgradeClick }) => {
       <div className="token-display">
         <div className="token-loading">
           <div className="token-spinner"></div>
-          <span>Загрузка токенов...</span>
+          <span>Loading tokens...</span>
         </div>
       </div>
     );
@@ -45,7 +45,7 @@ const TokenDisplay = ({ onUpgradeClick }) => {
     return (
       <div className="token-display">
         <div className="token-error">
-          <span>Ошибка загрузки токенов</span>
+          <span>Error loading tokens</span>
         </div>
       </div>
     );
@@ -63,14 +63,13 @@ const TokenDisplay = ({ onUpgradeClick }) => {
           {isLifetime ? (
             <div className="token-unlimited">
               <span className="token-count">∞</span>
-              <span className="token-label">Неограниченные токены</span>
+              <span className="token-label">Unlimited tokens</span>
             </div>
           ) : (
             <div className="token-limited">
               <span className="token-count">{tokenData.tokens}</span>
               <span className="token-label">
-                {tokenData.tokens === 1 ? 'токен' : 
-                 tokenData.tokens >= 2 && tokenData.tokens <= 4 ? 'токена' : 'токенов'}
+                {tokenData.tokens === 1 ? 'token' : 'tokens'}
               </span>
             </div>
           )}
@@ -78,7 +77,7 @@ const TokenDisplay = ({ onUpgradeClick }) => {
           {isFree && (
             <div className="token-subscription">
               <span className="subscription-badge free">Free</span>
-              <span className="subscription-info">3 токена в день</span>
+              <span className="subscription-info">3 tokens per day</span>
             </div>
           )}
           
@@ -88,7 +87,7 @@ const TokenDisplay = ({ onUpgradeClick }) => {
                 {tokenData.subscription === 'pro' ? 'Pro' : 'Premium'}
               </span>
               <span className="subscription-info">
-                {tokenData.subscription === 'pro' ? '100' : '300'} токенов в месяц
+                {tokenData.subscription === 'pro' ? '100' : '300'} tokens per month
               </span>
             </div>
           )}
@@ -96,7 +95,7 @@ const TokenDisplay = ({ onUpgradeClick }) => {
           {isLifetime && (
             <div className="token-subscription">
               <span className="subscription-badge lifetime">Lifetime</span>
-              <span className="subscription-info">Неограниченные токены</span>
+              <span className="subscription-info">Unlimited tokens</span>
             </div>
           )}
         </div>
@@ -105,9 +104,9 @@ const TokenDisplay = ({ onUpgradeClick }) => {
       {isFree && tokenData.tokens <= 1 && (
         <div className="token-warning">
           <span className="warning-icon">⚠️</span>
-          <span className="warning-text">Осталось мало токенов</span>
+          <span className="warning-text">Few tokens remaining</span>
           <button className="upgrade-button" onClick={onUpgradeClick}>
-            Улучшить
+            Upgrade
           </button>
         </div>
       )}
@@ -115,9 +114,9 @@ const TokenDisplay = ({ onUpgradeClick }) => {
       {isFree && tokenData.tokens === 0 && (
         <div className="token-error">
           <span className="error-icon">❌</span>
-          <span className="error-text">Токены закончились</span>
+          <span className="error-text">Tokens exhausted</span>
           <button className="upgrade-button" onClick={onUpgradeClick}>
-            Купить токены
+            Buy tokens
           </button>
         </div>
       )}

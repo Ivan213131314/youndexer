@@ -53,7 +53,7 @@
   font-style: italic;
 }
 
-/* Прогресс-бар для создания резюме */
+/* Progress bar for summary creation */
 .summary-progress-bar {
   margin-top: 12px;
   display: flex;
@@ -105,7 +105,7 @@
   text-align: right;
 }
 
-/* Адаптивность */
+/* Responsive */
 @media (max-width: 768px) {
   .search-progress {
     margin: 8px 0;

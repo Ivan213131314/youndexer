@@ -10,7 +10,7 @@ const Navigation = ({ currentPage, onPageChange, selectedHistoryId, onResetHisto
   const { user } = useAuth();
   const [tokenData, setTokenData] = useState(null);
 
-  // Подписка на изменения токенов
+  // Subscribe to token changes
   useEffect(() => {
     if (!user) {
       setTokenData(null);
@@ -24,15 +24,15 @@ const Navigation = ({ currentPage, onPageChange, selectedHistoryId, onResetHisto
     return () => unsubscribe();
   }, [user]);
 
-  // Определяем, нужно ли показывать кнопку Upgrade to Pro
+  // Determine whether to show the Upgrade to Pro button
   const shouldShowUpgradeButton = () => {
-    if (!user) return false; // Не показываем для неавторизованных пользователей
-    if (!tokenData) return false; // Не показываем пока не загрузились данные токенов
-    return tokenData.subscription === 'free'; // Показываем только для бесплатной подписки
+    if (!user) return false; // Don't show for unauthorized users
+    if (!tokenData) return false; // Don't show until token data is loaded
+    return tokenData.subscription === 'free'; // Show only for free subscription
   };
 
   const handleLogoClick = () => {
-    // Переходим на главную страницу только если мы не на главной странице
+    // Go to main page only if we're not already on the main page
     if (currentPage !== 'main') {
       onPageChange('main');
     }
@@ -40,10 +40,10 @@ const Navigation = ({ currentPage, onPageChange, selectedHistoryId, onResetHisto
 
   const handleHistoryClick = () => {
     if (currentPage === 'history' && selectedHistoryId) {
-      // Если мы на странице истории И открыт детальный просмотр - возвращаемся к списку
+      // If we're on the history page AND detailed view is open - return to list
       onResetHistory();
     } else {
-      // Иначе переходим на страницу истории
+      // Otherwise go to history page
       onPageChange('history');
     }
   };

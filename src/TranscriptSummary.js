@@ -12,9 +12,9 @@ const TranscriptSummary = ({ videos, userQuery, onSummaryComplete, selectedModel
   const [error, setError] = useState(null);
   const [isDownloading, setIsDownloading] = useState(false);
 
-  // Отладка: логируем получение пропа detailedSummary
+  // Debug: log the detailedSummary prop
   useEffect(() => {
-    console.log(`🔍 [TRANSCRIPT_SUMMARY] Компонент получил detailedSummary = ${detailedSummary}`);
+    console.log(`🔍 [TRANSCRIPT_SUMMARY] Component received detailedSummary = ${detailedSummary}`);
   }, [detailedSummary]);
 
 
@@ -26,21 +26,21 @@ const TranscriptSummary = ({ videos, userQuery, onSummaryComplete, selectedModel
     const videosWithTranscripts = videos ? videos.filter(video => video.transcript) : [];
     const totalVideos = videos ? videos.length : 0;
     
-    // Создаем резюме автоматически только если:
-    // 1. Есть видео с транскрипциями
-    // 2. ВСЕ видео имеют транскрипции (или процесс завершен)
-    // 3. Еще нет готового резюме
-    // 4. Не идет загрузка
-    // 5. Есть userQuery
-    // 6. Количество видео с транскрипциями равно общему количеству видео
+    // Create summary automatically only if:
+    // 1. There are videos with transcripts
+    // 2. ALL videos have transcripts (or process is complete)
+    // 3. No summary exists yet
+    // 4. Not currently loading
+    // 5. userQuery exists
+    // 6. Number of videos with transcripts equals total number of videos
     if (videosWithTranscripts.length > 0 && 
         videosWithTranscripts.length === totalVideos && 
         !summaryData && 
         !isLoading && 
         userQuery) {
-      console.log(`🤖 [AUTO_SUMMARY] Автоматически создаем резюме для ВСЕХ видео с транскрипциями (${videosWithTranscripts.length}/${totalVideos})`);
+      console.log(`🤖 [AUTO_SUMMARY] Automatically creating summary for ALL videos with transcripts (${videosWithTranscripts.length}/${totalVideos})`);
       
-      // Небольшая задержка чтобы убедиться что все транскрипции загружены
+      // Small delay to ensure all transcripts are loaded
       const timer = setTimeout(() => {
         createSummary();
       }, 2000);
@@ -53,14 +53,14 @@ const TranscriptSummary = ({ videos, userQuery, onSummaryComplete, selectedModel
 
   const createSummary = async () => {
     if (!videos || videos.length === 0 || !userQuery) {
-      setError('Необходимы видео и userQuery для создания резюме');
+      setError('Videos and userQuery are required to create summary');
       return;
     }
 
-    // Проверяем что есть видео с transcriptами
+    // Check that there are videos with transcripts
     const videosWithTranscripts = videos.filter(video => video.transcript);
     if (videosWithTranscripts.length === 0) {
-      setError('Нет видео с transcriptами для создания резюме');
+      setError('No videos with transcripts to create summary');
       return;
     }
 
@@ -68,35 +68,35 @@ const TranscriptSummary = ({ videos, userQuery, onSummaryComplete, selectedModel
     setError(null);
 
     try {
-      console.log('🚀 [SUMMARY] Создаем резюме...');
-      console.log(`📋 [SUMMARY] Количество видео: ${videos.length}`);
-      console.log(`📝 [SUMMARY] Видео с transcriptами: ${videosWithTranscripts.length}`);
-      console.log(`🔍 [SUMMARY] Исходный запрос: "${userQuery}"`);
+      console.log('🚀 [SUMMARY] Creating summary...');
+      console.log(`📋 [SUMMARY] Number of videos: ${videos.length}`);
+      console.log(`📝 [SUMMARY] Videos with transcripts: ${videosWithTranscripts.length}`);
+      console.log(`🔍 [SUMMARY] Original query: "${userQuery}"`);
 
-      console.log(`🎯 [SUMMARY] Режим детального резюме: ${detailedSummary ? 'ВКЛЮЧЕН' : 'ВЫКЛЮЧЕН'}`);
+      console.log(`🎯 [SUMMARY] Detailed summary mode: ${detailedSummary ? 'ENABLED' : 'DISABLED'}`);
 
-      // Формируем финальный запрос с учетом дополнительного промпта и детального режима
+      // Form final query with additional prompt and detailed mode
       let finalQuery = userQuery;
       
-      // Добавляем текст для детального резюме если включен соответствующий режим
+      // Add text for detailed summary if the corresponding mode is enabled
       if (detailedSummary) {
-        const detailedText = ". Создай очень детальное и подробное резюме с глубоким анализом, развернутыми пояснениями, конкретными примерами и расширенными выводами. Включи максимум полезной информации из транскриптов.";
+        const detailedText = ". Create a very detailed and comprehensive summary with deep analysis, detailed explanations, specific examples, and extended conclusions. Include maximum useful information from the transcripts.";
         finalQuery += detailedText;
-        console.log(`✨ [SUMMARY] Добавлен текст для детального резюме: "${detailedText}"`);
+        console.log(`✨ [SUMMARY] Added text for detailed summary: "${detailedText}"`);
       }
       
 
 
-      console.log(`📤 [SUMMARY] ФИНАЛЬНЫЙ ЗАПРОС К LLM: "${finalQuery}"`);
-      console.log(`📊 [SUMMARY] Длина финального запроса: ${finalQuery.length} символов`);
+      console.log(`📤 [SUMMARY] FINAL LLM REQUEST: "${finalQuery}"`);
+      console.log(`📊 [SUMMARY] Final request length: ${finalQuery.length} characters`);
       console.log('='.repeat(100));
 
-      // Обновляем прогресс до 90% перед отправкой запроса к LLM
+      // Update progress to 90% before sending request to LLM
       if (onProgressUpdate) {
         onProgressUpdate(90);
       }
 
-      // Отправляем полные transcriptы для качественного резюме
+      // Send full transcripts for quality summary
       const requestBody = {
         videos: videosWithTranscripts,
         userQuery: finalQuery,
@@ -314,8 +314,8 @@ const TranscriptSummary = ({ videos, userQuery, onSummaryComplete, selectedModel
       window.URL.revokeObjectURL(url);
       
     } catch (error) {
-      console.error('Ошибка при создании DOC:', error);
-      setError('Ошибка при создании DOC файла');
+      console.error('Error creating DOC:', error);
+      setError('Error creating DOC file');
     } finally {
       setIsDownloading(false);
     }
@@ -326,10 +326,10 @@ const TranscriptSummary = ({ videos, userQuery, onSummaryComplete, selectedModel
     
     setIsDownloading(true);
     try {
-      const content = `Резюме по запросу: "${userQuery}"
+      const content = `Summary for query: "${userQuery}"
 
-Всего результатов: ${summaryData.totalResults}
-Transcript найдено: ${summaryData.transcriptCount}
+Total results: ${summaryData.totalResults}
+Transcripts found: ${summaryData.transcriptCount}
 
 ${summaryData.summary}`;
 
@@ -345,8 +345,8 @@ ${summaryData.summary}`;
       window.URL.revokeObjectURL(url);
       
     } catch (error) {
-      console.error('Ошибка при создании TXT:', error);
-      setError('Ошибка при создании TXT файла');
+      console.error('Error creating TXT:', error);
+      setError('Error creating TXT file');
     } finally {
       setIsDownloading(false);
     }
@@ -355,21 +355,21 @@ ${summaryData.summary}`;
   const copyToClipboard = async () => {
     if (!summaryData) return;
     
-    const content = `Резюме по запросу: "${userQuery}"
+    const content = `Summary for query: "${userQuery}"
 
-Всего результатов: ${summaryData.totalResults}
-Transcript найдено: ${summaryData.transcriptCount}
+Total results: ${summaryData.totalResults}
+Transcripts found: ${summaryData.transcriptCount}
 
 ${summaryData.summary}`;
     
     try {
       await navigator.clipboard.writeText(content);
       
-      // Показываем уведомление об успешном копировании
+      // Show success notification for copying
       const button = document.querySelector('.copy-button');
       if (button) {
         const originalText = button.innerHTML;
-        button.innerHTML = '<span class="download-icon">✓</span>Скопировано';
+        button.innerHTML = '<span class="download-icon">✓</span>Copied';
         button.style.background = 'linear-gradient(135deg, #28a745 0%, #20c997 100%)';
         
         setTimeout(() => {
@@ -379,8 +379,8 @@ ${summaryData.summary}`;
       }
       
     } catch (error) {
-      console.error('Ошибка при копировании в буфер обмена:', error);
-      // Fallback для старых браузеров
+      console.error('Error copying to clipboard:', error);
+      // Fallback for older browsers
       const textArea = document.createElement('textarea');
       textArea.value = content;
       document.body.appendChild(textArea);
@@ -390,32 +390,32 @@ ${summaryData.summary}`;
     }
   };
 
-  // Проверяем есть ли видео с transcriptами
+  // Check if there are videos with transcripts
   const videosWithTranscripts = videos ? videos.filter(video => video.transcript) : [];
   const hasTranscripts = videosWithTranscripts.length > 0;
   const hasSummary = summaryData && summaryData.summary;
 
   return (
     <div className="transcript-summary">
-      {/* Статистика видео */}
+      {/* Video statistics */}
       <div className="summary-stats">
-        <span>Всего видео: {videos ? videos.length : 0}</span>
-        <span>С transcriptами: {videosWithTranscripts.length}</span>
+        <span>Total videos: {videos ? videos.length : 0}</span>
+        <span>With transcripts: {videosWithTranscripts.length}</span>
       </div>
       
 
 
-      {/* Кнопки скачивания - показываются только если резюме готово */}
+      {/* Download buttons - shown only if summary is ready */}
       {hasSummary && (
         <div className="download-section">
           <div className="download-buttons">
             <button 
               className="download-button copy-button"
               onClick={copyToClipboard}
-              title="Копировать в буфер обмена"
+              title="Copy to clipboard"
             >
               <span className="download-icon">📋</span>
-              Копировать
+              Copy
             </button>
             <button 
               className="download-button pdf-button"
@@ -423,7 +423,7 @@ ${summaryData.summary}`;
               disabled={isDownloading}
             >
               <span className="download-icon">📄</span>
-              {isDownloading ? 'Создаем PDF...' : 'Скачать PDF'}
+              {isDownloading ? 'Creating PDF...' : 'Download PDF'}
             </button>
             <button 
               className="download-button doc-button"
@@ -431,7 +431,7 @@ ${summaryData.summary}`;
               disabled={isDownloading}
             >
               <span className="download-icon">📝</span>
-              {isDownloading ? 'Создаем DOC...' : 'Скачать DOC'}
+              {isDownloading ? 'Creating DOC...' : 'Download DOC'}
             </button>
             <button 
               className="download-button txt-button"
@@ -439,7 +439,7 @@ ${summaryData.summary}`;
               disabled={isDownloading}
             >
               <span className="download-icon">📄</span>
-              {isDownloading ? 'Создаем TXT...' : 'Скачать TXT'}
+              {isDownloading ? 'Creating TXT...' : 'Download TXT'}
             </button>
           </div>
         </div>
@@ -455,14 +455,14 @@ ${summaryData.summary}`;
       {!hasTranscripts && videos && videos.length > 0 && (
         <div className="summary-warning">
           <span className="warning-icon">⚠️</span>
-          <span className="warning-text">Нет видео с transcriptами для создания резюме</span>
+          <span className="warning-text">No videos with transcripts to create summary</span>
         </div>
       )}
 
       {isLoading && (
         <div className="summary-loading">
           <div className="loading-spinner"></div>
-          <span>Создаем резюме на основе всех транскриптов...</span>
+          <span>Creating summary based on all transcripts...</span>
         </div>
       )}
 

@@ -18,7 +18,7 @@ const AuthModal = ({ isOpen, onClose, mode = 'login' }) => {
 
     try {
       if (currentMode === 'signup' && password !== confirmPassword) {
-        throw new Error('Пароли не совпадают');
+        throw new Error('Passwords do not match');
       }
 
       if (currentMode === 'login') {
@@ -53,21 +53,21 @@ const AuthModal = ({ isOpen, onClose, mode = 'login' }) => {
   const getErrorMessage = (errorCode) => {
     switch (errorCode) {
       case 'auth/user-not-found':
-        return 'Пользователь не найден';
+        return 'User not found';
       case 'auth/wrong-password':
-        return 'Неверный пароль';
+        return 'Wrong password';
       case 'auth/email-already-in-use':
-        return 'Email уже используется';
+        return 'Email already in use';
       case 'auth/weak-password':
-        return 'Пароль слишком слабый';
+        return 'Password too weak';
       case 'auth/invalid-email':
-        return 'Неверный формат email';
+        return 'Invalid email format';
       case 'auth/popup-closed-by-user':
-        return 'Окно авторизации было закрыто';
-      case 'Пароли не совпадают':
-        return 'Пароли не совпадают';
+        return 'Authorization window was closed';
+      case 'Passwords do not match':
+        return 'Passwords do not match';
       default:
-        return errorCode || 'Произошла ошибка. Попробуйте еще раз';
+        return errorCode || 'An error occurred. Please try again';
     }
   };
 
@@ -90,7 +90,7 @@ const AuthModal = ({ isOpen, onClose, mode = 'login' }) => {
         
         <div className="auth-modal-content">
           <h2 className="auth-modal-title">
-            {currentMode === 'login' ? 'Вход в аккаунт' : 'Регистрация'}
+            {currentMode === 'login' ? 'Sign In' : 'Registration'}
           </h2>
           
           <form onSubmit={handleEmailAuth} className="auth-form">
@@ -108,7 +108,7 @@ const AuthModal = ({ isOpen, onClose, mode = 'login' }) => {
             <div className="form-group">
               <input
                 type="password"
-                placeholder="Пароль"
+                placeholder="Password"
                 value={password}
                 onChange={(e) => setPassword(e.target.value)}
                 required
@@ -120,7 +120,7 @@ const AuthModal = ({ isOpen, onClose, mode = 'login' }) => {
               <div className="form-group">
                 <input
                   type="password"
-                  placeholder="Подтвердите пароль"
+                  placeholder="Confirm Password"
                   value={confirmPassword}
                   onChange={(e) => setConfirmPassword(e.target.value)}
                   required
@@ -136,12 +136,12 @@ const AuthModal = ({ isOpen, onClose, mode = 'login' }) => {
               className="auth-button primary"
               disabled={loading}
             >
-              {loading ? 'Загрузка...' : (currentMode === 'login' ? 'Войти' : 'Зарегистрироваться')}
+              {loading ? 'Loading...' : (currentMode === 'login' ? 'Sign In' : 'Register')}
             </button>
           </form>
           
           <div className="auth-divider">
-            <span>или</span>
+            <span>or</span>
           </div>
           
           <button 
@@ -155,15 +155,15 @@ const AuthModal = ({ isOpen, onClose, mode = 'login' }) => {
               <path fill="#FBBC05" d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l2.85-2.22.81-.62z"/>
               <path fill="#EA4335" d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z"/>
             </svg>
-            {currentMode === 'login' ? 'Войти через Google' : 'Зарегистрироваться через Google'}
+            {currentMode === 'login' ? 'Sign in with Google' : 'Register with Google'}
           </button>
           
           <div className="auth-switch">
             <span>
-              {currentMode === 'login' ? 'Нет аккаунта?' : 'Уже есть аккаунт?'}
+              {currentMode === 'login' ? 'No account?' : 'Already have an account?'}
             </span>
             <button onClick={switchMode} className="auth-switch-button">
-              {currentMode === 'login' ? 'Зарегистрироваться' : 'Войти'}
+              {currentMode === 'login' ? 'Register' : 'Sign In'}
             </button>
           </div>
         </div>

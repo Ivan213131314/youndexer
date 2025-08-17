@@ -5,17 +5,17 @@ const SearchProgress = ({ currentStep, stepDetails, progressPercentage = 0 }) =>
   const getStepInfo = () => {
     switch (currentStep) {
       case 'searching':
-        return { emoji: '🔍', label: 'Поиск релевантных видео' };
+        return { emoji: '🔍', label: 'Searching for relevant videos' };
       case 'filtering':
-        return { emoji: '🤖', label: 'Фильтрация с помощью GPT' };
+        return { emoji: '🤖', label: 'Filtering with GPT' };
       case 'transcribing':
-        return { emoji: '📝', label: 'Получение транскрипций' };
+        return { emoji: '📝', label: 'Getting transcripts' };
       case 'summarizing':
-        return { emoji: '📋', label: 'Создание резюме' };
+        return { emoji: '📋', label: 'Creating summary' };
       case 'ready':
-        return { emoji: '✅', label: 'Готово!' };
+        return { emoji: '✅', label: 'Ready!' };
       default:
-        return { emoji: '⏳', label: 'Обработка...' };
+        return { emoji: '⏳', label: 'Processing...' };
     }
   };
 
@@ -34,7 +34,7 @@ const SearchProgress = ({ currentStep, stepDetails, progressPercentage = 0 }) =>
         </div>
       </div>
       
-      {/* Прогресс-бар для всех шагов */}
+      {/* Progress bar for all steps */}
       <div className="summary-progress-bar">
         <div className="progress-bar-container">
           <div 

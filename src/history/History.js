@@ -51,7 +51,7 @@ const History = ({ onBackToMain, selectedHistoryId, setSelectedHistoryId }) => {
   const handleDeleteItem = async (historyId, event) => {
     event.stopPropagation(); // Предотвращаем открытие детального вида
     
-    if (window.confirm('Вы уверены, что хотите удалить эту запись из истории?')) {
+    if (window.confirm('Are you sure you want to delete this record from history?')) {
       const success = await deleteItem(historyId);
       if (success) {
         // Если удаляемый элемент был выбран, закрываем детальный вид
@@ -65,7 +65,7 @@ const History = ({ onBackToMain, selectedHistoryId, setSelectedHistoryId }) => {
   };
 
   const handleDeleteAllHistory = async () => {
-    if (window.confirm('Вы уверены, что хотите удалить ВСЮ историю поиска? Это действие нельзя отменить!')) {
+    if (window.confirm('Are you sure you want to delete ALL search history? This action cannot be undone!')) {
       const deletedCount = await deleteAll();
       if (deletedCount > 0) {
         // Закрываем детальный вид если он открыт
@@ -103,14 +103,14 @@ const History = ({ onBackToMain, selectedHistoryId, setSelectedHistoryId }) => {
       
       tempDiv.innerHTML = `
         <div style="text-align: center; margin-bottom: 30px;">
-          <h1 style="font-size: 28px; margin-bottom: 20px; color: #333;">Резюме по запросу</h1>
+          <h1 style="font-size: 28px; margin-bottom: 20px; color: #333;">Summary for query</h1>
           <h2 style="font-size: 20px; color: #666; margin-bottom: 30px;">"${historyItem.query}"</h2>
         </div>
         
         <div style="margin-bottom: 30px; padding: 20px; background-color: #f8f9fa; border-radius: 8px;">
-          <p style="margin: 5px 0; font-weight: bold;">Всего результатов: ${historyItem.summaryData.totalResults}</p>
-          <p style="margin: 5px 0; font-weight: bold;">Transcript найдено: ${historyItem.summaryData.transcriptCount}</p>
-          <p style="margin: 5px 0; font-weight: bold;">Дата поиска: ${formatHistoryDate(historyItem.timestamp)}</p>
+          <p style="margin: 5px 0; font-weight: bold;">Total results: ${historyItem.summaryData.totalResults}</p>
+          <p style="margin: 5px 0; font-weight: bold;">Transcripts found: ${historyItem.summaryData.transcriptCount}</p>
+          <p style="margin: 5px 0; font-weight: bold;">Search date: ${formatHistoryDate(historyItem.timestamp)}</p>
         </div>
         
         <hr style="border: none; border-top: 2px solid #ddd; margin: 30px 0;">
@@ -174,7 +174,7 @@ const History = ({ onBackToMain, selectedHistoryId, setSelectedHistoryId }) => {
       pdf.save(`${historyItem.query}.pdf`);
       
     } catch (error) {
-      console.error('Ошибка при создании PDF:', error);
+      console.error('Error creating PDF:', error);
     }
   };
 
@@ -183,13 +183,13 @@ const History = ({ onBackToMain, selectedHistoryId, setSelectedHistoryId }) => {
     
     try {
       const doc = new Document({
-        title: `Резюме по запросу: ${historyItem.query}`,
+        title: `Summary for query: ${historyItem.query}`,
         creator: "YouTube Semantic Searcher",
-        description: "Резюме по результатам поиска YouTube видео",
+        description: "Summary of YouTube video search results",
         sections: [{
           children: [
             new Paragraph({
-              text: "Резюме по запросу",
+              text: "Summary for query",
               heading: HeadingLevel.HEADING_1,
             }),
             new Paragraph({
@@ -199,7 +199,7 @@ const History = ({ onBackToMain, selectedHistoryId, setSelectedHistoryId }) => {
             new Paragraph({
               children: [
                 new TextRun({
-                  text: `Всего результатов: ${historyItem.summaryData.totalResults}`,
+                  text: `Total results: ${historyItem.summaryData.totalResults}`,
                   bold: true,
                 }),
               ],
@@ -207,7 +207,7 @@ const History = ({ onBackToMain, selectedHistoryId, setSelectedHistoryId }) => {
             new Paragraph({
               children: [
                 new TextRun({
-                  text: `Transcript найдено: ${historyItem.summaryData.transcriptCount}`,
+                  text: `Transcripts found: ${historyItem.summaryData.transcriptCount}`,
                   bold: true,
                 }),
               ],
@@ -215,7 +215,7 @@ const History = ({ onBackToMain, selectedHistoryId, setSelectedHistoryId }) => {
             new Paragraph({
               children: [
                 new TextRun({
-                  text: `Дата поиска: ${formatHistoryDate(historyItem.timestamp)}`,
+                  text: `Search date: ${formatHistoryDate(historyItem.timestamp)}`,
                   bold: true,
                 }),
               ],
@@ -242,7 +242,7 @@ const History = ({ onBackToMain, selectedHistoryId, setSelectedHistoryId }) => {
       window.URL.revokeObjectURL(url);
       
     } catch (error) {
-      console.error('Ошибка при создании DOC:', error);
+      console.error('Error creating DOC:', error);
     }
   };
 
@@ -250,11 +250,11 @@ const History = ({ onBackToMain, selectedHistoryId, setSelectedHistoryId }) => {
     if (!historyItem || !historyItem.summaryData) return;
     
     try {
-      const content = `Резюме по запросу: "${historyItem.query}"
+      const content = `Summary for query: "${historyItem.query}"
 
-Всего результатов: ${historyItem.summaryData.totalResults}
-Transcript найдено: ${historyItem.summaryData.transcriptCount}
-Дата поиска: ${formatHistoryDate(historyItem.timestamp)}
+Total results: ${historyItem.summaryData.totalResults}
+Transcripts found: ${historyItem.summaryData.transcriptCount}
+Search date: ${formatHistoryDate(historyItem.timestamp)}
 
 ${historyItem.summaryData.summary}`;
 
@@ -270,18 +270,18 @@ ${historyItem.summaryData.summary}`;
       window.URL.revokeObjectURL(url);
       
     } catch (error) {
-      console.error('Ошибка при создании TXT:', error);
+      console.error('Error creating TXT:', error);
     }
   };
 
   const copySummaryToClipboard = async (historyItem) => {
     if (!historyItem || !historyItem.summaryData) return;
     
-    const content = `Резюме по запросу: "${historyItem.query}"
+    const content = `Summary for query: "${historyItem.query}"
 
-Всего результатов: ${historyItem.summaryData.totalResults}
-Transcript найдено: ${historyItem.summaryData.transcriptCount}
-Дата поиска: ${formatHistoryDate(historyItem.timestamp)}
+Total results: ${historyItem.summaryData.totalResults}
+Transcripts found: ${historyItem.summaryData.transcriptCount}
+Search date: ${formatHistoryDate(historyItem.timestamp)}
 
 ${historyItem.summaryData.summary}`;
     
@@ -292,7 +292,7 @@ ${historyItem.summaryData.summary}`;
       const button = document.querySelector('.copy-button');
       if (button) {
         const originalText = button.innerHTML;
-        button.innerHTML = '<span class="download-icon">✓</span>Скопировано';
+        button.innerHTML = '<span class="download-icon">✓</span>Copied';
         button.style.backgroundColor = '#28a745';
         
         setTimeout(() => {
@@ -302,7 +302,7 @@ ${historyItem.summaryData.summary}`;
       }
       
     } catch (error) {
-      console.error('Ошибка при копировании в буфер обмена:', error);
+      console.error('Error copying to clipboard:', error);
       // Fallback для старых браузеров
       const textArea = document.createElement('textarea');
       textArea.value = content;
@@ -318,11 +318,11 @@ ${historyItem.summaryData.summary}`;
       <div className="history-container">
         <div className="history-header">
           <button className="back-button" onClick={onBackToMain}>
-            ← Назад к поиску
+            ← Back to Search
           </button>
-          <h1>История поиска</h1>
+          <h1>Search History</h1>
         </div>
-        <div className="loading-message">Загрузка истории...</div>
+        <div className="loading-message">Loading history...</div>
       </div>
     );
   }
@@ -332,11 +332,11 @@ ${historyItem.summaryData.summary}`;
       <div className="history-container">
         <div className="history-header">
           <button className="back-button" onClick={onBackToMain}>
-            ← Назад к поиску
+            ← Back to Search
           </button>
-          <h1>История поиска</h1>
+          <h1>Search History</h1>
         </div>
-        <div className="error-message">Ошибка загрузки истории: {error}</div>
+        <div className="error-message">Error loading history: {error}</div>
       </div>
     );
   }
@@ -345,15 +345,15 @@ ${historyItem.summaryData.summary}`;
     <div className="history-container">
       {!selectedHistoryId && (
         <div className="history-header">
-          <h1>История поиска</h1>
+          <h1>Search History</h1>
           {history.length > 0 && (
             <button 
               className="delete-all-button"
               onClick={handleDeleteAllHistory}
               disabled={deletingAll}
-              title="Удалить всю историю"
+              title="Delete all history"
             >
-              {deletingAll ? '🗑️ Удаляем...' : '🗑️ Удалить всю историю'}
+              {deletingAll ? '🗑️ Deleting...' : '🗑️ Delete all history'}
             </button>
           )}
         </div>
@@ -376,12 +376,12 @@ ${historyItem.summaryData.summary}`;
                <button className="back-button" onClick={handleBackClick}>
                  ← Back
                </button>
-               <h1>История поиска</h1>
+               <h1>Search History</h1>
              </div>
              
              <div className="summary-section">
                 <div className="history-item-header">
-                  <h2>📋 Общий вывод</h2>
+                  <h2>📋 General Summary</h2>
                  <div className="header-actions">
                    {/* Кнопки скачивания для истории */}
                    {hasSummary(historyItem) && (
@@ -389,10 +389,10 @@ ${historyItem.summaryData.summary}`;
                        <button 
                          className="download-button copy-button"
                          onClick={() => copySummaryToClipboard(historyItem)}
-                         title="Копировать в буфер обмена"
+                         title="Copy to clipboard"
                        >
                          <span className="download-icon">📋</span>
-                         Копировать
+                         Copy
                        </button>
                        <button 
                          className="download-button pdf-button"
@@ -421,7 +421,7 @@ ${historyItem.summaryData.summary}`;
                </div>
               
               {itemLoading ? (
-                <div className="loading-message">Загрузка данных...</div>
+                <div className="loading-message">Loading data...</div>
               ) : historyItem ? (
                 <>
                   {/* Показываем компонент для создания резюме если его нет */}
@@ -439,21 +439,21 @@ ${historyItem.summaryData.summary}`;
                     <div className="summary-display">
                       <div className="summary-stats">
                         <div className="stat-item">
-                          <span className="stat-label">Всего результатов:</span>
+                          <span className="stat-label">Total results:</span>
                           <span className="stat-value">{historyItem.summaryData.totalResults}</span>
                         </div>
                         <div className="stat-item">
-                          <span className="stat-label">Transcript найдено:</span>
+                          <span className="stat-label">Transcripts found:</span>
                           <span className="stat-value">{historyItem.summaryData.transcriptCount}</span>
                         </div>
                         <div className="stat-item">
-                          <span className="stat-label">Дата поиска:</span>
+                          <span className="stat-label">Search date:</span>
                           <span className="stat-value">{formatHistoryDate(historyItem.timestamp)}</span>
                         </div>
                       </div>
 
                       <div className="summary-content">
-                        <h4>📋 Резюме по запросу: "{historyItem.query}"</h4>
+                        <h4>📋 Summary for query: "{historyItem.query}"</h4>
                         <div className="summary-text">
                           {historyItem.summaryData.summary.split('\n').map((line, index) => (
                             <p key={index}>{line}</p>
@@ -466,12 +466,12 @@ ${historyItem.summaryData.summary}`;
                   {/* Если нет ни summary, ни результатов */}
                   {!hasSearchResults(historyItem) && !hasSummary(historyItem) && (
                     <div className="placeholder">
-                      <p>Для этого запроса нет доступных данных</p>
+                      <p>No data available for this query</p>
                     </div>
                   )}
                 </>
               ) : (
-                <div className="error-message">Запись не найдена</div>
+                <div className="error-message">Record not found</div>
               )}
             </div>
           </div>
@@ -485,10 +485,10 @@ ${historyItem.summaryData.summary}`;
           {/* Правая колонка - Отдельные видео */}
           <div className="right-column">
             <div className="videos-section">
-              <h2>📺 Найденные видео</h2>
+              <h2>📺 Found Videos</h2>
               
               {itemLoading ? (
-                <div className="loading-message">Загрузка видео...</div>
+                <div className="loading-message">Loading videos...</div>
                              ) : historyItem && hasSearchResults(historyItem) ? (
                  <div className="videos-list">
                    {historyItem.searchResults.map((video, index) => (
@@ -497,7 +497,7 @@ ${historyItem.summaryData.summary}`;
                  </div>
               ) : (
                 <div className="placeholder">
-                  <p>Видео не найдены</p>
+                  <p>Videos not found</p>
                 </div>
               )}
             </div>
@@ -508,8 +508,8 @@ ${historyItem.summaryData.summary}`;
         <div className="history-list">
           {history.length === 0 ? (
             <div className="empty-history">
-              <p>История поиска пуста</p>
-              <p>Выполните поиск, чтобы увидеть историю</p>
+              <p>Search history is empty</p>
+              <p>Perform a search to see history</p>
             </div>
           ) : (
             history.map((item) => {
@@ -527,8 +527,8 @@ ${historyItem.summaryData.summary}`;
                         <span className="history-date">{formatHistoryDate(item.timestamp)}</span>
                         {stats && (
                           <span className="history-stats">
-                            {stats.totalResults} видео
-                            {stats.hasSummary && ' • Есть резюме'}
+                            {stats.totalResults} videos
+                            {stats.hasSummary && ' • Has summary'}
                           </span>
                         )}
                       </div>
@@ -538,7 +538,7 @@ ${historyItem.summaryData.summary}`;
                          className="delete-button"
                          onClick={(e) => handleDeleteItem(item.id, e)}
                          disabled={deleting}
-                         title="Удалить запись"
+                         title="Delete record"
                        >
                          {deleting ? '🗑️' : '🗑️'}
                        </button>

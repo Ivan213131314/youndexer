@@ -147,20 +147,57 @@ function AppContent() {
     return null;
   };
 
+  // Функция для конвертации ISO 8601 длительности в читаемый формат
+  const formatDuration = (isoDuration) => {
+    if (!isoDuration) return 'N/A';
+    
+    // Убираем 'PT' из начала
+    const duration = isoDuration.replace('PT', '');
+    
+    let hours = 0;
+    let minutes = 0;
+    let seconds = 0;
+    
+    // Извлекаем часы
+    const hoursMatch = duration.match(/(\d+)H/);
+    if (hoursMatch) {
+      hours = parseInt(hoursMatch[1]);
+    }
+    
+    // Извлекаем минуты
+    const minutesMatch = duration.match(/(\d+)M/);
+    if (minutesMatch) {
+      minutes = parseInt(minutesMatch[1]);
+    }
+    
+    // Извлекаем секунды
+    const secondsMatch = duration.match(/(\d+)S/);
+    if (secondsMatch) {
+      seconds = parseInt(secondsMatch[1]);
+    }
+    
+    // Форматируем результат
+    if (hours > 0) {
+      return `${hours}:${minutes.toString().padStart(2, '0')}:${seconds.toString().padStart(2, '0')}`;
+    } else {
+      return `${minutes}:${seconds.toString().padStart(2, '0')}`;
+    }
+  };
+
   // Функция для получения информации о видео
   const fetchVideoInfo = async (videoId) => {
     const YOUTUBE_API_KEY = 'AIzaSyCs3QZxVnZBltP2tn2_v8IkbK0_03zoaTU';
     const url = `https://www.googleapis.com/youtube/v3/videos?key=${YOUTUBE_API_KEY}&part=snippet,contentDetails,statistics&id=${videoId}`;
     
     const response = await fetch(url);
-    if (!response.ok) {
-      throw new Error('Ошибка при получении информации о видео');
-    }
+         if (!response.ok) {
+       throw new Error('Error getting video information');
+     }
     
     const data = await response.json();
-    if (!data.items || data.items.length === 0) {
-      throw new Error('Видео не найдено');
-    }
+         if (!data.items || data.items.length === 0) {
+       throw new Error('Video not found');
+     }
     
     const videoData = data.items[0];
     return {
@@ -172,8 +209,8 @@ function AppContent() {
       thumbnail: videoData.snippet.thumbnails?.high?.url || videoData.snippet.thumbnails?.default?.url || '',
       author: videoData.snippet.channelTitle,
       publishedAt: videoData.snippet.publishedAt,
-      duration: videoData.contentDetails.duration,
-      views: videoData.statistics?.viewCount || 'Неизвестно',
+      duration: formatDuration(videoData.contentDetails.duration),
+             views: videoData.statistics?.viewCount || 'Unknown',
       transcript: null
     };
   };
@@ -181,9 +218,9 @@ function AppContent() {
   // Функция для получения транскрипции одного видео через Supadata
   const getVideoTranscriptDirect = async (videoId) => {
     try {
-      console.log(`🎬 [SUPADATA] Получаем transcript для видео: ${videoId}`);
+             console.log(`🎬 [SUPADATA] Getting transcript for video: ${videoId}`);
       
-      // Импортируем Supadata динамически
+             // Import Supadata dynamically
       const { Supadata } = await import('@supadata/js');
       const supadata = new Supadata({
         apiKey: 'sd_cf39c3a6069af680097faf6f996b8c16'
@@ -196,11 +233,11 @@ function AppContent() {
         text: true
       });
       
-      console.log(`✅ [SUPADATA] Transcript получен для видео: ${videoId}`);
+             console.log(`✅ [SUPADATA] Transcript received for video: ${videoId}`);
       return transcriptResult;
       
     } catch (error) {
-      console.error(`❌ [SUPADATA] Ошибка получения transcript для видео ${videoId}:`, error);
+             console.error(`❌ [SUPADATA] Error getting transcript for video ${videoId}:`, error);
       return null;
     }
   };
@@ -222,15 +259,15 @@ function AppContent() {
       if (!response.ok) {
         // Проверяем тип контента
         const contentType = response.headers.get('content-type');
-        if (contentType && contentType.includes('text/html')) {
-          throw new Error('Сервер недоступен или эндпоинт не найден');
-        }
+                 if (contentType && contentType.includes('text/html')) {
+           throw new Error('Server unavailable or endpoint not found');
+         }
         
         try {
           const errorData = await response.json();
-          throw new Error(errorData.error || 'Ошибка при получении транскрипции');
+                     throw new Error(errorData.error || 'Error getting transcript');
         } catch (jsonError) {
-          throw new Error(`Ошибка сервера: ${response.status} ${response.statusText}`);
+                     throw new Error(`Server error: ${response.status} ${response.statusText}`);
         }
       }
 
@@ -246,12 +283,12 @@ function AppContent() {
           return JSON.stringify(data.transcript);
         }
       } else {
-        throw new Error(data.error || 'Транскрипция недоступна');
+                 throw new Error(data.error || 'Transcript unavailable');
       }
     } catch (error) {
-      if (error.name === 'TypeError' && error.message.includes('fetch')) {
-        throw new Error('Сервер недоступен. Убедитесь что сервер запущен на порту 3001');
-      }
+             if (error.name === 'TypeError' && error.message.includes('fetch')) {
+         throw new Error('Server unavailable. Make sure the server is running on port 3001');
+       }
       throw error;
     }
   };
@@ -262,7 +299,7 @@ function AppContent() {
       setIsLoadingDefault(true);
       console.log('🔄 [APP] Loading default query data:', defaultQueryData);
 
-      // Устанавливаем только результаты из истории, НЕ устанавливаем запрос в поисковую строку
+             // Set only results from history, DO NOT set query in search field
       setSearchResults(defaultQueryData.searchResults || []);
       setSummaryData(defaultQueryData.summaryData || null);
 
@@ -280,14 +317,14 @@ function AppContent() {
       return;
     }
 
-    // Проверка авторизации
-    if (!user) {
-      console.log('❌ [APP] User not authenticated');
-      showLoginModal();
-      return;
-    }
+         // Authentication check
+     if (!user) {
+       console.log('❌ [APP] User not authenticated');
+       showLoginModal();
+       return;
+     }
 
-    // Проверка токенов
+     // Token check
     const canUseTokens = await canUseToken(user.uid);
     if (!canUseTokens) {
       console.log('❌ [APP] No tokens available');
@@ -295,15 +332,15 @@ function AppContent() {
       return;
     }
 
-    // Используем токен
-    const tokenUsed = await consumeToken(user.uid);
-    if (!tokenUsed) {
-      console.log('❌ [APP] Failed to use token');
-      setShowTokenLimit(true);
-      return;
-    }
+         // Use token
+     const tokenUsed = await consumeToken(user.uid);
+     if (!tokenUsed) {
+       console.log('❌ [APP] Failed to use token');
+       setShowTokenLimit(true);
+       return;
+     }
 
-    // Обновляем токены в контексте
+     // Update tokens in context
     if (userTokens) {
       setUserTokens({
         ...userTokens,
@@ -317,10 +354,10 @@ function AppContent() {
     setSearchResults(null);
     setSummaryData(null);
     setSearchProgress('searching');
-    setProgressDetails('Поиск релевантных видео...');
+         setProgressDetails('Searching for relevant videos...');
     setSummaryProgress(0);
     
-    // Анимация прогресса для поиска
+           // Progress animation for search
     const searchProgressInterval = setInterval(() => {
       setSummaryProgress(prev => {
         if (prev >= 25) {
@@ -334,16 +371,16 @@ function AppContent() {
     let searchCompleted = false;
     
     try {
-      // Обычный поиск по запросу
+             // Regular search by query
       console.log(`\n🔍 [APP] Regular search for query: "${query}"`);
-      setProgressDetails(`Найдено ${videoSearchCountPerRequest} видео, проверяем релевантность...`);
+             setProgressDetails(`Found ${videoSearchCountPerRequest} videos, checking relevance...`);
       let allVideos = await searchVideosWithPhrases([query], videoSearchCountPerRequest);
       
-      // Проверяем, что получили результаты
+             // Check that we got results
       if (!allVideos || allVideos.length === 0) {
         console.log(`❌ [APP] No videos found for query, retrying...`);
         
-        // Повторяем запрос еще раз
+                 // Retry the request
         const retryVideos = await searchVideosWithPhrases([query], videoSearchCountPerRequest);
         
         if (!retryVideos || retryVideos.length === 0) {
@@ -383,13 +420,13 @@ function AppContent() {
                });
              }
 
-             // Step 2: Filter videos with GPT (всегда используем GPT модель)
+                           // Step 2: Filter videos with GPT (always use GPT model)
              console.log(`\n🤖 [APP] Starting GPT filtering...`);
              setSearchProgress('filtering');
-             setProgressDetails(`Фильтрация ${allVideos.length} видео с помощью GPT...`);
+             setProgressDetails(`Filtering ${allVideos.length} videos with GPT...`);
              setSummaryProgress(25);
              
-             // Анимация прогресса для фильтрации
+                           // Progress animation for filtering
              const filterProgressInterval = setInterval(() => {
                setSummaryProgress(prev => {
                  if (prev >= 50) {
@@ -411,10 +448,10 @@ function AppContent() {
                // Step 3: Get transcripts for filtered videos
                console.log(`\n📝 [APP] Getting transcripts for ${filteredVideos.length} filtered videos...`);
                setSearchProgress('transcribing');
-               setProgressDetails(`Подготовка к получению транскрипций для ${filteredVideos.length} видео...`);
+               setProgressDetails(`Preparing to get transcripts for ${filteredVideos.length} videos...`);
                setSummaryProgress(50);
                
-               // Анимация прогресса для транскрипций
+                               // Progress animation for transcripts
                const transcribeProgressInterval = setInterval(() => {
                  setSummaryProgress(prev => {
                    if (prev >= 75) {
@@ -425,11 +462,11 @@ function AppContent() {
                  });
                }, 200);
                
-               // Сначала отображаем видео без transcriptов
+                               // First display videos without transcripts
                setSearchResults(filteredVideos.map(video => ({
                  ...video,
                  transcript: null,
-                 // Убеждаемся что есть все необходимые поля
+                                   // Make sure all required fields are present
                  thumbnail: video.thumbnail || `https://img.youtube.com/vi/${video.videoId}/default.jpg`,
                  url: video.url || `https://www.youtube.com/watch?v=${video.videoId}`,
                  author: video.author || video.channelTitle || 'Unknown Channel',
@@ -438,29 +475,29 @@ function AppContent() {
                  publishedAt: video.publishedAt || 'N/A'
                })));
                
-               // Затем получаем transcriptы инкрементально
-               const videosWithTranscripts = await addTranscriptsToVideos(filteredVideos, (updatedVideos) => {
-                 // Callback для обновления состояния при получении каждого transcript
-                 setSearchResults(updatedVideos);
-               }, (stepProgress) => {
-                 // Callback для обновления прогресса шага
-                 setProgressDetails(stepProgress.details);
-               });
+                               // Then get transcripts incrementally
+                                const videosWithTranscripts = await addTranscriptsToVideos(filteredVideos, (updatedVideos) => {
+                   // Callback to update state when getting each transcript
+                   setSearchResults(updatedVideos);
+                 }, (stepProgress) => {
+                   // Callback to update step progress
+                   setProgressDetails(stepProgress.details);
+                 });
                
                console.log(`\n📊 [APP] Final Results with Transcripts:`);
                console.log(`- Videos with transcripts: ${videosWithTranscripts.filter(v => v.transcript).length}`);
                console.log(`- Videos without transcripts: ${videosWithTranscripts.filter(v => !v.transcript).length}`);
-               console.log(`\n🎬 [APP] Complete video objects with transcripts:`, videosWithTranscripts);
+                               console.log(`\n🎬 [APP] Complete video objects with transcripts:`, videosWithTranscripts);
+                
+                // Final state update
+                setSearchResults(videosWithTranscripts);
                
-               // Финальное обновление состояния
-               setSearchResults(videosWithTranscripts);
-               
-               // Step 4: Show summarizing step (резюме создается автоматически в TranscriptSummary)
+                               // Step 4: Show summarizing step (summary is created automatically in TranscriptSummary)
                setSearchProgress('summarizing');
-               setProgressDetails(`Создание резюме на основе ${videosWithTranscripts.filter(v => v.transcript).length} транскрипций...`);
+               setProgressDetails(`Creating summary based on ${videosWithTranscripts.filter(v => v.transcript).length} transcripts...`);
                setSummaryProgress(75);
                
-               // НЕ делаем анимацию здесь - прогресс будет обновляться через callback из TranscriptSummary
+                               // DON'T do animation here - progress will be updated via callback from TranscriptSummary
              } else {
                console.log(`\n⚠️ [APP] GPT filtering failed or returned no results`);
                setSearchProgress(null);
@@ -479,12 +516,12 @@ function AppContent() {
       setSearchProgress(null);
       setProgressDetails('');
     } finally {
-      console.log(`\n🏁 [APP] Search process completed`);
-      setIsLoading(false);
+             console.log(`\n🏁 [APP] Search process completed`);
+       setIsLoading(false);
+       
+       // Counter was already incremented at the beginning of the function
       
-      // Счетчик уже был увеличен в начале функции
-      
-      // Сбрасываем прогресс если он еще не был сброшен (например, при ошибках или отсутствии результатов)
+             // Reset progress if it hasn't been reset yet (e.g., on errors or no results)
       if (searchProgress !== null) {
         setSearchProgress(null);
         setProgressDetails('');
@@ -503,11 +540,11 @@ function AppContent() {
   const handleSummaryComplete = async (summaryResult) => {
     console.log('🎉 [APP] Summary completed:', summaryResult);
     
-    // Сохраняем результат в соответствующее состояние в зависимости от режима
+         // Save result to appropriate state depending on mode
     if (searchMode === 'request') {
       setSummaryData(summaryResult);
       
-      // Сохраняем результаты в историю
+             // Save results to history
       try {
         const searchData = {
           query: query,
@@ -525,11 +562,11 @@ function AppContent() {
         console.error('❌ [APP] Error saving to history:', error);
       }
     } else {
-      // Режим парсинга видео или каналов
+             // Video or channel parsing mode
       setChannelSummaryData(summaryResult);
     }
     
-    // Сбрасываем прогресс-индикатор после завершения создания резюме
+         // Reset progress indicator after completing summary creation
     setSearchProgress(null);
     setProgressDetails('');
     setSummaryProgress(0);
@@ -554,10 +591,10 @@ function AppContent() {
     const width = rect.width;
     const percentage = (x / width) * 100;
     
-    // Ограничиваем ширину от 30% до 70% для предотвращения "плывущих" элементов
+         // Limit width from 30% to 70% to prevent "floating" elements
     const clampedPercentage = Math.max(30, Math.min(70, percentage));
     
-    // Определяем в каком режиме мы находимся и обновляем соответствующее состояние
+         // Determine which mode we're in and update the corresponding state
     if (searchMode === 'request') {
       setLeftColumnWidth(clampedPercentage);
     } else {
@@ -569,23 +606,23 @@ function AppContent() {
     setIsResizing(false);
   };
 
-  // Функции навигации теперь обрабатываются через компонент Navigation
+     // Navigation functions are now handled through the Navigation component
 
-  // Функции для парсинга видео или каналов
+     // Functions for parsing videos or channels
   const handleVideoOrChannelParse = async () => {
     if (!channelUrl.trim()) {
-      setChannelError('Пожалуйста, введите ссылку на видео или канал');
+             setChannelError('Please enter a video or channel link');
       return;
     }
 
-    // Проверка авторизации
-    if (!user) {
-      console.log('❌ [PARSING] User not authenticated');
-      showLoginModal();
-      return;
-    }
+         // Authentication check
+     if (!user) {
+       console.log('❌ [PARSING] User not authenticated');
+       showLoginModal();
+       return;
+     }
 
-    // Проверка токенов
+     // Token check
     const canUseTokens = await canUseToken(user.uid);
     if (!canUseTokens) {
       console.log('❌ [PARSING] No tokens available');
@@ -593,15 +630,15 @@ function AppContent() {
       return;
     }
 
-    // Используем токен
-    const tokenUsed = await consumeToken(user.uid);
-    if (!tokenUsed) {
-      console.log('❌ [PARSING] Failed to use token');
-      setShowTokenLimit(true);
-      return;
-    }
+         // Use token
+     const tokenUsed = await consumeToken(user.uid);
+     if (!tokenUsed) {
+       console.log('❌ [PARSING] Failed to use token');
+       setShowTokenLimit(true);
+       return;
+     }
 
-    // Обновляем токены в контексте
+     // Update tokens in context
     if (userTokens) {
       setUserTokens({
         ...userTokens,
@@ -614,30 +651,30 @@ function AppContent() {
     setIsLoading(true);
     setParsingResults(null);
     setChannelError(null);
-    setChannelSummaryData(null); // Очищаем предыдущее резюме
-    setCurrentParsingHistoryId(null); // Сбрасываем ID предыдущего парсинга
+         setChannelSummaryData(null); // Clear previous summary
+     setCurrentParsingHistoryId(null); // Reset previous parsing ID
     setSearchProgress('searching');
-    setProgressDetails('Анализ ссылки...');
+           setProgressDetails('Analyzing link...');
     
     let parsingCompleted = false;
     
     try {
-      // Проверяем, является ли запрос YouTube URL видео
+             // Check if the request is a YouTube video URL
       const videoId = extractVideoId(channelUrl);
       
       if (videoId) {
-        // Это YouTube URL видео - обрабатываем как конкретное видео
+                 // This is a YouTube video URL - process as a specific video
         console.log(`\n🎯 [PARSING] YouTube video URL detected, video ID: ${videoId}`);
         
-        // Получаем информацию о видео
-        setProgressDetails('Получение информации о видео...');
+                 // Get video information
+                 setProgressDetails('Getting video information...');
         const videoInfo = await fetchVideoInfo(videoId);
         console.log('✅ [PARSING] Video info obtained:', videoInfo);
         
-        // Получаем транскрипцию
+                 // Get transcript
         console.log('📝 [PARSING] Getting transcript...');
         setSearchProgress('transcribing');
-        setProgressDetails('Получение транскрипции видео...');
+                 setProgressDetails('Getting video transcript...');
         let transcript = null;
         
         try {
@@ -651,7 +688,7 @@ function AppContent() {
           console.error('❌ [PARSING] Transcript error:', transcriptError);
           console.error('❌ [PARSING] Transcript error stack:', transcriptError.stack);
           console.warn('⚠️ [PARSING] Could not get transcript:', transcriptError.message);
-          // Показываем видео без транскрипции
+                     // Show video without transcript
         }
         
         const videoWithTranscript = {
@@ -659,13 +696,13 @@ function AppContent() {
           transcript: transcript
         };
         
-        // Устанавливаем результаты как для отдельного видео
+                 // Set results as for individual video
         setChannelVideosResults({
           videos: [videoWithTranscript],
           totalCount: 1
         });
         
-        // Создаем фиктивные результаты парсинга для отображения
+                 // Create fake parsing results for display
         setParsingResults({
           channelName: videoInfo.author,
           videoCount: 1,
@@ -673,12 +710,12 @@ function AppContent() {
           description: null
         });
         
-        // Сохраняем результаты парсинга видео в историю
+                 // Save video parsing results to history
         setSearchProgress('summarizing');
-        setProgressDetails('Создание резюме на основе транскрипции...');
+                 setProgressDetails('Creating summary based on transcript...');
         setSummaryProgress(0);
         
-        // Анимация прогресса создания резюме
+                 // Progress animation for summary creation
         const progressInterval = setInterval(() => {
           setSummaryProgress(prev => {
             if (prev >= 90) {
@@ -689,13 +726,13 @@ function AppContent() {
           });
         }, 200);
         
-        // Небольшая задержка чтобы пользователь увидел шаг создания резюме
+                 // Small delay so user sees the summary creation step
         setTimeout(async () => {
           setSummaryProgress(100);
           setTimeout(async () => {
             parsingCompleted = true;
             await saveParsingToHistory([videoWithTranscript], true);
-            // Убираем индикатор после сохранения в историю
+                         // Remove indicator after saving to history
             setSearchProgress(null);
             setProgressDetails('');
             setSummaryProgress(0);
@@ -705,30 +742,30 @@ function AppContent() {
         return;
       }
       
-      // Проверяем, является ли это ссылкой на канал
+             // Check if this is a channel link
       if (!validateChannelUrl(channelUrl)) {
-        setChannelError('Неверный формат ссылки на YouTube видео или канал');
+        setChannelError('Invalid YouTube video or channel link format');
         setSearchProgress(null);
         setProgressDetails('');
         return;
       }
       
-      // Это канал - используем существующую логику парсинга каналов
+             // This is a channel - use existing channel parsing logic
       console.log(`\n📺 [PARSING] Channel URL detected, starting channel parsing`);
       setSearchProgress('filtering');
-      setProgressDetails('Парсинг канала...');
+             setProgressDetails('Parsing channel...');
       const results = await parseChannel(channelUrl);
       setParsingResults(results);
-      // Очищаем результаты видео при парсинге канала
+             // Clear video results when parsing channel
       setChannelVideosResults(null);
       setChannelSummaryData(null);
       
-      // Показываем результат парсинга канала
+             // Show channel parsing result
       setSearchProgress('ready');
-      setProgressDetails(`Готово! Канал "${results.channelName}" обработан`);
+             setProgressDetails(`Done! Channel "${results.channelName}" processed`);
       setSummaryProgress(100);
       
-      // Убираем индикатор через 2 секунды
+             // Remove indicator after 2 seconds
       setTimeout(() => {
         setSearchProgress(null);
         setProgressDetails('');
@@ -740,25 +777,25 @@ function AppContent() {
       
     } catch (error) {
       console.error('❌ [PARSING] Error in parsing:', error);
-      setChannelError('Ошибка при обработке ссылки. Попробуйте еще раз.');
+             setChannelError('Error processing link. Please try again.');
       setSearchProgress(null);
       setProgressDetails('');
       parsingCompleted = true;
     } finally {
       console.log(`\n🏁 [PARSING] Parsing completed`);
       setIsLoading(false);
-      // НЕ сбрасываем прогресс здесь - он будет сброшен в setTimeout выше
+             // DON'T reset progress here - it will be reset in setTimeout above
     }
   };
 
   const handleGetVideos = async () => {
-    if (!channelUrl.trim()) {
-      setChannelError('Пожалуйста, введите ссылку на канал');
-      return;
-    }
+         if (!channelUrl.trim()) {
+       setChannelError('Please enter a channel link');
+       return;
+     }
 
-    if (!validateChannelUrl(channelUrl)) {
-      setChannelError('Неверный формат ссылки на YouTube канал');
+     if (!validateChannelUrl(channelUrl)) {
+       setChannelError('Invalid YouTube channel link format');
       setSearchProgress(null);
       setProgressDetails('');
       return;
@@ -771,14 +808,14 @@ function AppContent() {
       return;
     }
 
-    // Проверка лимита запросов (только для не-pro пользователей)
+         // Request limit check (only for non-pro users)
     if (!proModel && !canMakeRequest()) {
       console.log('❌ [CHANNEL] Request limit exceeded');
       setShowRequestLimit(true);
       return;
     }
     
-    // Увеличиваем счетчик запросов сразу при нажатии кнопки (только для не-pro пользователей)
+         // Increment request counter immediately when button is pressed (only for non-pro users)
     if (!proModel) {
       incrementRequestCount();
       setRequestCount(getUsedRequestsToday());
@@ -790,10 +827,10 @@ function AppContent() {
     setChannelVideosResults(null);
     setChannelSummaryData(null);
     setChannelError(null);
-    setCurrentParsingHistoryId(null); // Сбрасываем ID предыдущего парсинга
+         setCurrentParsingHistoryId(null); // Reset previous parsing ID
     
     try {
-      // Получаем видео канала через Supadata
+             // Get channel videos through Supadata
       const { Supadata } = await import('@supadata/js');
       const supadata = new Supadata({
         apiKey: 'sd_cf39c3a6069af680097faf6f996b8c16'
@@ -807,15 +844,15 @@ function AppContent() {
       
       console.log(`✅ [CHANNEL] Channel videos received:`, channelVideos);
       
-      // Преобразуем в формат как на главном экране
+             // Convert to format like on main screen
       const videoIds = channelVideos.videoIds || [];
       
-      // Получаем полную информацию о видео через Supadata инкрементально
+             // Get full video information through Supadata incrementally
       console.log(`📝 [CHANNEL] Getting full video info for ${videoIds.length} videos...`);
       
       const videosWithInfo = [];
       
-      // Обрабатываем видео по одному для инкрементального отображения
+             // Process videos one by one for incremental display
       for (let i = 0; i < videoIds.length; i++) {
         const videoId = videoIds[i];
         console.log(`📝 [CHANNEL] Processing video ${i + 1}/${videoIds.length}: ${videoId}`);
@@ -836,19 +873,19 @@ function AppContent() {
             publishedAt: videoInfo.uploadDate || 'N/A'
           };
           
-          videosWithInfo.push(video);
-          
-          // Немедленно обновляем состояние для отображения видео
-          setChannelVideosResults(prev => ({
-            videos: [...videosWithInfo],
-            totalCount: videosWithInfo.length
-          }));
+                     videosWithInfo.push(video);
+           
+           // Immediately update state to display video
+           setChannelVideosResults(prev => ({
+             videos: [...videosWithInfo],
+             totalCount: videosWithInfo.length
+           }));
           
           console.log(`✅ [CHANNEL] Video ${i + 1}/${videoIds.length} added to display:`, video.title);
           
         } catch (error) {
           console.warn(`⚠️ [CHANNEL] Failed to get info for video ${videoId}:`, error);
-          // Fallback если не удалось получить информацию
+                     // Fallback if failed to get information
           const fallbackVideo = {
             videoId: videoId,
             title: `Video ${videoId}`,
@@ -862,11 +899,11 @@ function AppContent() {
           
           videosWithInfo.push(fallbackVideo);
           
-          // Немедленно обновляем состояние для отображения видео
-          setChannelVideosResults(prev => ({
-            videos: [...videosWithInfo],
-            totalCount: videosWithInfo.length
-          }));
+                     // Immediately update state to display video
+           setChannelVideosResults(prev => ({
+             videos: [...videosWithInfo],
+             totalCount: videosWithInfo.length
+           }));
           
           console.log(`⚠️ [CHANNEL] Fallback video ${i + 1}/${videoIds.length} added to display:`, fallbackVideo.title);
         }
@@ -874,17 +911,17 @@ function AppContent() {
       
       console.log(`✅ [CHANNEL] Full video info received for all ${videosWithInfo.length} videos`);
       
-      // Теперь получаем transcriptы инкрементально
+             // Now get transcripts incrementally
       console.log(`📝 [CHANNEL] Getting transcripts for ${videosWithInfo.length} videos...`);
       const videosWithTranscripts = await addTranscriptsToVideos(videosWithInfo, (updatedVideos) => {
-        // Callback для обновления состояния при получении каждого transcript
+                 // Callback to update state when getting each transcript
         setChannelVideosResults(prev => ({
           videos: updatedVideos,
           totalCount: updatedVideos.length
         }));
       });
       
-      // Финальное обновление состояния
+             // Final state update
       setChannelVideosResults({
         videos: videosWithTranscripts,
         totalCount: videosWithTranscripts.length
@@ -892,38 +929,38 @@ function AppContent() {
       
       console.log(`✅ [CHANNEL] Channel videos with transcripts received successfully:`, videosWithTranscripts);
       
-      // Сохраняем результаты парсинга канала в историю
+             // Save channel parsing results to history
       await saveParsingToHistory(videosWithTranscripts, false);
       
     } catch (error) {
       console.error('❌ [CHANNEL] Error getting channel videos:', error);
-      setChannelError('Ошибка при получении видео канала. Попробуйте еще раз.');
+             setChannelError('Error getting channel videos. Please try again.');
     } finally {
       console.log(`\n🏁 [CHANNEL] Channel videos request completed`);
       setIsLoadingVideos(false);
       
-      // Счетчик уже был увеличен в начале функции
+             // Counter was already incremented at the beginning of the function
     }
   };
 
-  // Функция для сохранения результатов парсинга в историю (без summary)
+     // Function to save parsing results to history (without summary)
   const saveParsingToHistory = async (videos, isVideo = false) => {
     try {
       let queryTitle;
-      if (isVideo && videos.length === 1) {
-        // Это отдельное видео
-        const videoTitle = videos[0]?.title || 'Unknown Video';
-        queryTitle = `Video: ${videoTitle}`;
-      } else {
-        // Это канал
-        const channelName = parsingResults?.channelName || 'Unknown Channel';
-        queryTitle = `Channel: ${channelName}`;
-      }
+             if (isVideo && videos.length === 1) {
+         // This is an individual video
+         const videoTitle = videos[0]?.title || 'Unknown Video';
+         queryTitle = `Video: ${videoTitle}`;
+       } else {
+         // This is a channel
+         const channelName = parsingResults?.channelName || 'Unknown Channel';
+         queryTitle = `Channel: ${channelName}`;
+       }
       
       const searchData = {
         query: queryTitle,
         searchResults: videos || [],
-        summaryData: null // Пока без summary
+                 summaryData: null // No summary yet
       };
       
       const historyId = await saveSearchToHistory(searchData, user?.uid);
@@ -945,10 +982,10 @@ function AppContent() {
     console.log(`📋 [CHANNEL] Summary completed:`, summaryResult);
     setChannelSummaryData(summaryResult);
     
-    // Обновляем существующую запись истории с summary данными
+         // Update existing history entry with summary data
     try {
       if (currentParsingHistoryId) {
-        // Обновляем существующую запись
+                 // Update existing entry
         const updateSuccess = await updateHistoryItem(
           currentParsingHistoryId,
           { summaryData: summaryResult },
@@ -959,11 +996,11 @@ function AppContent() {
           console.log('✅ [APP] History item updated with summary, ID:', currentParsingHistoryId);
         } else {
           console.log('⚠️ [APP] Failed to update history item with summary, creating new one...');
-          // Fallback - создаем новую запись если обновление не удалось
+                     // Fallback - create new entry if update failed
           await createNewHistoryEntry(summaryResult);
         }
       } else {
-        // Если нет текущего ID, создаем новую запись (fallback)
+                 // If no current ID, create new entry (fallback)
         console.log('ℹ️ [APP] No current history ID, creating new entry...');
         await createNewHistoryEntry(summaryResult);
       }
@@ -972,19 +1009,19 @@ function AppContent() {
     }
   };
 
-  // Fallback функция для создания новой записи истории
+     // Fallback function to create new history entry
   const createNewHistoryEntry = async (summaryResult) => {
     try {
       let queryTitle;
-      if (channelVideosResults && channelVideosResults.totalCount === 1) {
-        // Это отдельное видео
-        const videoTitle = channelVideosResults.videos[0]?.title || 'Unknown Video';
-        queryTitle = `Video: ${videoTitle}`;
-      } else {
-        // Это канал
-        const channelName = parsingResults?.channelName || 'Unknown Channel';
-        queryTitle = `Channel: ${channelName}`;
-      }
+             if (channelVideosResults && channelVideosResults.totalCount === 1) {
+         // This is an individual video
+         const videoTitle = channelVideosResults.videos[0]?.title || 'Unknown Video';
+         queryTitle = `Video: ${videoTitle}`;
+       } else {
+         // This is a channel
+         const channelName = parsingResults?.channelName || 'Unknown Channel';
+         queryTitle = `Channel: ${channelName}`;
+       }
       
       const searchData = {
         query: queryTitle,
@@ -1112,7 +1149,7 @@ function AppContent() {
                       </label>
                       <span className="toggle-label">
                         Pro Model
-                        <span className="tooltip-trigger" data-tooltip="Использование модели Gemini 2.0 Flash Lite (Google). Эта модель обеспечивает более высокое качество результатов, но потребляет больше токенов и стоит дороже.">
+                        <span className="tooltip-trigger" data-tooltip="Using Gemini 2.0 Flash Lite model (Google). This model provides higher quality results but consumes more tokens and costs more.">
                           ❓
                         </span>
                       </span>
@@ -1133,7 +1170,7 @@ function AppContent() {
                       </label>
                       <span className="toggle-label">
                         Detailed Summary
-                        <span className="tooltip-trigger" data-tooltip="Создание более подробного резюме с детальными пояснениями, анализом ключевых моментов и расширенными выводами.">
+                        <span className="tooltip-trigger" data-tooltip="Creating a more detailed summary with detailed explanations, key points analysis and extended conclusions.">
                           ❓
                         </span>
                       </span>
@@ -1157,33 +1194,33 @@ function AppContent() {
 
 
 
-                     {/* Сообщение об ошибке */}
+                     {/* Error Message */}
            {channelError && (
              <div className="error-message">
                <p>{channelError}</p>
              </div>
            )}
 
-                    {/* Основной контент */}
+                    {/* Main Content */}
           {searchMode === 'request' ? (
-            // Интерфейс для обычного поиска
+            // Interface for regular search
             <div 
               className="main-content"
               onMouseMove={handleMouseMove}
               onMouseUp={handleMouseUp}
               onMouseLeave={handleMouseUp}
             >
-              {/* Левая колонка - Общий вывод */}
+              {/* Left Column - General Summary */}
               <div 
                 className="left-column"
                 style={{ width: `${leftColumnWidth}%` }}
               >
                 <div className="summary-section">
                   <div className="summary-header">
-                    <h2>📋 Общий вывод</h2>
+                    <h2>📋 General Summary</h2>
                   </div>
                   
-                  {/* Показываем компонент для создания резюме */}
+                  {/* Show component for creating summary */}
                   {searchResults && searchResults.length > 0 && (
                     <TranscriptSummary 
                       videos={searchResults}
@@ -1196,22 +1233,22 @@ function AppContent() {
                     />
                   )}
 
-                  {/* Отображение готового резюме */}
+                  {/* Display ready summary */}
                   {summaryData && (
                     <div className="summary-display">
                       <div className="summary-stats">
                         <div className="stat-item">
-                          <span className="stat-label">Всего результатов:</span>
+                          <span className="stat-label">Total results:</span>
                           <span className="stat-value">{summaryData.totalResults}</span>
                         </div>
                         <div className="stat-item">
-                          <span className="stat-label">Transcript найдено:</span>
+                          <span className="stat-label">Transcripts found:</span>
                           <span className="stat-value">{summaryData.transcriptCount}</span>
                         </div>
                       </div>
 
                       <div className="summary-content">
-                        <h4>📋 Резюме по запросу: "{query}"</h4>
+                        <h4>📋 Summary for query: "{query}"</h4>
                         <div className="summary-text">
                           {summaryData.summary.split('\n').map((line, index) => (
                             <p key={index}>{line}</p>
@@ -1221,25 +1258,25 @@ function AppContent() {
                     </div>
                   )}
 
-                  {/* Плейсхолдер когда нет данных */}
+                  {/* Placeholder when no data */}
                   {!summaryData && !searchResults && (
                     <div className="placeholder">
-                      <p>Резюме будет создано автоматически после получения результатов поиска</p>
+                      <p>Summary will be created automatically after receiving search results</p>
                     </div>
                   )}
                 </div>
               </div>
 
-              {/* Разделитель колонок */}
+              {/* Column Divider */}
               <div 
                 className="column-resizer"
                 onMouseDown={handleMouseDown}
               ></div>
 
-              {/* Правая колонка - Отдельные видео */}
+              {/* Right Column - Individual Videos */}
               <div className="right-column">
                 <div className="videos-section">
-                  <h2>📺 Найденные видео</h2>
+                  <h2>📺 Found Videos</h2>
                   
                   {searchResults ? (
                     <div className="videos-list">
@@ -1249,29 +1286,29 @@ function AppContent() {
                     </div>
                   ) : (
                     <div className="placeholder">
-                      <p>Результаты поиска появятся здесь</p>
+                      <p>Search results will appear here</p>
                     </div>
                   )}
                 </div>
               </div>
             </div>
           ) : (
-            // Интерфейс для парсинга каналов
+            // Interface for channel parsing
             <div className="main-content">
               <div className="channel-results">
                                     {parsingResults ? (
                       <div className="results-section">
-                        {/* Показываем channel-info только для каналов, не для отдельных видео */}
+                        {/* Show channel-info only for channels, not for individual videos */}
                         {!(channelVideosResults && channelVideosResults.totalCount === 1) && (
                         <div className="channel-info">
-                          {/* Кнопки управления */}
+                          {/* Control buttons */}
                           <div className="channel-actions-top">
                             <div className="channel-header-left">
-                              <h2>📺 Информация о {channelVideosResults && channelVideosResults.totalCount === 1 ? 'видео' : 'канале'}</h2>
+                              <h2>📺 Information about {channelVideosResults && channelVideosResults.totalCount === 1 ? 'video' : 'channel'}</h2>
                               {parsingResults && (
                                 <div className="channel-actions-right">
                                   <div className="video-count-selector">
-                                    <label htmlFor="videoCount">Количество видео:</label>
+                                    <label htmlFor="videoCount">Number of videos:</label>
                                     <select 
                                       id="videoCount" 
                                       className="video-count-select"
@@ -1296,7 +1333,7 @@ function AppContent() {
                                     onClick={handleGetVideos}
                                     disabled={isLoadingVideos}
                                   >
-                                    {isLoadingVideos ? 'Получение...' : 'Получить видео'}
+                                    {isLoadingVideos ? 'Getting...' : 'Get Videos'}
                                   </button>
                                 </div>
                               )}
@@ -1318,22 +1355,22 @@ function AppContent() {
                                               <div className="channel-info-content">
                           <div className="channel-details">
                             <div className="detail-item">
-                              <span className="detail-label">{channelVideosResults && channelVideosResults.totalCount === 1 ? 'Автор:' : 'Название канала:'}</span>
-                              <span className="detail-value">{parsingResults.channelName || 'Не найдено'}</span>
+                              <span className="detail-label">{channelVideosResults && channelVideosResults.totalCount === 1 ? 'Author:' : 'Channel name:'}</span>
+                              <span className="detail-value">{parsingResults.channelName || 'Not found'}</span>
                             </div>
                             {channelVideosResults && channelVideosResults.totalCount === 1 ? (
                               // Для отдельного видео показываем информацию о видео
                               <>
                                 <div className="detail-item">
-                                  <span className="detail-label">Название видео:</span>
-                                  <span className="detail-value">{channelVideosResults.videos[0]?.title || 'Не найдено'}</span>
+                                  <span className="detail-label">Video title:</span>
+                                  <span className="detail-value">{channelVideosResults.videos[0]?.title || 'Not found'}</span>
                                 </div>
                                 <div className="detail-item">
-                                  <span className="detail-label">Просмотры:</span>
+                                  <span className="detail-label">Views:</span>
                                   <span className="detail-value">{channelVideosResults.videos[0]?.views || 'N/A'}</span>
                                 </div>
                                 <div className="detail-item">
-                                  <span className="detail-label">Длительность:</span>
+                                  <span className="detail-label">Duration:</span>
                                   <span className="detail-value">{channelVideosResults.videos[0]?.duration || 'N/A'}</span>
                                 </div>
                               </>
@@ -1341,16 +1378,16 @@ function AppContent() {
                               // Для канала показываем информацию о канале
                               <>
                                 <div className="detail-item">
-                                  <span className="detail-label">Подписчики:</span>
+                                  <span className="detail-label">Subscribers:</span>
                                   <span className="detail-value">{parsingResults.subscriberCount?.toLocaleString() || 'N/A'}</span>
                                 </div>
                                 <div className="detail-item">
-                                  <span className="detail-label">Количество видео:</span>
+                                  <span className="detail-label">Number of videos:</span>
                                   <span className="detail-value">{parsingResults.videoCount}</span>
                                 </div>
                                 {parsingResults.description && (
                                   <div className="detail-item">
-                                    <span className="detail-label">Описание:</span>
+                                    <span className="detail-label">Description:</span>
                                     <span className="detail-value description">{parsingResults.description}</span>
                                   </div>
                                 )}
@@ -1361,7 +1398,7 @@ function AppContent() {
                     </div>
                         )}
 
-                                            {/* Результаты получения видео в двух колонках */}
+                                            {/* Video results in two columns */}
                         {channelVideosResults && (
                           <div 
                             className="videos-results-section"
@@ -1369,17 +1406,17 @@ function AppContent() {
                             onMouseUp={handleMouseUp}
                             onMouseLeave={handleMouseUp}
                           >
-                            {/* Левая колонка - Общий вывод */}
+                            {/* Left Column - General Summary */}
                             <div 
                               className="left-column"
                               style={{ width: `${parsingLeftColumnWidth}%` }}
                             >
                               <div className="summary-section">
                                 <div className="summary-header">
-                                  <h2>📋 Общий вывод {channelVideosResults.totalCount === 1 ? 'по видео' : 'по каналу'}</h2>
+                                  <h2>📋 General Summary {channelVideosResults.totalCount === 1 ? 'for video' : 'for channel'}</h2>
                                 </div>
                             
-                            {/* Показываем компонент для создания резюме */}
+                            {/* Show component for creating summary */}
                             {channelVideosResults.videos && channelVideosResults.videos.length > 0 && (
                               <>
                                 <TranscriptSummary 
@@ -1394,26 +1431,26 @@ function AppContent() {
                               </>
                             )}
 
-                            {/* Отображение готового резюме */}
+                            {/* Display ready summary */}
                             {channelSummaryData && (
                               <div className="summary-display">
-                                <div className="summary-stats">
-                                  <div className="stat-item">
-                                    <span className="stat-label">Всего результатов:</span>
-                                    <span className="stat-value">{channelSummaryData.totalResults}</span>
-                                  </div>
-                                  <div className="stat-item">
-                                    <span className="stat-label">Transcript найдено:</span>
-                                    <span className="stat-value">{channelSummaryData.transcriptCount}</span>
-                                  </div>
-                                  <div className="stat-item">
-                                    <span className="stat-label">Канал:</span>
-                                    <span className="stat-value">{parsingResults.channelName}</span>
-                                  </div>
-                                </div>
+                                                                 <div className="summary-stats">
+                                   <div className="stat-item">
+                                     <span className="stat-label">Total results:</span>
+                                     <span className="stat-value">{channelSummaryData.totalResults}</span>
+                                   </div>
+                                   <div className="stat-item">
+                                     <span className="stat-label">Transcripts found:</span>
+                                     <span className="stat-value">{channelSummaryData.transcriptCount}</span>
+                                   </div>
+                                   <div className="stat-item">
+                                     <span className="stat-label">Channel:</span>
+                                     <span className="stat-value">{parsingResults.channelName}</span>
+                                   </div>
+                                 </div>
 
-                                <div className="summary-content">
-                                  <h4>📋 Резюме канала: "{parsingResults.channelName}"</h4>
+                                 <div className="summary-content">
+                                   <h4>📋 Channel Summary: "{parsingResults.channelName}"</h4>
                                   <div className="summary-text">
                                     {channelSummaryData.summary.split('\n').map((line, index) => (
                                       <p key={index}>{line}</p>
@@ -1423,25 +1460,25 @@ function AppContent() {
                               </div>
                             )}
 
-                            {/* Плейсхолдер когда нет данных */}
-                            {!channelSummaryData && (
-                              <div className="placeholder">
-                                <p>Резюме будет создано автоматически после загрузки транскрипций</p>
-                              </div>
-                            )}
+                                                         {/* Placeholder when no data */}
+                             {!channelSummaryData && (
+                               <div className="placeholder">
+                                 <p>Summary will be created automatically after loading transcripts</p>
+                               </div>
+                             )}
                           </div>
                         </div>
 
-                        {/* Разделитель колонок */}
+                                                 {/* Column Divider */}
                         <div 
                           className="column-resizer"
                           onMouseDown={handleParsingMouseDown}
                         ></div>
 
-                        {/* Правая колонка - Найденные видео */}
-                        <div className="right-column">
-                          <div className="videos-section">
-                            <h2>📺 {channelVideosResults.totalCount === 1 ? 'Видео' : 'Найденные видео'} ({channelVideosResults.totalCount})</h2>
+                                                 {/* Right Column - Found Videos */}
+                         <div className="right-column">
+                           <div className="videos-section">
+                             <h2>📺 {channelVideosResults.totalCount === 1 ? 'Video' : 'Found Videos'} ({channelVideosResults.totalCount})</h2>
                             <div className="videos-list">
                               {channelVideosResults.videos.map((video, index) => (
                                 <VideoItem key={index} video={video} index={index} />
@@ -1453,20 +1490,20 @@ function AppContent() {
                     )}
                   </div>
                 ) : (
-                  <div className="placeholder">
-                    <p>Вставьте ссылку на YouTube видео или канал для начала парсинга</p>
-                    <p className="placeholder-examples">
-                      Примеры поддерживаемых форматов:<br/>
-                      <strong>Видео:</strong><br/>
-                      • https://youtube.com/watch?v=VIDEO_ID<br/>
-                      • https://youtu.be/VIDEO_ID<br/>
-                      <strong>Каналы:</strong><br/>
-                      • https://youtube.com/channel/UC...<br/>
-                      • https://youtube.com/c/ChannelName<br/>
-                      • https://youtube.com/@username<br/>
-                      • https://youtube.com/user/username
-                    </p>
-                  </div>
+                                     <div className="placeholder">
+                     <p>Paste a YouTube video or channel link to start parsing</p>
+                     <p className="placeholder-examples">
+                       Examples of supported formats:<br/>
+                       <strong>Videos:</strong><br/>
+                       • https://youtube.com/watch?v=VIDEO_ID<br/>
+                       • https://youtu.be/VIDEO_ID<br/>
+                       <strong>Channels:</strong><br/>
+                       • https://youtube.com/channel/UC...<br/>
+                       • https://youtube.com/c/ChannelName<br/>
+                       • https://youtube.com/@username<br/>
+                       • https://youtube.com/user/username
+                     </p>
+                   </div>
                 )}
               </div>
             </div>

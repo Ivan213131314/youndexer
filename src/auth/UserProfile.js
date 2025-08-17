@@ -24,7 +24,7 @@ const UserProfile = ({ onUpgradeClick }) => {
     setIsDropdownOpen(!isDropdownOpen);
   };
 
-  // Подписка на изменения токенов
+  // Subscribe to token changes
   useEffect(() => {
     if (!user) return;
 
@@ -35,7 +35,7 @@ const UserProfile = ({ onUpgradeClick }) => {
     return () => unsubscribe();
   }, [user]);
 
-  // Закрытие dropdown при клике вне его
+  // Close dropdown when clicking outside
   useEffect(() => {
     const handleClickOutside = (event) => {
       if (dropdownRef.current && !dropdownRef.current.contains(event.target)) {
@@ -93,7 +93,7 @@ const UserProfile = ({ onUpgradeClick }) => {
             </div>
             <div className="dropdown-user-info">
               <div className="dropdown-user-name">
-                {user.displayName || 'Пользователь'}
+                {user.displayName || 'User'}
               </div>
               <div className="dropdown-user-email">
                 {user.email}
@@ -103,13 +103,13 @@ const UserProfile = ({ onUpgradeClick }) => {
           
           <div className="dropdown-divider"></div>
           
-          {/* Токены */}
+          {/* Tokens */}
           {tokenData && (
             <div className="dropdown-tokens">
               <div className="tokens-header">
                 <div className="tokens-header-left">
                   <span className="tokens-icon">🪙</span>
-                  <span className="tokens-label">Токены</span>
+                  <span className="tokens-label">Tokens</span>
                 </div>
                                  {(tokenData.subscription === 'pro' || tokenData.subscription === 'premium' || tokenData.subscription === 'lifetime') && (
                    <button 
@@ -118,7 +118,7 @@ const UserProfile = ({ onUpgradeClick }) => {
                        setShowSubscriptionModal(true);
                        setIsDropdownOpen(false);
                      }}
-                     title="Настройки подписки"
+                     title="Subscription Settings"
                    >
                     <svg width="16" height="16" viewBox="0 0 16 16" fill="none">
                       <path d="M8 4.754a3.246 3.246 0 1 0 0 6.492 3.246 3.246 0 0 0 0-6.492zM5.754 8a2.246 2.246 0 1 1 4.492 0 2.246 2.246 0 0 1-4.492 0z" fill="currentColor"/>
@@ -145,7 +145,7 @@ const UserProfile = ({ onUpgradeClick }) => {
               </div>
               {(tokenData.subscription === 'free' && tokenData.tokens <= 1) && (
                 <button className="upgrade-tokens-button" onClick={onUpgradeClick}>
-                  Обновить
+                  Upgrade
                 </button>
               )}
             </div>
@@ -158,7 +158,7 @@ const UserProfile = ({ onUpgradeClick }) => {
               <path d="M6 12V10H2V6H6V4L10 8L6 12Z" fill="currentColor"/>
               <path d="M12 2H8V4H12V12H8V14H12C13.1 14 14 13.1 14 12V4C14 2.9 13.1 2 12 2Z" fill="currentColor"/>
             </svg>
-            Выйти
+            Logout
           </button>
         </div>
       )}

@@ -909,6 +909,15 @@ body {
   cursor: not-allowed;
 }
 
+/* Pro model locked indicator */
+.pro-model-locked {
+  color: #ff6b6b !important;
+  font-size: 12px !important;
+  margin-left: 8px !important;
+  font-weight: 500;
+  opacity: 0.8;
+}
+
 /* Tooltip стили */
 .tooltip-trigger {
   position: relative;

@@ -71,7 +71,7 @@ function ChannelParsing({ onBackToMain }) {
     setSummaryData(null);
     setError(null);
     setSearchProgress('searching');
-    setProgressDetails('Получение списка видео канала...');
+    setProgressDetails('Getting channel video list...');
     
     let channelCompleted = false;
     
@@ -94,7 +94,7 @@ function ChannelParsing({ onBackToMain }) {
       const videoIds = channelVideos.videoIds || [];
       
       setSearchProgress('filtering');
-      setProgressDetails(`Получение информации о ${videoIds.length} видео...`);
+      setProgressDetails(`Getting information about ${videoIds.length} videos...`);
       
       // Получаем полную информацию о видео через Supadata инкрементально
       console.log(`📝 [CHANNEL] Getting full video info for ${videoIds.length} videos...`);
@@ -163,7 +163,7 @@ function ChannelParsing({ onBackToMain }) {
         // Теперь получаем transcriptы инкрементально
         console.log(`📝 [CHANNEL] Getting transcripts for ${videosWithInfo.length} videos...`);
         setSearchProgress('transcribing');
-        setProgressDetails(`Подготовка к получению транскрипций для ${videosWithInfo.length} видео...`);
+        setProgressDetails(`Preparing to get transcripts for ${videosWithInfo.length} videos...`);
         const videosWithTranscripts = await addTranscriptsToVideos(videosWithInfo, (updatedVideos) => {
           // Callback для обновления состояния при получении каждого transcript
           setChannelVideosResults(prev => ({
@@ -183,7 +183,7 @@ function ChannelParsing({ onBackToMain }) {
         
                                    // Step 4: Show summarizing step (резюме создается автоматически в TranscriptSummary)
           setSearchProgress('summarizing');
-          setProgressDetails(`Создание резюме на основе ${videosWithTranscripts.filter(v => v.transcript).length} транскрипций...`);
+          setProgressDetails(`Creating summary based on ${videosWithTranscripts.filter(v => v.transcript).length} transcripts...`);
           setSummaryProgress(0);
           
           // НЕ делаем анимацию здесь - прогресс будет обновляться через callback из TranscriptSummary
@@ -192,7 +192,7 @@ function ChannelParsing({ onBackToMain }) {
       
     } catch (error) {
       console.error('❌ [CHANNEL] Error getting channel videos:', error);
-      setError('Ошибка при получении видео канала. Попробуйте еще раз.');
+      setError('Error getting channel videos. Please try again.');
       setSearchProgress(null);
       setProgressDetails('');
       channelCompleted = true;
@@ -242,7 +242,7 @@ function ChannelParsing({ onBackToMain }) {
           <input
             type="text"
             className="search-input"
-            placeholder="Вставьте ссылку на канал..."
+            placeholder="Paste channel link..."
             value={channelUrl}
             onChange={(e) => setChannelUrl(e.target.value)}
             onKeyPress={handleKeyPress}
@@ -282,7 +282,7 @@ function ChannelParsing({ onBackToMain }) {
               <div className="channel-info">
                 {/* Кнопки управления - перемещены наверх контейнера channel-info */}
                 <div className="channel-actions-top">
-                  <h2>📺 Информация о канале</h2>
+                                     <h2>📺 Channel Information</h2>
                   <div className="channel-actions-right">
                     <div className="video-count-selector">
                       <label htmlFor="videoCount">Количество видео:</label>
@@ -310,27 +310,27 @@ function ChannelParsing({ onBackToMain }) {
                       onClick={handleGetVideos}
                       disabled={isLoadingVideos}
                     >
-                      {isLoadingVideos ? 'Получение...' : 'Получить видео'}
+                      {isLoadingVideos ? 'Getting...' : 'Get Videos'}
                     </button>
                   </div>
                 </div>
                 <div className="channel-info-content">
                   <div className="channel-details">
                     <div className="detail-item">
-                      <span className="detail-label">Название канала:</span>
-                      <span className="detail-value">{parsingResults.channelName || 'Не найдено'}</span>
+                      <span className="detail-label">Channel name:</span>
+                      <span className="detail-value">{parsingResults.channelName || 'Not found'}</span>
                     </div>
                     <div className="detail-item">
-                      <span className="detail-label">Подписчики:</span>
+                      <span className="detail-label">Subscribers:</span>
                       <span className="detail-value">{parsingResults.subscriberCount?.toLocaleString() || 'N/A'}</span>
                     </div>
                     <div className="detail-item">
-                      <span className="detail-label">Количество видео:</span>
+                      <span className="detail-label">Number of videos:</span>
                       <span className="detail-value">{parsingResults.videoCount}</span>
                     </div>
                     {parsingResults.description && (
                       <div className="detail-item">
-                        <span className="detail-label">Описание:</span>
+                        <span className="detail-label">Description:</span>
                         <span className="detail-value description">{parsingResults.description}</span>
                       </div>
                     )}
@@ -344,7 +344,7 @@ function ChannelParsing({ onBackToMain }) {
                 {/* Левая колонка - Общий вывод */}
                 <div className="left-column">
                   <div className="summary-section">
-                    <h2>📋 Общий вывод</h2>
+                    <h2>📋 General Summary</h2>
                     
                                          {/* Показываем компонент для создания резюме */}
                      {channelVideosResults.videos && channelVideosResults.videos.length > 0 && (
@@ -361,21 +361,21 @@ function ChannelParsing({ onBackToMain }) {
                       <div className="summary-display">
                         <div className="summary-stats">
                           <div className="stat-item">
-                            <span className="stat-label">Всего результатов:</span>
+                            <span className="stat-label">Total results:</span>
                             <span className="stat-value">{summaryData.totalResults}</span>
                           </div>
                           <div className="stat-item">
-                            <span className="stat-label">Transcript найдено:</span>
+                            <span className="stat-label">Transcripts found:</span>
                             <span className="stat-value">{summaryData.transcriptCount}</span>
                           </div>
                           <div className="stat-item">
-                            <span className="stat-label">Канал:</span>
+                            <span className="stat-label">Channel:</span>
                             <span className="stat-value">{parsingResults.channelName}</span>
                           </div>
                         </div>
 
                         <div className="summary-content">
-                          <h4>📋 Резюме канала: "{parsingResults.channelName}"</h4>
+                          <h4>📋 Channel Summary: "{parsingResults.channelName}"</h4>
                           <div className="summary-text">
                             {summaryData.summary.split('\n').map((line, index) => (
                               <p key={index}>{line}</p>
@@ -388,7 +388,7 @@ function ChannelParsing({ onBackToMain }) {
                     {/* Плейсхолдер когда нет данных */}
                     {!summaryData && (
                       <div className="placeholder">
-                        <p>Нажмите "Получить видео" чтобы увидеть общий вывод по всем транскриптам</p>
+                        <p>Click "Get Videos" to see the general summary for all transcripts</p>
                       </div>
                     )}
                   </div>
@@ -397,7 +397,7 @@ function ChannelParsing({ onBackToMain }) {
                 {/* Правая колонка - Найденные видео */}
                 <div className="right-column">
                   <div className="videos-section">
-                    <h2>📺 Найденные видео ({channelVideosResults.totalCount})</h2>
+                    <h2>📺 Found Videos ({channelVideosResults.totalCount})</h2>
                     <div className="videos-list">
                       {channelVideosResults.videos.map((video, index) => (
                         <VideoItem key={index} video={video} index={index} />
@@ -411,7 +411,7 @@ function ChannelParsing({ onBackToMain }) {
             {/* Старый список видео (убираем) */}
             {!channelVideosResults && (
               <div className="videos-section">
-                <h2>📋 Список видео ({parsingResults.videos.length})</h2>
+                <h2>📋 Video List ({parsingResults.videos.length})</h2>
                 <div className="videos-list">
                   {parsingResults.videos.map((video, index) => (
                     <div key={index} className="video-item">
@@ -427,17 +427,17 @@ function ChannelParsing({ onBackToMain }) {
                         />
                       </div>
                       <div className="video-details">
-                        <p>👁️ Просмотры: {video.views}</p>
-                        <p>📅 Дата публикации: {video.publishedAt}</p>
-                        <p>⏱️ Длительность: {video.duration}</p>
+                        <p>👁️ Views: {video.views}</p>
+                        <p>📅 Published: {video.publishedAt}</p>
+                        <p>⏱️ Duration: {video.duration}</p>
                         <a href={video.url} target="_blank" rel="noopener noreferrer" className="video-link">
-                          Смотреть на YouTube
+                          Watch on YouTube
                         </a>
                         {video.transcript && (
                           <details>
-                            <summary>► Показать transcript</summary>
+                            <summary>► Show transcript</summary>
                             <div className="transcript-content">
-                              {typeof video.transcript === 'string' ? video.transcript : 'Transcript недоступен'}
+                              {typeof video.transcript === 'string' ? video.transcript : 'Transcript unavailable'}
                             </div>
                           </details>
                         )}
@@ -450,14 +450,14 @@ function ChannelParsing({ onBackToMain }) {
             </div>
           ) : (
             <div className="placeholder">
-              <p>Вставьте ссылку на YouTube канал для начала парсинга</p>
-              <p className="placeholder-examples">
-                Примеры поддерживаемых форматов:<br/>
-                • https://youtube.com/channel/UC...<br/>
-                • https://youtube.com/c/ChannelName<br/>
-                • https://youtube.com/@username<br/>
-                • https://youtube.com/user/username
-              </p>
+              <p>Paste a YouTube channel link to start parsing</p>
+                              <p className="placeholder-examples">
+                  Examples of supported formats:<br/>
+                  • https://youtube.com/channel/UC...<br/>
+                  • https://youtube.com/c/ChannelName<br/>
+                  • https://youtube.com/@username<br/>
+                  • https://youtube.com/user/username
+                </p>
             </div>
           )}
         </div>

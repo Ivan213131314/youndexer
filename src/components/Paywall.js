@@ -14,12 +14,12 @@ function Paywall({ onClose, onSubscribe }) {
       name: 'Pro',
       price: 10,
       originalPrice: null,
-      period: 'месяц',
+      period: 'month',
              features: [
-         'Pro модель',
-         'История поисков',
-         '100 токенов в месяц',
-         '3 дня бесплатного пробного периода'
+         'Pro model',
+         'Search history',
+         '100 tokens per month',
+         '3 days free trial'
        ],
       popular: false,
       discount: null
@@ -29,12 +29,12 @@ function Paywall({ onClose, onSubscribe }) {
       name: 'Premium',
       price: 18,
       originalPrice: null,
-      period: 'месяц',
+      period: 'month',
              features: [
-         'Pro модель',
-         'История поисков',
-         '300 токенов в месяц',
-         '3 дня бесплатного пробного периода'
+         'Pro model',
+         'Search history',
+         '300 tokens per month',
+         '3 days free trial'
        ],
       popular: true,
       discount: null
@@ -44,13 +44,13 @@ function Paywall({ onClose, onSubscribe }) {
       name: 'Lifetime',
       price: 98,
       originalPrice: 298,
-      period: 'навсегда',
+      period: 'forever',
       features: [
-        'Pro модель',
-        'История поисков',
-        'Неограниченные токены',
-        'Пожизненный доступ',
-        'Все будущие обновления'
+        'Pro model',
+        'Search history',
+        'Unlimited tokens',
+        'Lifetime access',
+        'All future updates'
       ],
       popular: false,
       discount: '67%'
@@ -59,19 +59,19 @@ function Paywall({ onClose, onSubscribe }) {
 
   const handleSubscribe = async (planId) => {
     if (!user) {
-      console.error('Пользователь не авторизован');
+      console.error('User not authenticated');
       return;
     }
 
     setIsProcessing(true);
     try {
-      // Покупаем подписку
+      // Purchase subscription
       const success = await purchaseSubscription(user.uid, planId);
       
       if (success) {
-        console.log('Подписка успешно куплена:', planId);
+        console.log('Subscription successfully purchased:', planId);
         
-        // Обновляем токены в контексте
+        // Update tokens in context
         const { getUserTokens } = await import('../utils/tokenService');
         const updatedTokens = await getUserTokens(user.uid);
         setUserTokens(updatedTokens);
@@ -80,12 +80,12 @@ function Paywall({ onClose, onSubscribe }) {
           await onSubscribe(planId);
         }
       } else {
-        console.error('Ошибка при покупке подписки');
-        alert('Ошибка при покупке подписки. Попробуйте еще раз.');
+        console.error('Error purchasing subscription');
+        alert('Error purchasing subscription. Please try again.');
       }
     } catch (error) {
-      console.error('Ошибка подписки:', error);
-      alert('Ошибка при покупке подписки. Попробуйте еще раз.');
+      console.error('Subscription error:', error);
+      alert('Error purchasing subscription. Please try again.');
     } finally {
       setIsProcessing(false);
     }
@@ -95,8 +95,8 @@ function Paywall({ onClose, onSubscribe }) {
     <div className="paywall-overlay">
       <div className="paywall-modal">
         <div className="paywall-header">
-          <h2>Выберите план подписки</h2>
-          <p>Получите доступ к расширенным возможностям</p>
+          <h2>Choose Subscription Plan</h2>
+          <p>Get access to advanced features</p>
           <button className="paywall-close" onClick={onClose}>
             ✕
           </button>
@@ -110,7 +110,7 @@ function Paywall({ onClose, onSubscribe }) {
               onClick={() => setSelectedPlan(plan.id)}
             >
               {plan.popular && (
-                <div className="popular-badge">Популярный</div>
+                <div className="popular-badge">Popular</div>
               )}
               
               <div className="plan-header">
@@ -144,7 +144,7 @@ function Paywall({ onClose, onSubscribe }) {
                 }}
                 disabled={isProcessing}
               >
-                {isProcessing ? 'Обработка...' : 'Выбрать план'}
+                {isProcessing ? 'Processing...' : 'Select Plan'}
               </button>
             </div>
           ))}
@@ -152,13 +152,13 @@ function Paywall({ onClose, onSubscribe }) {
 
         <div className="paywall-footer">
           <p className="trial-info">
-            💳 Все планы включают 3-дневный бесплатный пробный период
+            💳 All plans include 3-day free trial
           </p>
           <p className="limit-info">
-            🪙 Бесплатные пользователи: 3 токена в день
+            🪙 Free users: 3 tokens per day
           </p>
           <p className="security-info">
-            🔒 Безопасная оплата • Отмена в любое время
+            🔒 Secure payment • Cancel anytime
           </p>
         </div>
       </div>

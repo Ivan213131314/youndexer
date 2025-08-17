@@ -312,7 +312,7 @@
   }
 } 
 
-/* Адаптивность для мобильных устройств */
+/* Responsive for mobile devices */
 @media (max-width: 768px) {
   .summary-header {
     flex-direction: column;

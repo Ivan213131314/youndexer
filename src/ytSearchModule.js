@@ -198,7 +198,7 @@ export const addTranscriptsToVideos = async (videos, onProgressCallback = null, 
       if (onStepProgress) {
         onStepProgress({
           step: 'transcribing',
-          details: `Получение транскрипции для видео "${videoTitle}" (${i + 1}/${videoIds.length})`
+          details: `Getting transcript for video "${videoTitle}" (${i + 1}/${videoIds.length})`
         });
       }
       
