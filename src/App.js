@@ -808,15 +808,16 @@ function AppContent() {
       return;
     }
 
-         // Request limit check (only for non-pro users)
-    if (!proModel && !canMakeRequest()) {
+             // Request limit check (only for free users)
+    const isProUser = userTokens && (userTokens.subscription === 'pro' || userTokens.subscription === 'premium' || userTokens.subscription === 'lifetime');
+    if (!isProUser && !canMakeRequest()) {
       console.log('❌ [CHANNEL] Request limit exceeded');
       setShowRequestLimit(true);
       return;
     }
     
-         // Increment request counter immediately when button is pressed (only for non-pro users)
-    if (!proModel) {
+    // Increment request counter immediately when button is pressed (only for free users)
+    if (!isProUser) {
       incrementRequestCount();
       setRequestCount(getUsedRequestsToday());
       console.log(`📊 [CHANNEL] Request count incremented immediately. Used today: ${getUsedRequestsToday()}, Remaining: ${getRemainingRequests()}`);

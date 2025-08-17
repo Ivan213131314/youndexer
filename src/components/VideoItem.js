@@ -3,35 +3,44 @@ import './VideoItem.css';
 import ThumbnailImage from './ThumbnailImage';
 
 const VideoItem = ({ video, index }) => {
-  // Функция для конвертации ISO 8601 длительности в читаемый формат
+  // Функция для безопасного отображения длительности
   const formatDuration = (duration) => {
     if (!duration || duration === 'N/A') return 'N/A';
     
-    // Если уже в читаемом формате (содержит двоеточие), возвращаем как есть
-    if (duration.includes(':')) return duration;
+    // Если это уже отформатированная строка (содержит двоеточие), возвращаем как есть
+    if (typeof duration === 'string' && duration.includes(':')) {
+      return duration;
+    }
+    
+    // Если это число (секунды), конвертируем в формат MM:SS
+    if (typeof duration === 'number') {
+      const minutes = Math.floor(duration / 60);
+      const seconds = duration % 60;
+      return `${minutes}:${seconds.toString().padStart(2, '0')}`;
+    }
     
     // Если это ISO 8601 формат (PT10M47S)
-    if (duration.startsWith('PT')) {
-      const durationStr = duration.replace('PT', '');
+    if (typeof duration === 'string' && duration.startsWith('PT')) {
+      const isoDuration = duration.replace('PT', '');
       
       let hours = 0;
       let minutes = 0;
       let seconds = 0;
       
       // Извлекаем часы
-      const hoursMatch = durationStr.match(/(\d+)H/);
+      const hoursMatch = isoDuration.match(/(\d+)H/);
       if (hoursMatch) {
         hours = parseInt(hoursMatch[1]);
       }
       
       // Извлекаем минуты
-      const minutesMatch = durationStr.match(/(\d+)M/);
+      const minutesMatch = isoDuration.match(/(\d+)M/);
       if (minutesMatch) {
         minutes = parseInt(minutesMatch[1]);
       }
       
       // Извлекаем секунды
-      const secondsMatch = durationStr.match(/(\d+)S/);
+      const secondsMatch = isoDuration.match(/(\d+)S/);
       if (secondsMatch) {
         seconds = parseInt(secondsMatch[1]);
       }
@@ -45,7 +54,7 @@ const VideoItem = ({ video, index }) => {
     }
     
     // Если неизвестный формат, возвращаем как есть
-    return duration;
+    return String(duration);
   };
 
   const handleVideoClick = () => {
