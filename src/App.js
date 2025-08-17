@@ -178,6 +178,33 @@ function AppContent() {
     };
   };
 
+  // Функция для получения транскрипции одного видео через Supadata
+  const getVideoTranscriptDirect = async (videoId) => {
+    try {
+      console.log(`🎬 [SUPADATA] Получаем transcript для видео: ${videoId}`);
+      
+      // Импортируем Supadata динамически
+      const { Supadata } = await import('@supadata/js');
+      const supadata = new Supadata({
+        apiKey: 'sd_cf39c3a6069af680097faf6f996b8c16'
+      });
+      
+      // Get transcript for a single video
+      const transcriptResult = await supadata.youtube.transcript({
+        url: `https://www.youtube.com/watch?v=${videoId}`,
+        lang: 'en',
+        text: true
+      });
+      
+      console.log(`✅ [SUPADATA] Transcript получен для видео: ${videoId}`);
+      return transcriptResult;
+      
+    } catch (error) {
+      console.error(`❌ [SUPADATA] Ошибка получения transcript для видео ${videoId}:`, error);
+      return null;
+    }
+  };
+
   // Функция для получения транскрипции
   const fetchTranscript = async (videoId) => {
     try {
@@ -615,9 +642,15 @@ function AppContent() {
         let transcript = null;
         
         try {
-          transcript = await fetchTranscript(videoId);
+          console.log(`🔍 [PARSING] Calling getVideoTranscriptDirect(${videoId})...`);
+          const transcriptResult = await getVideoTranscriptDirect(videoId);
+          console.log(`📋 [PARSING] Transcript result:`, transcriptResult);
+          transcript = transcriptResult?.content || transcriptResult?.text || null;
+          console.log(`📋 [PARSING] Final transcript:`, transcript ? transcript.substring(0, 100) + '...' : 'null');
           console.log('✅ [PARSING] Transcript obtained');
         } catch (transcriptError) {
+          console.error('❌ [PARSING] Transcript error:', transcriptError);
+          console.error('❌ [PARSING] Transcript error stack:', transcriptError.stack);
           console.warn('⚠️ [PARSING] Could not get transcript:', transcriptError.message);
           // Показываем видео без транскрипции
         }
