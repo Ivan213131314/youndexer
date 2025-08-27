@@ -4,6 +4,7 @@ import { filterVideosWithGPT, getFilteredVideos } from './videoFilter';
 import TranscriptSummary from './TranscriptSummary';
 import History from './history/History';
 import AboutUs from './AboutUs';
+import TermsAndConditions from './TermsAndConditions';
 import Navigation from './components/Navigation';
 import SearchProgress from './components/SearchProgress';
 import Paywall from './components/Paywall';
@@ -1067,6 +1068,8 @@ function AppContent() {
         />
       ) : currentPage === 'about' ? (
         <AboutUs />
+      ) : currentPage === 'terms' ? (
+        <TermsAndConditions />
       ) : (
         <>
 
@@ -1485,6 +1488,42 @@ function AppContent() {
           )}
         </>
       )}
+
+      {/* Simple Footer with anchors to sections on Terms page */}
+      <div className="footer" style={{ marginTop: 40, padding: '16px 0', borderTop: '1px solid #e5e7eb' }}>
+        <div className="footer-content" style={{ maxWidth: 1200, margin: '0 auto', display: 'flex', gap: 16, flexWrap: 'wrap', alignItems: 'center', justifyContent: 'center' }}>
+          <button 
+            className="nav-button"
+            onClick={() => {
+              setCurrentPage('terms');
+              setTimeout(() => {
+                const el = document.getElementById('privacy');
+                if (el) el.scrollIntoView({ behavior: 'smooth' });
+              }, 0);
+            }}
+          >
+            Privacy Policy
+          </button>
+          <button 
+            className="nav-button"
+            onClick={() => {
+              setCurrentPage('terms');
+              setTimeout(() => {
+                const el = document.getElementById('refund');
+                if (el) el.scrollIntoView({ behavior: 'smooth' });
+              }, 0);
+            }}
+          >
+            Refund Policy
+          </button>
+          <button 
+            className="nav-button"
+            onClick={() => setCurrentPage('terms')}
+          >
+            Terms of Service
+          </button>
+        </div>
+      </div>
 
       {/* Paywall Modal */}
       {showPaywall && (

@@ -87,6 +87,13 @@ const Navigation = ({ currentPage, onPageChange, selectedHistoryId, onResetHisto
           >
             About us
           </button>
+          
+          <button 
+            className={`nav-button ${currentPage === 'terms' ? 'active' : ''}`}
+            onClick={() => onPageChange('terms')}
+          >
+            Terms
+          </button>
         </div>
         
         <div className="auth-section">
