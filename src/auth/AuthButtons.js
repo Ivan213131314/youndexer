@@ -17,7 +17,7 @@ const AuthButtons = () => {
     setIsModalOpen(false);
   };
 
-  // Не показываем кнопки, если пользователь уже авторизован
+  // Don't show buttons if user is already authenticated
   if (isAuthenticated) {
     return null;
   }
@@ -29,13 +29,13 @@ const AuthButtons = () => {
           className="auth-btn login-btn"
           onClick={() => openModal('login')}
         >
-          Войти
+          Sign In
         </button>
         <button 
           className="auth-btn signup-btn"
           onClick={() => openModal('signup')}
         >
-          Регистрация
+          Register
         </button>
       </div>
 

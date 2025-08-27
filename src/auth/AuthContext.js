@@ -23,12 +23,12 @@ export const AuthProvider = ({ children }) => {
       setUser(user);
       
       if (user) {
-        // Получаем токены пользователя при входе
+        // Get user tokens on login
         try {
           const tokenData = await getUserTokens(user.uid);
           setUserTokens(tokenData);
         } catch (error) {
-          console.error('Ошибка при получении токенов:', error);
+          console.error('Error getting tokens:', error);
           setUserTokens(null);
         }
       } else {
