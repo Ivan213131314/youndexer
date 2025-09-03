@@ -1518,7 +1518,13 @@ function AppContent() {
           </button>
           <button 
             className="nav-button"
-            onClick={() => setCurrentPage('terms')}
+            onClick={() => {
+              setCurrentPage('terms');
+              setTimeout(() => {
+                const el = document.getElementById('terms');
+                if (el) el.scrollIntoView({ behavior: 'smooth' });
+              }, 0);
+            }}
           >
             Terms of Service
           </button>
