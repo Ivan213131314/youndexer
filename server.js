@@ -959,6 +959,30 @@ Transcript: ${nextLongestVideo.transcript}`;
   }
 });
 
+// Webhook endpoint for Gumroad (x-www-form-urlencoded)
+app.post('/api/gumroad/webhook', (req, res) => {
+  try {
+    console.log('📬 [GUMROAD] Webhook received');
+    console.log('   Method:', req.method);
+    console.log('   Content-Type:', req.headers['content-type']);
+    console.log('   Query:', req.query);
+    console.log('   Headers:', {
+      'user-agent': req.headers['user-agent'],
+      'x-forwarded-for': req.headers['x-forwarded-for'],
+      'x-real-ip': req.headers['x-real-ip'],
+      'content-type': req.headers['content-type'],
+      'content-length': req.headers['content-length']
+    });
+    console.log('   Body (parsed):', req.body);
+
+    // Respond quickly so Gumroad considers it successful
+    res.status(200).json({ ok: true, received: true });
+  } catch (error) {
+    console.error('❌ [GUMROAD] Error handling webhook:', error);
+    res.status(500).json({ ok: false, error: error.message });
+  }
+});
+
 // Handle React routing, return all requests to React app
 if (process.env.NODE_ENV === 'production') {
   app.get('*', (req, res) => {
