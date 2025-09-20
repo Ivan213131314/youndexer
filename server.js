@@ -12,7 +12,106 @@ const cors = require('cors');
 const path = require('path');
 const yts = require('yt-search');
 const { getTranscriptSummary } = require('./transcript-summarizer.cjs');
+const admin = require('firebase-admin');
 
+// Инициализация Firebase Admin SDK
+if (!admin.apps.length) {
+  try {
+    let credential;
+    
+    // Проверяем, есть ли JSON credentials в переменных окружения
+    if (process.env.GOOGLE_APPLICATION_CREDENTIALS_JSON) {
+      console.log('🔑 [FIREBASE] Using JSON credentials from environment variable');
+      const serviceAccount = JSON.parse(process.env.GOOGLE_APPLICATION_CREDENTIALS_JSON);
+      credential = admin.credential.cert(serviceAccount);
+    } else {
+      console.log('🔑 [FIREBASE] Using application default credentials');
+      credential = admin.credential.applicationDefault();
+    }
+    
+    admin.initializeApp({
+      credential: credential,
+      projectId: process.env.REACT_APP_FIREBASE_PROJECT_ID || 'careerbloom-fp61e'
+    });
+    console.log('✅ [FIREBASE] Admin SDK initialized successfully');
+  } catch (error) {
+    console.error('❌ [FIREBASE] Failed to initialize Admin SDK:', error.message);
+  }
+}
+
+const db = admin.firestore();
+
+// Маппинг Gumroad tiers в типы подписок
+const TIER_MAPPING = {
+  'Membership Pro': 'pro',
+  'Membership Premium': 'premium', 
+  'Membership Lifetime': 'lifetime',
+  'Pro': 'pro',
+  'Premium': 'premium',
+  'Lifetime': 'lifetime'
+};
+
+// Функция для поиска пользователя по email
+async function getUserByEmail(email) {
+  try {
+    const userRecord = await admin.auth().getUserByEmail(email);
+    return userRecord.uid;
+  } catch (error) {
+    console.error(`❌ [FIREBASE] Error finding user by email ${email}:`, error.message);
+    return null;
+  }
+}
+
+// Функция для обновления подписки пользователя
+async function updateUserSubscription(userId, subscriptionType) {
+  try {
+    const tokenRef = db.collection('userTokens').doc(userId);
+    const tokenDoc = await tokenRef.get();
+    
+    if (!tokenDoc.exists) {
+      console.log(`❌ [FIREBASE] User ${userId} not found in userTokens collection`);
+      return false;
+    }
+    
+    const tokenData = tokenDoc.data();
+    const now = new Date();
+    let expiresAt = null;
+    let tokensToAdd = 0;
+    
+    // Определяем параметры подписки
+    switch (subscriptionType) {
+      case 'pro':
+        expiresAt = new Date(now.getTime() + 30 * 24 * 60 * 60 * 1000); // 30 дней
+        tokensToAdd = 100; // PRO_MONTHLY_TOKENS
+        break;
+      case 'premium':
+        expiresAt = new Date(now.getTime() + 30 * 24 * 60 * 60 * 1000); // 30 дней
+        tokensToAdd = 300; // PREMIUM_MONTHLY_TOKENS
+        break;
+      case 'lifetime':
+        expiresAt = null; // Lifetime не истекает
+        tokensToAdd = 0; // Lifetime не добавляет токены
+        break;
+      default:
+        throw new Error(`Unknown subscription type: ${subscriptionType}`);
+    }
+    
+    // Обновляем подписку
+    await tokenRef.update({
+      subscription: subscriptionType,
+      subscriptionExpiresAt: expiresAt ? expiresAt.toISOString() : null,
+      tokens: tokenData.tokens + tokensToAdd,
+      totalTokensEarned: tokenData.totalTokensEarned + tokensToAdd,
+      updatedAt: now.toISOString()
+    });
+    
+    console.log(`✅ [FIREBASE] Updated subscription for user ${userId} to ${subscriptionType}`);
+    return true;
+  } catch (error) {
+    console.error(`❌ [FIREBASE] Error updating subscription for user ${userId}:`, error.message);
+    return false;
+  }
+}
 
 const app = express();
 const PORT = process.env.PORT || 3001;
@@ -959,8 +1058,20 @@ Transcript: ${nextLongestVideo.transcript}`;
   }
 });
 
+// Лог-буфер для локального сервера
+let localLogBuffer = [];
+const MAX_LOCAL_LOGS = 50;
+
+function addToLocalLogBuffer(data) {
+  const timestamp = new Date().toISOString();
+  localLogBuffer.unshift({ timestamp, ...data });
+  if (localLogBuffer.length > MAX_LOCAL_LOGS) {
+    localLogBuffer = localLogBuffer.slice(0, MAX_LOCAL_LOGS);
+  }
+}
+
 // Webhook endpoint for Gumroad (x-www-form-urlencoded)
-app.post('/api/gumroad/webhook', (req, res) => {
+app.post('/api/gumroad/webhook', async (req, res) => {
   try {
     console.log('📬 [GUMROAD] Webhook received');
     console.log('   Method:', req.method);
@@ -975,12 +1086,107 @@ app.post('/api/gumroad/webhook', (req, res) => {
     });
     console.log('   Body (parsed):', req.body);
 
-    // Respond quickly so Gumroad considers it successful
-    res.status(200).json({ ok: true, received: true });
+    // Обрабатываем покупку подписки
+    const { email, 'variants[Tier]': tier, refunded, disputed, test } = req.body;
+    
+    // Проверяем, что это не возврат или спор
+    if (refunded === 'true' || disputed === 'true') {
+      console.log('⚠️ [GUMROAD] Skipping subscription update - refunded or disputed');
+    } else if (email && tier) {
+      console.log(`🔄 [GUMROAD] Processing subscription for email: ${email}, tier: ${tier}`);
+      
+      // Получаем тип подписки из маппинга
+      const subscriptionType = TIER_MAPPING[tier];
+      
+      if (subscriptionType) {
+        // Ищем пользователя по email
+        const userId = await getUserByEmail(email);
+        
+        if (userId) {
+          // Обновляем подписку
+          const success = await updateUserSubscription(userId, subscriptionType);
+          
+          if (success) {
+            console.log(`✅ [GUMROAD] Successfully updated subscription for ${email} to ${subscriptionType}`);
+          } else {
+            console.log(`❌ [GUMROAD] Failed to update subscription for ${email}`);
+          }
+        } else {
+          console.log(`❌ [GUMROAD] User not found for email: ${email}`);
+        }
+      } else {
+        console.log(`⚠️ [GUMROAD] Unknown tier: ${tier}`);
+      }
+    } else {
+      console.log('⚠️ [GUMROAD] Missing email or tier in webhook data');
+    }
+
+    // Добавляем в локальный лог-буфер
+    addToLocalLogBuffer({
+      type: 'webhook',
+      email: req.body.email,
+      product_name: req.body.product_name,
+      price: req.body.price,
+      currency: req.body.currency,
+      sale_id: req.body.sale_id,
+      test: req.body.test,
+      refunded: req.body.refunded,
+      disputed: req.body.disputed,
+      recurrence: req.body.recurrence,
+      'variants[Tier]': req.body['variants[Tier]'],
+      ip_country: req.body.ip_country,
+      order_number: req.body.order_number
+    });
+
+    // Возвращаем HTML с alert
+    const logData = {
+      type: 'webhook',
+      email: req.body.email,
+      product_name: req.body.product_name,
+      price: req.body.price,
+      currency: req.body.currency,
+      sale_id: req.body.sale_id,
+      test: req.body.test,
+      refunded: req.body.refunded,
+      disputed: req.body.disputed,
+      recurrence: req.body.recurrence,
+      'variants[Tier]': req.body['variants[Tier]'],
+      ip_country: req.body.ip_country,
+      order_number: req.body.order_number,
+      timestamp: new Date().toISOString()
+    };
+
+    const html = `
+    <!DOCTYPE html>
+    <html>
+    <head><title>Gumroad Webhook</title></head>
+    <body>
+      <h1>Webhook received</h1>
+      <p>Check alert and browser console for details</p>
+      <script>
+        alert('📬 GUMROAD WEBHOOK RECEIVED!\\n\\nEmail: ${req.body.email}\\nProduct: ${req.body.product_name}\\nPrice: $${req.body.price} ${req.body.currency}\\nSale ID: ${req.body.sale_id}\\nTest: ${req.body.test}');
+        console.log('📬 [GUMROAD] Webhook received:', ${JSON.stringify(logData, null, 2)});
+        console.table(${JSON.stringify([logData])});
+      </script>
+    </body>
+    </html>
+    `;
+
+    res.setHeader('Content-Type', 'text/html');
+    res.status(200).send(html);
   } catch (error) {
     console.error('❌ [GUMROAD] Error handling webhook:', error);
     res.status(500).json({ ok: false, error: error.message });
   }
+});
+
+// GET endpoint для просмотра локальных логов
+app.get('/api/gumroad/webhook', (req, res) => {
+  res.json({
+    success: true,
+    logs: localLogBuffer,
+    total: localLogBuffer.length
+  });
 });
 
 // Handle React routing, return all requests to React app

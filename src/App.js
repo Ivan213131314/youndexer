@@ -1074,7 +1074,7 @@ function AppContent() {
         <>
 
           <div className="header">
-            <h1 className="main-heading">YouTube Semantic Searcher</h1>
+            <h1 className="main-heading">YouTube Semantic Searcher2</h1>
             <div className="search-box">
               <div className="search-input-group">
                 <div className="search-input-row">
